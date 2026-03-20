@@ -1,0 +1,17 @@
+# compile verilog/system verilog design source files
+sv xil_defaultlib  --include "C:/AMDDesignTools/2025.2/Vivado/data/rsb/busdef" \
+"../../../../../src/scheduler.sv" \
+"../../../../../src/control_unit.sv" \
+"../../../../../src/shuffle_one_hot.sv" \
+"../../../../../src/shuffle_any.sv" \
+"../../../../../tb/tb_config_pkg.sv" \
+"../../../../../tb/tb_shuffle_any.sv" \
+"../../../../../tb/tb_control_unit.sv" \
+"../../../../../tb/tb_scheduler.sv" \
+"../../../../../tb/tb_shuffle_one_hot.sv" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort

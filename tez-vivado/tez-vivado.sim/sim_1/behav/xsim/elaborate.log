@@ -1,0 +1,19 @@
+Vivado Simulator v2025.2
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+Running: C:/AMDDesignTools/2025.2/Vivado/bin/unwrapped/win64.o/xelab.exe --incr --debug typical --relax --mt 2 -L xil_defaultlib -L uvm -L unisims_ver -L unimacro_ver -L secureip --snapshot tb_shuffle_any_behav xil_defaultlib.tb_shuffle_any xil_defaultlib.glbl -log elaborate.log 
+Using 2 slave threads.
+Starting static elaboration
+Pass Through NonSizing Optimizer
+Completed static elaboration
+Starting simulation data flow analysis
+WARNING: [XSIM 43-4099] "P:/AZC/tez/src/shuffle_any.sv" Line 36. Module shuffle_any doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "P:/AZC/tez/src/shuffle_one_hot.sv" Line 19. Module shuffle_one_hot doesn't have a timescale but at least one module in design has a timescale.
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling package xil_defaultlib.tb_config_pkg
+Compiling module xil_defaultlib.shuffle_one_hot
+Compiling module xil_defaultlib.shuffle_any
+Compiling module xil_defaultlib.tb_shuffle_any
+Compiling module xil_defaultlib.glbl
+Built simulation snapshot tb_shuffle_any_behav

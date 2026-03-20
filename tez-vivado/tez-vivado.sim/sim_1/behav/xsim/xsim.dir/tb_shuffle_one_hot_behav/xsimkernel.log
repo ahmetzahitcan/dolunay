@@ -1,0 +1,7 @@
+Running: xsim.dir/tb_shuffle_one_hot_behav/xsimk.exe -simmode gui -wdb tb_shuffle_one_hot_behav.wdb -simrunnum 0 -socket 62065
+Design successfully loaded
+Design Loading Memory Usage: 10880 KB (Peak: 10880 KB)
+Design Loading CPU Usage: 46 ms
+Simulation completed
+Simulation Memory Usage: 12684 KB (Peak: 12684 KB)
+Simulation CPU Usage: 93 ms

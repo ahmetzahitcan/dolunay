@@ -1,0 +1,17 @@
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/src/scheduler.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module scheduler
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/src/control_unit.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module control_unit
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/src/shuffle_one_hot.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module shuffle_one_hot
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/src/shuffle_any.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module shuffle_any
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/tb/tb_config_pkg.sv" into library xil_defaultlib
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/tb/tb_shuffle_any.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tb_shuffle_any
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/tb/tb_control_unit.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tb_control_unit
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/tb/tb_scheduler.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tb_scheduler
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "P:/AZC/tez/tb/tb_shuffle_one_hot.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module tb_shuffle_one_hot
