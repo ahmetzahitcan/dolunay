@@ -1,7 +1,7 @@
 // =============================================================================
 // fetch.sv — Fetch stage with thread scheduler (main prototype focus)
 // =============================================================================
-`default_nettype none
+// `default_nettype none
 
 module fetch
     import proto_pkg::*;
@@ -9,99 +9,99 @@ module fetch
     parameter int NUM_THREADS = proto_pkg::NUM_THREADS,
     parameter int PC_WIDTH    = proto_pkg::PC_WIDTH
 ) (
-    input  logic clk,
-    input  logic rst_n,
+    input  wire logic clk,
+    input  wire logic rst_n,
 
     // Pipeline handshake
-    input  logic                valid_i,
+    input  wire logic                valid_i,
     output logic                done_o,
 
     // Branch feedback from execute
-    input  logic                branch_taken_i,
-    input  logic [PC_WIDTH-1:0] branch_target_i,
+    input  wire logic                branch_taken_i,
+    input  wire logic [NUM_THREADS-1:0] branch_mask_i,
+    input  wire logic [PC_WIDTH-1:0] branch_target_i,
 
     // Output to instruction memory
     output logic [PC_WIDTH-1:0] pc_o,
     output logic [NUM_THREADS-1:0] active_mask_o
 );
 
-    localparam int LOG_NUM_THREADS = $clog2(NUM_THREADS);
+    // =========================================================================
+    //  Fetch FSM to pulse thread_scheduler safely
+    // =========================================================================
+    typedef enum logic [1:0] {
+        IDLE     = 2'd0,
+        DO_FETCH = 2'd1,
+        DONE     = 2'd2
+    } state_t;
 
-    // -------------------------------------------------------------------------
-    // Thread scheduler state
-    // -------------------------------------------------------------------------
-    logic [NUM_THREADS-1:0][PC_WIDTH-1:0]    pc_list_r;
-    logic [NUM_THREADS-1:0][NUM_THREADS-1:0] mask_list_r;
-    logic [LOG_NUM_THREADS-1:0]              curr_path_id_r;
+    state_t state_r, next_state_w;
 
-    // -------------------------------------------------------------------------
-    // Internal wires
-    // -------------------------------------------------------------------------
-    logic [LOG_NUM_THREADS-1:0] next_path_id_w;
-    assign next_path_id_w = curr_path_id_r + 1'b1;
+    logic sched_fetch_w;
+    logic sched_branch_w;
+    logic done_w;
 
-    logic next_path_valid_w;
-    assign next_path_valid_w = |mask_list_r[next_path_id_w];
+    always_comb begin
+        next_state_w   = state_r;
+        sched_fetch_w  = 1'b0;
+        sched_branch_w = 1'b0;
+        done_w         = 1'b0;
 
-    logic [PC_WIDTH-1:0] selected_pc_w;
-    assign selected_pc_w = pc_list_r[curr_path_id_r];
-
-    logic [NUM_THREADS-1:0] selected_mask_w;
-    assign selected_mask_w = mask_list_r[curr_path_id_r];
-
-    // -------------------------------------------------------------------------
-    // Done flag
-    // -------------------------------------------------------------------------
-    logic done_r;
-    assign done_o = done_r;
-
-    // -------------------------------------------------------------------------
-    // Outputs
-    // -------------------------------------------------------------------------
-    assign pc_o          = selected_pc_w;
-    assign active_mask_o = selected_mask_w;
-
-    // -------------------------------------------------------------------------
-    // Sequential logic
-    // -------------------------------------------------------------------------
-    always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            curr_path_id_r <= '0;
-            done_r         <= 1'b0;
-
-            // Thread 0 starts at PC=0 with mask=all-ones
-            pc_list_r[0]   <= '0;
-            mask_list_r[0] <= '1;
-            for (int i = 1; i < NUM_THREADS; i++) begin
-                pc_list_r[i]   <= '0;
-                mask_list_r[i] <= '0;
-            end
-
-        end else begin
-            done_r <= 1'b0;  // default: deassert
-
-            if (valid_i) begin
-                // Advance PC for the current path
-                pc_list_r[curr_path_id_r] <= selected_pc_w + PC_WIDTH'(4);
-
-                // TODO: thread scheduling policy (round-robin, priority, etc.)
-                if (next_path_valid_w) begin
-                    curr_path_id_r <= next_path_id_w;
-                end else begin
-                    curr_path_id_r <= '0;
+        case (state_r)
+            IDLE: begin
+                if (valid_i) begin
+                    if (branch_taken_i) begin
+                        sched_branch_w = 1'b1;
+                        next_state_w   = DO_FETCH;
+                    end else begin
+                        sched_fetch_w  = 1'b1;
+                        next_state_w   = DONE;
+                    end
                 end
-
-                done_r <= 1'b1;
             end
-
-            // Branch override
-            if (branch_taken_i) begin
-                pc_list_r[curr_path_id_r] <= branch_target_i;
-                // TODO: handle mask divergence on BEQ
+            DO_FETCH: begin
+                sched_fetch_w = 1'b1;
+                next_state_w  = DONE;
             end
-        end
+            DONE: begin
+                done_w = 1'b1;
+                if (!valid_i) begin
+                    next_state_w = IDLE;
+                end
+            end
+            default: next_state_w = IDLE;
+        endcase
     end
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) state_r <= IDLE;
+        else        state_r <= next_state_w;
+    end
+
+    assign done_o = done_w;
+
+    // =========================================================================
+    //  Thread Scheduler Instance
+    // =========================================================================
+    thread_scheduler #(
+        .NUM_THREADS  (NUM_THREADS),
+        .PC_WIDTH     (PC_WIDTH),
+        .NUM_BARRIERS (8) // Default
+    ) u_scheduler (
+        .clk           (clk),
+        .rst_n         (rst_n),
+        .fetch_i       (sched_fetch_w),
+        .yield_i       (1'b0),
+        .binit_i       (1'b0),
+        .bwait_i       (1'b0),
+        .bsel_i        ('0),
+        .branch_i      (sched_branch_w),
+        .pc_branch_i   (branch_target_i),
+        .mask_branch_i (branch_mask_i),
+        .pc_o          (pc_o),
+        .mask_o        (active_mask_o)
+    );
 
 endmodule
 
-`default_nettype wire
+// `default_nettype wire

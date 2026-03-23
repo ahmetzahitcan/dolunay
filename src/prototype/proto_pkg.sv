@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 
 package proto_pkg;
 
@@ -33,4 +33,4 @@ package proto_pkg;
 
 endpackage
 
-`default_nettype wire
+// `default_nettype wire

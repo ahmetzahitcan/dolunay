@@ -1,22 +1,23 @@
 // =============================================================================
 // execute.sv — SIMD execute stage (ADD / BEQ)
 // =============================================================================
-`default_nettype none
+// `default_nettype none
 
 module execute
     import proto_pkg::*;
 (
-    input  logic clk,
-    input  logic rst_n,
+    input  wire logic clk,
+    input  wire logic rst_n,
 
     // Pipeline handshake
-    input  logic           valid_i,
+    input  wire logic           valid_i,
     output logic           done_o,
 
     // Decoded instruction + operands from decode
     input  decoded_instr_t              decoded_i,
-    input  logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_i,
-    input  logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_i,
+    input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_i,
+    input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_i,
+    input  wire logic [NUM_THREADS-1:0]      active_mask_i,
 
     // ALU result
     output logic [NUM_LANES-1:0][XLEN-1:0] result_o,
@@ -24,6 +25,7 @@ module execute
 
     // Branch resolution
     output logic                branch_taken_o,
+    output logic [NUM_THREADS-1:0] branch_mask_o,
     output logic [PC_WIDTH-1:0] branch_target_o
 );
 
@@ -50,10 +52,14 @@ module execute
     endgenerate
 
     // -------------------------------------------------------------------------
-    // Branch logic — branch if ALL lanes agree (simplified)
+    // Branch logic
     // -------------------------------------------------------------------------
     logic branch_taken_w;
-    assign branch_taken_w = (decoded_i.opcode == OP_BEQ) && (&lane_eq_w);
+    logic [NUM_THREADS-1:0] branch_mask_w;
+    // Condition matches for each lane
+    assign branch_mask_w = (decoded_i.opcode == OP_BEQ) ? (lane_eq_w & active_mask_i) : '0;
+    // Take branch if ANY active lane satisfied the condition
+    assign branch_taken_w = |branch_mask_w;
 
     logic [PC_WIDTH-1:0] branch_target_w;
     assign branch_target_w = decoded_i.imm;  // TODO: add PC offset properly
@@ -64,12 +70,14 @@ module execute
     logic [NUM_LANES-1:0][XLEN-1:0] result_r;
     decoded_instr_t decoded_pass_r;
     logic branch_taken_r;
+    logic [NUM_THREADS-1:0] branch_mask_r;
     logic [PC_WIDTH-1:0] branch_target_r;
     logic done_r;
 
     assign result_o        = result_r;
     assign decoded_pass_o  = decoded_pass_r;
     assign branch_taken_o  = branch_taken_r;
+    assign branch_mask_o   = branch_mask_r;
     assign branch_target_o = branch_target_r;
     assign done_o          = done_r;
 
@@ -78,6 +86,7 @@ module execute
             result_r        <= '0;
             decoded_pass_r  <= '0;
             branch_taken_r  <= 1'b0;
+            branch_mask_r   <= '0;
             branch_target_r <= '0;
             done_r          <= 1'b0;
         end else begin
@@ -87,6 +96,7 @@ module execute
                 result_r        <= alu_result_w;
                 decoded_pass_r  <= decoded_i;
                 branch_taken_r  <= branch_taken_w;
+                branch_mask_r   <= branch_mask_w;
                 branch_target_r <= branch_target_w;
                 done_r          <= 1'b1;
             end
@@ -95,4 +105,4 @@ module execute
 
 endmodule
 
-`default_nettype wire
+// `default_nettype wire

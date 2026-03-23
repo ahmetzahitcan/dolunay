@@ -1,7 +1,7 @@
 // =============================================================================
 // pipeline_controller.sv — FSM cycling through pipeline stages
 // =============================================================================
-`default_nettype none
+// `default_nettype none
 
 module pipeline_controller (
     input  logic clk,
@@ -72,4 +72,4 @@ module pipeline_controller (
 
 endmodule
 
-`default_nettype wire
+// `default_nettype wire

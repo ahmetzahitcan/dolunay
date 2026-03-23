@@ -1,7 +1,7 @@
 // =============================================================================
 // instr_rom.sv — Synchronous instruction ROM
 // =============================================================================
-`default_nettype none
+// `default_nettype none
 
 module instr_rom #(
     parameter int ADDR_WIDTH = 32,
@@ -39,4 +39,4 @@ module instr_rom #(
 
 endmodule
 
-`default_nettype wire
+// `default_nettype wire

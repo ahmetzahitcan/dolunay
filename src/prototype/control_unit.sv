@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 
 module control_unit (
     input  wire  [31:2] instr_i,
@@ -21,4 +21,4 @@ module control_unit (
     end
 endmodule
 
-`default_nettype wire
+// `default_nettype wire

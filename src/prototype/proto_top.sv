@@ -1,7 +1,7 @@
 // =============================================================================
 // proto_top.sv — Top-level: wires all prototype modules together
 // =============================================================================
-`default_nettype none
+// `default_nettype none
 
 module proto_top
     import proto_pkg::*;
@@ -9,8 +9,8 @@ module proto_top
     parameter ROM_INIT_FILE = "program.hex",
     parameter int ROM_DEPTH = 256
 ) (
-    input logic clk,
-    input logic rst_n
+    input wire logic clk,
+    input wire logic rst_n
 );
 
     // =========================================================================
@@ -42,6 +42,7 @@ module proto_top
 
     // Execute → Fetch (branch)
     logic              branch_taken_w;
+    logic [NUM_THREADS-1:0] branch_mask_w;
     logic [PC_WIDTH-1:0] branch_target_w;
 
     // Regfile ↔ Decode / Writeback
@@ -54,12 +55,24 @@ module proto_top
     logic [NUM_LANES-1:0][XLEN-1:0]    rf_write_data_w;
 
     // ROM done: 1-cycle latency → just delay rom_read_en by one clock
+    // Also delay active_mask to match ROM latency
     logic rom_read_en_d1_r;
+    logic [NUM_THREADS-1:0] active_mask_d1_r;
     always_ff @(posedge clk) begin
-        if (!rst_n) rom_read_en_d1_r <= 1'b0;
-        else        rom_read_en_d1_r <= rom_read_en_w;
+        if (!rst_n) begin
+            rom_read_en_d1_r <= 1'b0;
+            active_mask_d1_r <= '0;
+        end else begin
+            rom_read_en_d1_r <= rom_read_en_w;
+            if (rom_read_en_w) active_mask_d1_r <= active_mask_w;
+        end
     end
     assign rom_done_w = rom_read_en_d1_r;
+    logic [NUM_THREADS-1:0] rom_active_mask_w;
+    assign rom_active_mask_w = active_mask_d1_r;
+
+    // Decode → Execute (active_mask)
+    logic [NUM_THREADS-1:0] dec_active_mask_w;
 
     // =========================================================================
     //  Module instances
@@ -86,6 +99,7 @@ module proto_top
         .valid_i           (fetch_valid_w),
         .done_o            (fetch_done_w),
         .branch_taken_i    (branch_taken_w),
+        .branch_mask_i     (branch_mask_w),
         .branch_target_i   (branch_target_w),
         .pc_o              (fetch_pc_w),
         .active_mask_o     (active_mask_w)
@@ -107,13 +121,15 @@ module proto_top
         .valid_i    (decode_valid_w),
         .done_o     (decode_done_w),
         .instr_i    (rom_instr_w),
+        .active_mask_i (rom_active_mask_w),
         .rs1_addr_o (rf_rs1_addr_w),
         .rs2_addr_o (rf_rs2_addr_w),
         .rs1_data_i (rf_rs1_data_w),
         .rs2_data_i (rf_rs2_data_w),
         .decoded_o  (dec_decoded_w),
         .rs1_data_o (dec_rs1_data_w),
-        .rs2_data_o (dec_rs2_data_w)
+        .rs2_data_o (dec_rs2_data_w),
+        .active_mask_o (dec_active_mask_w)
     );
 
     execute u_execute (
@@ -124,9 +140,11 @@ module proto_top
         .decoded_i       (dec_decoded_w),
         .rs1_data_i      (dec_rs1_data_w),
         .rs2_data_i      (dec_rs2_data_w),
+        .active_mask_i   (dec_active_mask_w),
         .result_o        (exe_result_w),
         .decoded_pass_o  (exe_decoded_w),
         .branch_taken_o  (branch_taken_w),
+        .branch_mask_o   (branch_mask_w),
         .branch_target_o (branch_target_w)
     );
 
@@ -155,4 +173,4 @@ module proto_top
 
 endmodule
 
-`default_nettype wire
+// `default_nettype wire

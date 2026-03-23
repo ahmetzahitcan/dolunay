@@ -1,7 +1,7 @@
 // =============================================================================
 // regfile.sv — SIMD register file (NUM_REGS × NUM_LANES × XLEN)
 // =============================================================================
-`default_nettype none
+// `default_nettype none
 
 module regfile
     import proto_pkg::*;
@@ -44,4 +44,4 @@ module regfile
 
 endmodule
 
-`default_nettype wire
+// `default_nettype wire

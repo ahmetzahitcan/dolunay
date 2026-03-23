@@ -1,7 +1,7 @@
 // =============================================================================
 // writeback.sv — Write results back to register file
 // =============================================================================
-`default_nettype none
+// `default_nettype none
 
 module writeback
     import proto_pkg::*;
@@ -49,4 +49,4 @@ module writeback
 
 endmodule
 
-`default_nettype wire
+// `default_nettype wire

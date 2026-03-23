@@ -1,0 +1,1 @@
+-debug "typical" -top "tb_thread_scheduler" -snapshot "sim_snapshot" 
