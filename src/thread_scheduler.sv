@@ -182,7 +182,7 @@ always_ff @(posedge clk) begin
             end else begin
                 // Uniform Jump: All threads took the branch. Overwrite the current slot to avoid wasting path capacity.
                 pc_list_r[path_id_r] <= pc_branch_i;
-                // mask_list_r[path_id_r] <= mask_branch_i; // Not needed since this only happens when mask_w = mask_branch_i
+                // mask_list_r[path_id_r] <= mask_branch_i; // Not needed since this only happens when mask_w == mask_branch_i
             end
         end
     end

@@ -34,35 +34,18 @@ module decode
     // Decode logic (combinational)
     // -------------------------------------------------------------------------
     decoded_instr_t decoded_w;
-    logic [1:0] opcode_w;
 
     control_unit ctrl_i (
         .instr_i (instr_i[31:2]),
-        .opcode_o(opcode_w)
+        .control_signals_o(decoded_w.control_signals)
     );
 
     always_comb begin
-        decoded_w = '0;
-        decoded_w.opcode = opcode_t'(opcode_w);
-
-        case (opcode_t'(opcode_w))
-            OP_ADD: begin // R-type → ADD
-                decoded_w.rd     = instr_i[11:7];
-                decoded_w.rs1    = instr_i[19:15];
-                decoded_w.rs2    = instr_i[24:20];
-                decoded_w.imm    = '0;
-            end
-            OP_BEQ: begin // B-type → BEQ
-                decoded_w.rd     = '0;
-                decoded_w.rs1    = instr_i[19:15];
-                decoded_w.rs2    = instr_i[24:20];
-                decoded_w.imm    = {{20{instr_i[31]}}, instr_i[7],
-                                    instr_i[30:25], instr_i[11:8], 1'b0};
-            end
-            default: begin
-                decoded_w = '0;
-            end
-        endcase
+        decoded_w.rd     = instr_i[11:7];
+        decoded_w.rs1    = instr_i[19:15];
+        decoded_w.rs2    = instr_i[24:20];
+        decoded_w.imm    = {{20{instr_i[31]}}, instr_i[7],
+                            instr_i[30:25], instr_i[11:8], 1'b0};
     end
 
     // -------------------------------------------------------------------------

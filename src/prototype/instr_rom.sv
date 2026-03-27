@@ -6,8 +6,7 @@
 module instr_rom #(
     parameter int ADDR_WIDTH = 32,
     parameter int DATA_WIDTH = 32,
-    parameter int DEPTH      = 256,
-    parameter     INIT_FILE  = "program.hex"
+    parameter int DEPTH      = 256
 ) (
     input  logic clk,
 
@@ -15,6 +14,22 @@ module instr_rom #(
     input  logic [ADDR_WIDTH-1:0]   addr_i,
     output logic [DATA_WIDTH-1:0]   instr_o
 );
+    // -------------------------------------------------------------------------
+    // Instructions
+    // -------------------------------------------------------------------------
+    localparam ADD = 32'b0000000_00000_00000_000_00000_01100_11;
+    localparam BEQ_P100 = 32'b000001100000000000000010011000_11;
+    localparam BINIT = 32'b0000000_00000_00000_000_00000_00001_11;
+    localparam BWAIT = 32'b0000000_00000_00000_000_00000_00011_11;
+    localparam X1_RD = 32'b0000000_00000_00000_000_00001_00000_11;
+    localparam X2_RD = 32'b0000000_00000_00000_000_00010_00000_11;
+    localparam X3_RD = 32'b0000000_00000_00000_000_00011_00000_11;
+    localparam X1_RS1 = 32'b0000000_00000_00001_000_00000_00000_11;
+    localparam X2_RS1 = 32'b0000000_00000_00010_000_00000_00000_11;
+    localparam X3_RS1 = 32'b0000000_00000_00011_000_00000_00000_11;
+    localparam X1_RS2 = 32'b0000000_00001_00000_000_00000_00000_11;
+    localparam X2_RS2 = 32'b0000000_00010_00000_000_00000_00000_11;
+    localparam X3_RS2 = 32'b0000000_00011_00000_000_00000_00000_11;
 
     // -------------------------------------------------------------------------
     // Memory
@@ -22,7 +37,17 @@ module instr_rom #(
     logic [DATA_WIDTH-1:0] mem_r [0:DEPTH-1];
 
     initial begin
-        $readmemh(INIT_FILE, mem_r);
+        for (int i = 0; i < DEPTH; i++) begin
+            mem_r[i] <= ADD; // NOP
+        end
+        mem_r[0] = BINIT; // BINIT
+        mem_r[1] = BEQ_P100 | X3_RS1; // BEQ x3, x0, 100
+        mem_r[2] = BEQ_P100 | X3_RS1 | X1_RS2; // BEQ x3, x1, 100
+        mem_r[3] = BEQ_P100 | X3_RS1 | X2_RS2; // BEQ x3, x2, 100
+        mem_r[4] = ADD | X1_RD | X1_RS1 | X2_RS2; // ADD x1, x1, x2
+        mem_r[5] = BEQ_P100 | X3_RS1 | X1_RS2; // BEQ x3, x1, 100
+        mem_r[6] = BEQ_P100; // BEQ x0, x0, 100
+        mem_r[106] = BWAIT; // BWAIT
     end
 
     // -------------------------------------------------------------------------

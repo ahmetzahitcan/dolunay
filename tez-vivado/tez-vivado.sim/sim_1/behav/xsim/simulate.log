@@ -1,7 +1,8 @@
 Time resolution is 1 ps
-PASS  mask_zero (mask=0, done immediately)
-PASS  mask_single_bit (mask=10, 1 cycles)
-PASS  mask_3bits (mask=111, 3 cycles)
-
-tb_shuffle_any: all checks complete.
-$finish called at time : 246 ns : File "P:/AZC/tez/tb/tb_shuffle_any.sv" Line 161
+reg_write_o:           1
+result_src_o:          32
+mem_write_o:           1
+alu_src_o:           1
+imm_src_o:           3
+alu_control_o:          32
+opcode_o:          32

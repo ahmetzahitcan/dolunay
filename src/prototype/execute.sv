@@ -42,9 +42,9 @@ module execute
                 alu_result_w[g] = '0;
                 lane_eq_w[g]    = 1'b0;
 
-                case (decoded_i.opcode)
-                    OP_ADD: alu_result_w[g] = rs1_data_i[g] + rs2_data_i[g];
-                    OP_BEQ: lane_eq_w[g]    = (rs1_data_i[g] == rs2_data_i[g]);
+                case (decoded_i.control_signals.alu_funct)
+                    ALU_ADD: alu_result_w[g] = rs1_data_i[g] + rs2_data_i[g];
+                    ALU_BEQ: lane_eq_w[g]    = (rs1_data_i[g] == rs2_data_i[g]);
                     default: ;
                 endcase
             end
@@ -57,7 +57,7 @@ module execute
     logic branch_taken_w;
     logic [NUM_THREADS-1:0] branch_mask_w;
     // Condition matches for each lane
-    assign branch_mask_w = (decoded_i.opcode == OP_BEQ) ? (lane_eq_w & active_mask_i) : '0;
+    assign branch_mask_w = decoded_i.control_signals.branch ? (lane_eq_w & active_mask_i) : '0;
     // Take branch if ANY active lane satisfied the condition
     assign branch_taken_w = |branch_mask_w;
 

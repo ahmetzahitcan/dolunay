@@ -1,7 +1,7 @@
-Running: xsim.dir/tb_shuffle_any_behav/xsimk.exe -simmode gui -wdb tb_shuffle_any_behav.wdb -simrunnum 0 -socket 63897
+Running: xsim.dir/tb_shuffle_any_behav/xsimk.exe -simmode gui -wdb tb_shuffle_any_behav.wdb -simrunnum 0 -socket 59198
 Design successfully loaded
-Design Loading Memory Usage: 10892 KB (Peak: 10892 KB)
-Design Loading CPU Usage: 15 ms
+Design Loading Memory Usage: 10832 KB (Peak: 10832 KB)
+Design Loading CPU Usage: 46 ms
 Simulation completed
-Simulation Memory Usage: 12792 KB (Peak: 12792 KB)
-Simulation CPU Usage: 93 ms
+Simulation Memory Usage: 12748 KB (Peak: 12748 KB)
+Simulation CPU Usage: 77 ms

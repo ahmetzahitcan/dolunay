@@ -27,7 +27,7 @@ module writeback
     // Write enable: only for ADD (BEQ has no destination register)
     // -------------------------------------------------------------------------
     logic writes_rd_w;
-    assign writes_rd_w = (decoded_i.opcode == OP_ADD);
+    assign writes_rd_w = decoded_i.control_signals.writeback;
 
     // -------------------------------------------------------------------------
     // Registered outputs

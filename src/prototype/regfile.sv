@@ -25,7 +25,15 @@ module regfile
     // -------------------------------------------------------------------------
     // Storage: each register holds NUM_LANES × XLEN bits
     // -------------------------------------------------------------------------
-    logic [NUM_LANES-1:0][XLEN-1:0] regs_r [0:NUM_REGS-1];
+    logic [NUM_LANES-1:0][XLEN-1:0] regs_r [1:NUM_REGS];
+
+    initial begin
+        for(int j = 0; j < NUM_LANES; j++) begin
+            regs_r[1][j] <= 1;
+            regs_r[2][j] <= 2;
+            regs_r[3][j] <= j;
+        end
+    end
 
     // -------------------------------------------------------------------------
     // Combinational reads
