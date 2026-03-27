@@ -1,8 +1,23 @@
 Time resolution is 1 ps
-reg_write_o:           1
-result_src_o:          32
-mem_write_o:           1
-alu_src_o:           1
-imm_src_o:           3
-alu_control_o:          32
-opcode_o:          32
+--- TEST START ---
+TEST 1: Fetching sequentially
+Fetch: PC=0, Mask=ffffffff
+Fetch: PC=1, Mask=ffffffff
+
+TEST 2: Initializing Barrier 0 with all threads.
+
+TEST 3: Divergent Branch (lower 16 threads take branch to PC: 100).
+Fetch after branch (Fall-through Path): PC=2, Mask=ffff0000
+
+TEST 4: Yielding path
+Fetch after yield (Taken Path): PC=100, Mask=0000ffff
+
+TEST 5: Barrier Wait on Taken Path (Expecting yield since barrier incomplete).
+Fetch after bwait (Back to Fall-through Path): PC=3, Mask=ffff0000
+
+TEST 6: Barrier Wait on Fall-through Path (Expecting reconvergence).
+Fetch after reconvergence: PC=4, Mask=ffffffff
+
+--- ALL TESTS COMPLETED ---
+$finish called at time : 266 ns : File "/run/host/mnt/roketsan/tez/tb/tb_thread_scheduler.sv" Line 207
+INFO: xsimkernel Simulation Memory Usage: 283984 KB (Peak: 341256 KB), Simulation CPU Usage: 630 ms

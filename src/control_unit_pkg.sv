@@ -1,20 +1,22 @@
-`ifndef CONTROL_UNIT_PKG_SV
-`define CONTROL_UNIT_PKG_SV
+`default_nettype none
 
 package control_unit_pkg;
 
-    typedef enum logic [1:0] {
-        ALU_ADD,
-        ALU_BEQ,
-        ALU_NOP
-    } alu_funct_t;
+	typedef enum logic {
+		ALU_ADD,
+		ALU_BEQ,
+		UNDEFINED='x
+	} alu_funct_e;
 
-    typedef struct packed {
-        alu_funct_t alu_funct;
-        logic         writeback;
-        logic         branch;
-    } control_signals_t;
+	typedef struct packed {
+		alu_funct_e alu_funct;
+		logic writeback;
+		logic branch;
+		logic binit;
+		logic bwait;
+		logic yield;
+	} control_signals_s;
 
 endpackage
 
-`endif
+`default_nettype wire

@@ -1,24 +1,26 @@
 #-----------------------------------------------------------
 # Vivado v2025.2 (64-bit)
-# SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+# SW Build 6299465 on Fri Nov 14 12:34:56 MST 2025
 # IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
 # SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
-# Start of session at: Tue Mar 24 16:00:58 2026
-# Process ID         : 5424
-# Current directory  : P:/AZC/tez/tez-vivado/tez-vivado.runs/synth_1
-# Command line       : vivado.exe -log thread_scheduler.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source thread_scheduler.tcl
-# Log file           : P:/AZC/tez/tez-vivado/tez-vivado.runs/synth_1/thread_scheduler.vds
-# Journal file       : P:/AZC/tez/tez-vivado/tez-vivado.runs/synth_1\vivado.jou
-# Running On         : DESKTOP-JGO4TC8
-# Platform           : Windows Server 2016 or Windows 10
-# Operating System   : 26200
-# Processor Detail   : AMD Ryzen 5 4500U with Radeon Graphics         
-# CPU Frequency      : 2370 MHz
-# CPU Physical cores : 6
-# CPU Logical cores  : 6
-# Host memory        : 24938 MB
-# Swap memory        : 25769 MB
-# Total Virtual      : 50708 MB
-# Available Virtual  : 24710 MB
+# Start of session at: Fri Mar 27 11:37:31 2026
+# Process ID         : 37513
+# Current directory  : /mnt/roketsan/tez/tez-vivado/tez-vivado.runs/synth_1
+# Command line       : vivado -log control_unit.vds -product Vivado -mode batch -messageDb vivado.pb -notrace -source control_unit.tcl
+# Log file           : /mnt/roketsan/tez/tez-vivado/tez-vivado.runs/synth_1/control_unit.vds
+# Journal file       : /mnt/roketsan/tez/tez-vivado/tez-vivado.runs/synth_1/vivado.jou
+# Running On         : fedora
+# Platform           : ubuntu
+# Operating System   : Ubuntu"
+VERSION_ID="22.04 22.04.5 LTS (Jammy Jellyfish)"
+VERSION_CODENAME=jammy
+# Processor Detail   : 13th Gen Intel(R) Core(TM) i7-13700
+# CPU Frequency      : 5100.000 MHz
+# CPU Physical cores : 16
+# CPU Logical cores  : 24
+# Host memory        : 16346 MB
+# Swap memory        : 42949 MB
+# Total Virtual      : 59296 MB
+# Available Virtual  : 48033 MB
 #-----------------------------------------------------------
-source thread_scheduler.tcl -notrace
+source control_unit.tcl -notrace

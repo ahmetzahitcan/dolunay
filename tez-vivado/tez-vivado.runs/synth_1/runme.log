@@ -1,140 +1,132 @@
 
 *** Running vivado
-    with args -log thread_scheduler.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source thread_scheduler.tcl
-
+    with args -log control_unit.vds -m64 -product Vivado -mode batch -messageDb vivado.pb -notrace -source control_unit.tcl
 
 
 ****** Vivado v2025.2 (64-bit)
-  **** SW Build 6299465 on Fri Nov 14 19:35:11 GMT 2025
+  **** SW Build 6299465 on Fri Nov 14 12:34:56 MST 2025
   **** IP Build 6300035 on Fri Nov 14 10:48:45 MST 2025
   **** SharedData Build 6298862 on Thu Nov 13 04:50:51 MST 2025
-  **** Start of session at: Tue Mar 24 16:00:58 2026
+  **** Start of session at: Fri Mar 27 11:37:31 2026
     ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
     ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 
-source thread_scheduler.tcl -notrace
-create_project: Time (s): cpu = 00:00:09 ; elapsed = 00:00:07 . Memory (MB): peak = 524.410 ; gain = 219.609
-Command: synth_design -top thread_scheduler -part xc7a35tcpg236-1
+source control_unit.tcl -notrace
+Command: read_checkpoint -auto_incremental -incremental /mnt/roketsan/tez/tez-vivado/tez-vivado.srcs/utils_1/imports/synth_1/thread_scheduler.dcp
+INFO: [Vivado 12-5825] Read reference checkpoint from /mnt/roketsan/tez/tez-vivado/tez-vivado.srcs/utils_1/imports/synth_1/thread_scheduler.dcp for incremental synthesis
+INFO: [Vivado 12-7989] Please ensure there are no constraint changes
+Command: synth_design -top control_unit -part xc7a35tcpg236-1
 Starting synth_design
 Attempting to get a license for feature 'Synthesis' and/or device 'xc7a35t'
 INFO: [Common 17-349] Got license for feature 'Synthesis' and/or device 'xc7a35t'
 INFO: [Device 21-403] Loading part xc7a35tcpg236-1
-INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 2 processes.
+INFO: [Designutils 20-5440] No compile time benefit to using incremental synthesis; A full resynthesis will be run
+INFO: [Designutils 20-4379] Flow is switching to default flow due to incremental criteria not met. If you would like to alter this behaviour and have the flow terminate instead, please set the following parameter config_implementation {autoIncr.Synth.RejectBehavior Terminate}
+INFO: [Synth 8-7079] Multithreading enabled for synth_design using a maximum of 7 processes.
 INFO: [Synth 8-7078] Launching helper process for spawning children vivado processes
-INFO: [Synth 8-7075] Helper process launched with PID 12848
+INFO: [Synth 8-7075] Helper process launched with PID 37582
 ---------------------------------------------------------------------------------
-Starting RTL Elaboration : Time (s): cpu = 00:00:07 ; elapsed = 00:00:09 . Memory (MB): peak = 1261.164 ; gain = 541.695
+Starting RTL Elaboration : Time (s): cpu = 00:00:02 ; elapsed = 00:00:03 . Memory (MB): peak = 2201.281 ; gain = 482.156 ; free physical = 230 ; free virtual = 44497
 ---------------------------------------------------------------------------------
-INFO: [Synth 8-6157] synthesizing module 'thread_scheduler' [P:/AZC/tez/src/thread_scheduler.sv:4]
-INFO: [Synth 8-294] found qualifier unique on case statement: implementing as parallel_case [P:/AZC/tez/src/thread_scheduler.sv:141]
-INFO: [Synth 8-155] case statement is not full and has no default [P:/AZC/tez/src/thread_scheduler.sv:141]
-INFO: [Synth 8-6155] done synthesizing module 'thread_scheduler' (0#1) [P:/AZC/tez/src/thread_scheduler.sv:4]
+INFO: [Synth 8-6157] synthesizing module 'control_unit' [/mnt/roketsan/tez/src/control_unit.sv:3]
+INFO: [Synth 8-6155] done synthesizing module 'control_unit' (0#1) [/mnt/roketsan/tez/src/control_unit.sv:3]
 ---------------------------------------------------------------------------------
-Finished RTL Elaboration : Time (s): cpu = 00:00:10 ; elapsed = 00:00:13 . Memory (MB): peak = 1412.320 ; gain = 692.852
+Finished RTL Elaboration : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2286.250 ; gain = 567.125 ; free physical = 244 ; free virtual = 44339
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:00:10 ; elapsed = 00:00:13 . Memory (MB): peak = 1412.320 ; gain = 692.852
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2304.062 ; gain = 584.938 ; free physical = 243 ; free virtual = 44338
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:10 ; elapsed = 00:00:13 . Memory (MB): peak = 1412.320 ; gain = 692.852
+Finished RTL Optimization Phase 1 : Time (s): cpu = 00:00:03 ; elapsed = 00:00:04 . Memory (MB): peak = 2304.062 ; gain = 584.938 ; free physical = 243 ; free virtual = 44338
 ---------------------------------------------------------------------------------
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.117 . Memory (MB): peak = 1412.320 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2304.062 ; gain = 0.000 ; free physical = 243 ; free virtual = 44338
 INFO: [Project 1-570] Preparing netlist for logic optimization
 
 Processing XDC Constraints
 Initializing timing engine
-Parsing XDC File [P:/AZC/tez/CmodA7_Master.xdc]
-WARNING: [Vivado 12-584] No ports matched 'sysclk'. [P:/AZC/tez/CmodA7_Master.xdc:7]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:7]
+Parsing XDC File [/mnt/roketsan/tez/CmodA7_Master.xdc]
+WARNING: [Vivado 12-584] No ports matched 'sysclk'. [/mnt/roketsan/tez/CmodA7_Master.xdc:7]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:7]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'sysclk'. [P:/AZC/tez/CmodA7_Master.xdc:8]
-CRITICAL WARNING: [Vivado 12-4739] create_clock:No valid object(s) found for '-objects [get_ports sysclk]'. [P:/AZC/tez/CmodA7_Master.xdc:8]
+WARNING: [Vivado 12-584] No ports matched 'sysclk'. [/mnt/roketsan/tez/CmodA7_Master.xdc:8]
+CRITICAL WARNING: [Vivado 12-4739] create_clock:No valid object(s) found for '-objects [get_ports sysclk]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:8]
 Resolution: Check if the specified object(s) exists in the current design. If it does, ensure that the correct design hierarchy was specified for the object. If you are working with clocks, make sure create_clock was used to create the clock object before it is referenced.
-WARNING: [Vivado 12-584] No ports matched 'led_b'. [P:/AZC/tez/CmodA7_Master.xdc:15]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:15]
+WARNING: [Vivado 12-584] No ports matched 'led_b'. [/mnt/roketsan/tez/CmodA7_Master.xdc:15]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:15]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'led_g'. [P:/AZC/tez/CmodA7_Master.xdc:16]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:16]
+WARNING: [Vivado 12-584] No ports matched 'led_g'. [/mnt/roketsan/tez/CmodA7_Master.xdc:16]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:16]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'led'. [P:/AZC/tez/CmodA7_Master.xdc:17]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:17]
+WARNING: [Vivado 12-584] No ports matched 'led'. [/mnt/roketsan/tez/CmodA7_Master.xdc:17]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:17]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'btn0'. [P:/AZC/tez/CmodA7_Master.xdc:21]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:21]
+WARNING: [Vivado 12-584] No ports matched 'btn0'. [/mnt/roketsan/tez/CmodA7_Master.xdc:21]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:21]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'xa_n[0]'. [P:/AZC/tez/CmodA7_Master.xdc:38]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:38]
+WARNING: [Vivado 12-584] No ports matched 'xa_n[0]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:38]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:38]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'xa_p[0]'. [P:/AZC/tez/CmodA7_Master.xdc:39]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:39]
+WARNING: [Vivado 12-584] No ports matched 'xa_p[0]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:39]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:39]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'xa_n[1]'. [P:/AZC/tez/CmodA7_Master.xdc:40]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:40]
+WARNING: [Vivado 12-584] No ports matched 'xa_n[1]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:40]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:40]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'xa_p[1]'. [P:/AZC/tez/CmodA7_Master.xdc:41]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:41]
+WARNING: [Vivado 12-584] No ports matched 'xa_p[1]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:41]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:41]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'pio'. [P:/AZC/tez/CmodA7_Master.xdc:46]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:46]
+WARNING: [Vivado 12-584] No ports matched 'pio'. [/mnt/roketsan/tez/CmodA7_Master.xdc:46]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:46]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'data_out[0]'. [P:/AZC/tez/CmodA7_Master.xdc:47]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:47]
+WARNING: [Vivado 12-584] No ports matched 'data_out[0]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:47]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:47]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'data_out[1]'. [P:/AZC/tez/CmodA7_Master.xdc:48]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:48]
+WARNING: [Vivado 12-584] No ports matched 'data_out[1]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:48]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:48]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'data_out[2]'. [P:/AZC/tez/CmodA7_Master.xdc:49]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:49]
+WARNING: [Vivado 12-584] No ports matched 'data_out[2]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:49]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:49]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-WARNING: [Vivado 12-584] No ports matched 'data_out[3]'. [P:/AZC/tez/CmodA7_Master.xdc:50]
-CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [P:/AZC/tez/CmodA7_Master.xdc:50]
+WARNING: [Vivado 12-584] No ports matched 'data_out[3]'. [/mnt/roketsan/tez/CmodA7_Master.xdc:50]
+CRITICAL WARNING: [Common 17-55] 'set_property' expects at least one object. [/mnt/roketsan/tez/CmodA7_Master.xdc:50]
 Resolution: If [get_<value>] was used to populate the object, check to make sure this command returns at least one valid object.
-Finished Parsing XDC File [P:/AZC/tez/CmodA7_Master.xdc]
+Finished Parsing XDC File [/mnt/roketsan/tez/CmodA7_Master.xdc]
 Completed Processing XDC Constraints
 
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.003 . Memory (MB): peak = 1494.977 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2355.957 ; gain = 0.000 ; free physical = 270 ; free virtual = 44297
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
-Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.073 . Memory (MB): peak = 1494.977 ; gain = 0.000
+Constraint Validation Runtime : Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2355.992 ; gain = 0.000 ; free physical = 270 ; free virtual = 44297
+INFO: [Designutils 20-5440] No compile time benefit to using incremental synthesis; A full resynthesis will be run
+INFO: [Designutils 20-4379] Flow is switching to default flow due to incremental criteria not met. If you would like to alter this behaviour and have the flow terminate instead, please set the following parameter config_implementation {autoIncr.Synth.RejectBehavior Terminate}
 ---------------------------------------------------------------------------------
-Finished Constraint Validation : Time (s): cpu = 00:00:22 ; elapsed = 00:00:28 . Memory (MB): peak = 1494.977 ; gain = 775.508
+Finished Constraint Validation : Time (s): cpu = 00:00:06 ; elapsed = 00:00:08 . Memory (MB): peak = 2355.992 ; gain = 636.867 ; free physical = 239 ; free virtual = 44315
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Loading Part and Timing Information
 ---------------------------------------------------------------------------------
 Loading part: xc7a35tcpg236-1
 ---------------------------------------------------------------------------------
-Finished Loading Part and Timing Information : Time (s): cpu = 00:00:22 ; elapsed = 00:00:28 . Memory (MB): peak = 1494.977 ; gain = 775.508
+Finished Loading Part and Timing Information : Time (s): cpu = 00:00:06 ; elapsed = 00:00:08 . Memory (MB): peak = 2363.961 ; gain = 644.836 ; free physical = 239 ; free virtual = 44315
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Applying 'set_property' XDC Constraints
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:22 ; elapsed = 00:00:28 . Memory (MB): peak = 1494.977 ; gain = 775.508
+Finished applying 'set_property' XDC Constraints : Time (s): cpu = 00:00:06 ; elapsed = 00:00:08 . Memory (MB): peak = 2363.961 ; gain = 644.836 ; free physical = 239 ; free virtual = 44315
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:24 ; elapsed = 00:00:30 . Memory (MB): peak = 1494.977 ; gain = 775.508
+Finished RTL Optimization Phase 2 : Time (s): cpu = 00:00:07 ; elapsed = 00:00:08 . Memory (MB): peak = 2363.961 ; gain = 644.836 ; free physical = 203 ; free virtual = 44281
 ---------------------------------------------------------------------------------
 No constraint files found.
 ---------------------------------------------------------------------------------
 Start RTL Component Statistics 
 ---------------------------------------------------------------------------------
 Detailed RTL Component Info : 
-+---Adders : 
-	   2 Input   30 Bit       Adders := 1     
-+---Registers : 
-	               32 Bit    Registers := 49    
-	               30 Bit    Registers := 33    
-+---Muxes : 
-	   6 Input   32 Bit        Muxes := 2     
-	   2 Input   32 Bit        Muxes := 1     
-	   2 Input    5 Bit        Muxes := 1     
-	   2 Input    1 Bit        Muxes := 226   
-	   6 Input    1 Bit        Muxes := 9     
 ---------------------------------------------------------------------------------
 Finished RTL Component Statistics 
 ---------------------------------------------------------------------------------
@@ -152,20 +144,20 @@ No constraint files found.
 Start Cross Boundary and Area Optimization
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:02:10 ; elapsed = 00:02:32 . Memory (MB): peak = 1607.430 ; gain = 887.961
+Finished Cross Boundary and Area Optimization : Time (s): cpu = 00:00:07 ; elapsed = 00:00:09 . Memory (MB): peak = 2363.961 ; gain = 644.836 ; free physical = 279 ; free virtual = 44310
 ---------------------------------------------------------------------------------
 No constraint files found.
 ---------------------------------------------------------------------------------
 Start Timing Optimization
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Timing Optimization : Time (s): cpu = 00:02:45 ; elapsed = 00:03:11 . Memory (MB): peak = 1607.430 ; gain = 887.961
+Finished Timing Optimization : Time (s): cpu = 00:00:07 ; elapsed = 00:00:09 . Memory (MB): peak = 2363.961 ; gain = 644.836 ; free physical = 279 ; free virtual = 44310
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Technology Mapping
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Technology Mapping : Time (s): cpu = 00:03:00 ; elapsed = 00:03:27 . Memory (MB): peak = 1607.430 ; gain = 887.961
+Finished Technology Mapping : Time (s): cpu = 00:00:07 ; elapsed = 00:00:09 . Memory (MB): peak = 2363.961 ; gain = 644.836 ; free physical = 279 ; free virtual = 44310
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start IO Insertion
@@ -183,37 +175,37 @@ Start Final Netlist Cleanup
 Finished Final Netlist Cleanup
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished IO Insertion : Time (s): cpu = 00:03:07 ; elapsed = 00:03:35 . Memory (MB): peak = 1689.145 ; gain = 969.676
+Finished IO Insertion : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 2512.773 ; gain = 793.648 ; free physical = 244 ; free virtual = 44127
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Instances
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Instances : Time (s): cpu = 00:03:07 ; elapsed = 00:03:35 . Memory (MB): peak = 1689.145 ; gain = 969.676
+Finished Renaming Generated Instances : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 2512.773 ; gain = 793.648 ; free physical = 244 ; free virtual = 44127
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Rebuilding User Hierarchy
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Rebuilding User Hierarchy : Time (s): cpu = 00:03:07 ; elapsed = 00:03:35 . Memory (MB): peak = 1689.145 ; gain = 969.676
+Finished Rebuilding User Hierarchy : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 2512.773 ; gain = 793.648 ; free physical = 245 ; free virtual = 44127
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Ports
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Ports : Time (s): cpu = 00:03:07 ; elapsed = 00:03:35 . Memory (MB): peak = 1689.145 ; gain = 969.676
+Finished Renaming Generated Ports : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 2512.773 ; gain = 793.648 ; free physical = 245 ; free virtual = 44127
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Handling Custom Attributes
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Handling Custom Attributes : Time (s): cpu = 00:03:07 ; elapsed = 00:03:36 . Memory (MB): peak = 1689.145 ; gain = 969.676
+Finished Handling Custom Attributes : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 2512.773 ; gain = 793.648 ; free physical = 245 ; free virtual = 44126
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Renaming Generated Nets
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-Finished Renaming Generated Nets : Time (s): cpu = 00:03:07 ; elapsed = 00:03:36 . Memory (MB): peak = 1689.145 ; gain = 969.676
+Finished Renaming Generated Nets : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 2512.773 ; gain = 793.648 ; free physical = 246 ; free virtual = 44126
 ---------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Start Writing Synthesis Report
@@ -226,47 +218,38 @@ Report BlackBoxes:
 +-+--------------+----------+
 
 Report Cell Usage: 
-+------+-------+------+
-|      |Cell   |Count |
-+------+-------+------+
-|1     |BUFG   |     1|
-|2     |CARRY4 |    11|
-|3     |LUT1   |     1|
-|4     |LUT2   |   106|
-|5     |LUT3   |    71|
-|6     |LUT4   |   308|
-|7     |LUT5   |   525|
-|8     |LUT6   |  1898|
-|9     |MUXF7  |   280|
-|10    |FDRE   |  2544|
-|11    |FDSE   |    32|
-|12    |IBUF   |    72|
-|13    |OBUF   |    62|
-+------+-------+------+
++------+-----+------+
+|      |Cell |Count |
++------+-----+------+
+|1     |LUT1 |     1|
+|2     |LUT2 |     1|
+|3     |LUT3 |     1|
+|4     |IBUF |     5|
+|5     |OBUF |     6|
++------+-----+------+
 ---------------------------------------------------------------------------------
-Finished Writing Synthesis Report : Time (s): cpu = 00:03:07 ; elapsed = 00:03:36 . Memory (MB): peak = 1689.145 ; gain = 969.676
+Finished Writing Synthesis Report : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 2512.773 ; gain = 793.648 ; free physical = 246 ; free virtual = 44126
 ---------------------------------------------------------------------------------
 Synthesis finished with 0 errors, 0 critical warnings and 0 warnings.
-Synthesis Optimization Runtime : Time (s): cpu = 00:02:53 ; elapsed = 00:03:31 . Memory (MB): peak = 1689.145 ; gain = 887.020
-Synthesis Optimization Complete : Time (s): cpu = 00:03:07 ; elapsed = 00:03:36 . Memory (MB): peak = 1689.145 ; gain = 969.676
+Synthesis Optimization Runtime : Time (s): cpu = 00:00:08 ; elapsed = 00:00:09 . Memory (MB): peak = 2512.773 ; gain = 741.719 ; free physical = 246 ; free virtual = 44121
+Synthesis Optimization Complete : Time (s): cpu = 00:00:09 ; elapsed = 00:00:11 . Memory (MB): peak = 2512.781 ; gain = 793.648 ; free physical = 237 ; free virtual = 44107
 INFO: [Project 1-571] Translating synthesized netlist
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.055 . Memory (MB): peak = 1702.266 ; gain = 0.000
-INFO: [Netlist 29-17] Analyzing 291 Unisim elements for replacement
-INFO: [Netlist 29-28] Unisim Transformation completed in 0 CPU seconds
-WARNING: [Netlist 29-101] Netlist 'thread_scheduler' is not ideal for floorplanning, since the cellview 'thread_scheduler' contains a large number of primitives.  Please consider enabling hierarchy in synthesis if you want to do floorplanning.
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2527.617 ; gain = 0.000 ; free physical = 301 ; free virtual = 44170
 INFO: [Project 1-570] Preparing netlist for logic optimization
 INFO: [Opt 31-138] Pushed 0 inverter(s) to 0 load pin(s).
-Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.003 . Memory (MB): peak = 1797.250 ; gain = 0.000
+Netlist sorting complete. Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2678.238 ; gain = 0.000 ; free physical = 246 ; free virtual = 44118
 INFO: [Project 1-111] Unisim Transformation Summary:
 No Unisim elements were transformed.
 
-Synth Design complete | Checksum: a8542815
+Synth Design complete | Checksum: 2ce17dca
 INFO: [Common 17-83] Releasing license: Synthesis
-18 Infos, 16 Warnings, 15 Critical Warnings and 0 Errors encountered.
+20 Infos, 15 Warnings, 15 Critical Warnings and 0 Errors encountered.
 synth_design completed successfully
-synth_design: Time (s): cpu = 00:03:14 ; elapsed = 00:03:45 . Memory (MB): peak = 1797.250 ; gain = 1272.840
+synth_design: Time (s): cpu = 00:00:13 ; elapsed = 00:00:14 . Memory (MB): peak = 2678.273 ; gain = 1086.391 ; free physical = 251 ; free virtual = 44123
+INFO: [Common 17-2834] synth_design peak Physical Memory [PSS] (MB): overall = 1810.054; main = 1751.257; forked = 283.709
+INFO: [Common 17-2834] synth_design peak Virtual Memory [VSS] (MB): overall = 3429.008; main = 2678.242; forked = 1002.043
 INFO: [runtcl-6] Synthesis results are not added to the cache due to CRITICAL_WARNING
-Write ShapeDB Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00.015 . Memory (MB): peak = 1797.250 ; gain = 0.000
-INFO: [Common 17-1381] The checkpoint 'P:/AZC/tez/tez-vivado/tez-vivado.runs/synth_1/thread_scheduler.dcp' has been generated.
-INFO: [Vivado 12-24828] Executing command : report_utilization -file thread_scheduler_utilization_synth.rpt -pb thread_scheduler_utilization_synth.pb
-INFO: [Common 17-206] Exiting Vivado at Tue Mar 24 16:04:56 2026...
+Write ShapeDB Complete: Time (s): cpu = 00:00:00 ; elapsed = 00:00:00 . Memory (MB): peak = 2702.250 ; gain = 0.000 ; free physical = 238 ; free virtual = 44125
+INFO: [Common 17-1381] The checkpoint '/mnt/roketsan/tez/tez-vivado/tez-vivado.runs/synth_1/control_unit.dcp' has been generated.
+INFO: [Vivado 12-24828] Executing command : report_utilization -file control_unit_utilization_synth.rpt -pb control_unit_utilization_synth.pb
+INFO: [Common 17-206] Exiting Vivado at Fri Mar 27 11:37:48 2026...
