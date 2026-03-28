@@ -52,17 +52,16 @@ always_ff @(posedge clk) begin
     end
 end
 
+// Priority encoder input/output
+
+logic [NUM_THREADS-1:0] u_pe_input_r;
+logic [LOG_NUM_THREADS-1:0] u_pe_output_w;
+
 // Coalesce logic
 
 logic [NUM_THREADS-1:0] coalesce_remaining_mask_r;
 logic [LOG_NUM_THREADS-1:0] coalesce_leader_index_w;
-
-priority_encoder #(
-    .WIDTH(NUM_THREADS)
-) u_pe_coalesce (
-    .input_i(coalesce_remaining_mask_r),
-    .index_o(coalesce_leader_index_w)
-);
+assign coalesce_leader_index_w = u_pe_output_w;
 
 logic [MEM_ADDR_WIDTH-1:0] coalesce_base_addr_w;
 assign coalesce_base_addr_w = addr_r[coalesce_leader_index_w][ADDR_WIDTH-1:LOG_NUM_THREADS];
@@ -91,13 +90,7 @@ assign mem_addr_o = mem_addr_r;
 
 logic [NUM_THREADS-1:0] gather_scatter_remaining_mask_r;
 logic [LOG_NUM_THREADS-1:0] gather_scatter_working_index_w;
-
-priority_encoder #(
-    .WIDTH(NUM_THREADS)
-) u_pe_gather_scatter (
-    .input_i(gather_scatter_remaining_mask_r),
-    .index_o(gather_scatter_working_index_w)
-);
+assign gather_scatter_working_index_w = u_pe_output_w;
 
 logic gather_scatter_final_w;
 assign gather_scatter_final_w = $onehot(gather_scatter_remaining_mask_r);
@@ -127,6 +120,24 @@ end
 
 assign data_o = data_r;
 assign mem_data_o = mem_data_r;
+
+// Priority encoder logic
+
+always_comb begin
+    case (state_r)
+        COALESCE: u_pe_input_r = coalesce_remaining_mask_r;
+        GATHER, SCATTER: u_pe_input_r = gather_scatter_remaining_mask_r;
+        default: u_pe_input_r = 'x;
+    endcase
+end
+
+priority_encoder #(
+    .WIDTH(NUM_THREADS)
+) u_pe (
+    .input_i(u_pe_input_r),
+    .index_o(u_pe_output_w)
+);
+
 
 // Iteration logic
 
