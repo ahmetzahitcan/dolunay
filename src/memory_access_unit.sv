@@ -37,20 +37,20 @@ state_e state_r, next_state_w;
 
 assign busy_o = (state_r != IDLE);
 
-// Assertions
+// Preserve inputs
 
-`ifndef SYNTHESIS
-logic __last_store_r;
+logic store_r;
+logic [NUM_THREADS-1:0] active_mask_r;
+logic [NUM_THREADS-1:0][ADDR_WIDTH-1:0] addr_r;
+logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] data_r;
 always_ff @(posedge clk) begin
-    __last_store_r <= store_i;
+    if (state_r == IDLE) begin
+        store_r       <= store_i;
+        active_mask_r <= active_mask_i;
+        addr_r        <= addr_i;
+        data_r        <= data_i;
+    end
 end
-
-property p_preserve_store;
-    @(posedge clk) disable iff (!rst_n)
-    (state_r != IDLE) |-> (__last_store_r == store_i);
-endproperty
-assert property (p_preserve_store) else $error("Memory unit store_i changed while running.");
-`endif
 
 // Coalesce logic
 
@@ -65,12 +65,12 @@ priority_encoder #(
 );
 
 logic [MEM_ADDR_WIDTH-1:0] coalesce_base_addr_w;
-assign coalesce_base_addr_w = addr_i[coalesce_leader_index_w][ADDR_WIDTH-1:LOG_NUM_THREADS];
+assign coalesce_base_addr_w = addr_r[coalesce_leader_index_w][ADDR_WIDTH-1:LOG_NUM_THREADS];
 
 logic [NUM_THREADS-1:0] coalesce_mask_w;
 always_comb begin
     for (int i = 0; i < NUM_THREADS; i++) begin
-        coalesce_mask_w[i] = (addr_i[i][ADDR_WIDTH-1:LOG_NUM_THREADS] == coalesce_base_addr_w) && active_mask_i[i];
+        coalesce_mask_w[i] = (addr_r[i][ADDR_WIDTH-1:LOG_NUM_THREADS] == coalesce_base_addr_w) && active_mask_r[i];
     end
 end
 
@@ -102,11 +102,11 @@ priority_encoder #(
 logic gather_scatter_final_w;
 assign gather_scatter_final_w = $onehot(gather_scatter_remaining_mask_r);
 
-logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] data_r;
+// logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] data_r; -- This is already defined above
 logic [MEM_DATA_WIDTH-1:0] mem_data_r;
 
 logic [LOG_NUM_THREADS-1:0] gather_scatter_thread_lowaddr_w;
-assign gather_scatter_thread_lowaddr_w = addr_i[gather_scatter_working_index_w][LOG_NUM_THREADS-1:0];
+assign gather_scatter_thread_lowaddr_w = addr_r[gather_scatter_working_index_w][LOG_NUM_THREADS-1:0];
 
 always_ff @(posedge clk) begin
     unique0 case (state_r)
@@ -178,7 +178,7 @@ always_comb begin
                     // at the end of the gather/scatter logic
                     // meaning, it will be updated in the next cycle
                     // as load logic goes 
-                    // IDLE -> COALESCE -> READ1/2 -> GATHER -> COALESCE|IDLE
+                    // IDLE -> COALESCE -> READ1/2 -> GATHER (xN) -> COALESCE|IDLE
                     next_state_w = IDLE;
                 end else begin
                     next_state_w = COALESCE;
@@ -194,7 +194,7 @@ always_comb begin
             next_state_w = READ2;
         end
         READ2: begin
-            if (store_i) begin
+            if (store_r) begin
                 next_state_w = SCATTER;
             end else begin
                 next_state_w = GATHER;
@@ -207,7 +207,7 @@ always_comb begin
                 // at the end of the gather/scatter logic
                 // meaning, it is already up to date
                 // as store logic goes
-                // IDLE -> COALESCE -> READ1/2 -> SCATTER -> WRITE -> COALESCE|IDLE
+                // IDLE -> COALESCE -> READ1/2 -> SCATTER (xN) -> WRITE -> COALESCE|IDLE
                 next_state_w = IDLE;
             end else begin
                 next_state_w = COALESCE;

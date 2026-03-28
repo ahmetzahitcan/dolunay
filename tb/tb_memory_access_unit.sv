@@ -54,6 +54,9 @@ module tb_memory_access_unit;
     // Clock
     // -----------------------------------------------------------------------
     always #5 clk = ~clk;
+    
+    int cycle_count;
+    always_ff @(posedge clk) cycle_count <= cycle_count + 1;
 
     // -----------------------------------------------------------------------
     // DUT
@@ -112,6 +115,9 @@ module tb_memory_access_unit;
         input logic [NUM_THREADS-1:0][ADDR_WIDTH-1:0] addrs,
         input logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] wdata
     );
+        int start_cycle;
+        start_cycle = cycle_count;
+
         // Align to the cycle after the current edge, then apply inputs
         @(posedge clk); #1;
         store_i       = store;
@@ -126,21 +132,29 @@ module tb_memory_access_unit;
 
         // Wait until operation completes (busy_o returns low)
         do begin
+            // These shouldn't change the result.
+            store_i       = $urandom();
+            active_mask_i = $urandom();
+            for (int i = 0; i < NUM_THREADS; i++) begin
+                addr_i[i] = $urandom();
+                data_i[i] = $urandom();
+            end
+
             @(posedge clk); #1;
         end while (busy_o);
 
         store_i = 0;
-        $display("  [%s] complete", tname);
+        $display("  [%s] complete in %0d cycles", tname, cycle_count - start_cycle);
     endtask
 
     // -----------------------------------------------------------------------
     // Stimulus
     // -----------------------------------------------------------------------
     initial begin
-        // Initialise memory: mem[line][word] = 32'h1000_0000 + line*10 + word
+        // Initialise memory: mem[line][word] = 32'h1000_0000 + line*16 + word
         for (int l = 0; l < MEM_LINES; l++)
             for (int w = 0; w < NUM_THREADS; w++)
-                mem[l][w * DATA_WIDTH +: DATA_WIDTH] = 32'h1000_0000 + l * 10 + w;
+                mem[l][w * DATA_WIDTH +: DATA_WIDTH] = 32'h1000_0000 + l * 16 + w;
 
         // Reset
         rst_n = 0;
@@ -208,26 +222,34 @@ module tb_memory_access_unit;
         $display("  [T3] mem[10] verified");
 
         // --------------------------------------------------------------------
-        // T4: Non-coalesced store — block 20 (threads 0,2) and block 21 (threads 1,3)
+        // T4: Non-coalesced store — block 32 (threads 0,2) and block 33 (threads 1,3)
         //   Only the scattered offsets are checked; non-scattered slots in each
         //   line may contain stale data (design limitation: no read-modify-write).
         // --------------------------------------------------------------------
-        $display("\nT4: Non-coalesced store (blocks 20 and 21)");
+        $display("\nT4: Non-coalesced store (blocks 32 and 33)");
         run_access("T4", 1, 4'b1111,
-            '{mkaddr(21,3), mkaddr(20,2), mkaddr(21,1), mkaddr(20,0)},
+            '{mkaddr(33,3), mkaddr(32,2), mkaddr(33,1), mkaddr(32,0)},
             '{32'hCAFE_0003, 32'hCAFE_0002, 32'hCAFE_0001, 32'hCAFE_0000});
 
-        // block 20: threads 0 and 2 → offsets 0 and 2
-        assert (mem_word(20,0) === 32'hCAFE_0000)
-            else $error("T4: mem[20][0]=%0h", mem_word(20,0));
-        assert (mem_word(20,2) === 32'hCAFE_0002)
-            else $error("T4: mem[20][2]=%0h", mem_word(20,2));
-        // block 21: threads 1 and 3 → offsets 1 and 3
-        assert (mem_word(21,1) === 32'hCAFE_0001)
-            else $error("T4: mem[21][1]=%0h", mem_word(21,1));
-        assert (mem_word(21,3) === 32'hCAFE_0003)
-            else $error("T4: mem[21][3]=%0h", mem_word(21,3));
-        $display("  [T4] mem[20][0,2] and mem[21][1,3] verified");
+        // block 32: threads 0 and 2 → offsets 0 and 2
+        assert (mem_word(32,0) === 32'hCAFE_0000)
+            else $error("T4: mem[32][0]=%0h", mem_word(32,0));
+        assert (mem_word(32,1) === 32'h1000_0201)
+            else $error("T4: mem[32][1]=%0h", mem_word(32,1));
+        assert (mem_word(32,2) === 32'hCAFE_0002)
+            else $error("T4: mem[32][2]=%0h", mem_word(32,2));
+        assert (mem_word(32,3) === 32'h1000_0203)
+            else $error("T4: mem[32][3]=%0h", mem_word(32,3));
+        // block 33: threads 1 and 3 → offsets 1 and 3
+        assert (mem_word(33,0) === 32'h1000_0210)
+            else $error("T4: mem[33][0]=%0h", mem_word(33,0));
+        assert (mem_word(33,1) === 32'hCAFE_0001)
+            else $error("T4: mem[33][1]=%0h", mem_word(33,1));
+        assert (mem_word(33,2) === 32'h1000_0212)
+            else $error("T4: mem[33][2]=%0h", mem_word(33,2));
+        assert (mem_word(33,3) === 32'hCAFE_0003)
+            else $error("T4: mem[33][3]=%0h", mem_word(33,3));
+        $display("  [T4] mem[32] and mem[33] verified");
 
         // --------------------------------------------------------------------
         // T5: Partial mask load — only threads 0 and 2, both in block 8
