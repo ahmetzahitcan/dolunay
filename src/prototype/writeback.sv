@@ -14,7 +14,7 @@ module writeback
     output logic           done_o,
 
     // From execute
-    input  decoded_instr_t              decoded_i,
+    input  decoded_instr_s              decoded_i,
     input  logic [NUM_LANES-1:0][XLEN-1:0] result_i,
 
     // Register file write interface
@@ -24,18 +24,12 @@ module writeback
 );
 
     // -------------------------------------------------------------------------
-    // Write enable: only for ADD (BEQ has no destination register)
-    // -------------------------------------------------------------------------
-    logic writes_rd_w;
-    assign writes_rd_w = decoded_i.control_signals.writeback;
-
-    // -------------------------------------------------------------------------
     // Registered outputs
     // -------------------------------------------------------------------------
     logic done_r;
     assign done_o = done_r;
 
-    assign reg_write_en_o   = valid_i && writes_rd_w;
+    assign reg_write_en_o   = valid_i && decoded_i.control_signals.writeback;
     assign reg_write_addr_o = decoded_i.rd;
     assign reg_write_data_o = result_i;
 

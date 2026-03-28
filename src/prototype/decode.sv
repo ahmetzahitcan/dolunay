@@ -24,16 +24,20 @@ module decode
     input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_i,
 
     // Decoded outputs
-    output decoded_instr_t              decoded_o,
+    output decoded_instr_s              decoded_o,
     output logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_o,
     output logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_o,
-    output logic [NUM_THREADS-1:0]      active_mask_o
+    output logic [NUM_THREADS-1:0]      active_mask_o,
+
+    // PC
+    input  wire [PC_WIDTH-1:0] pc_i,
+    output logic [PC_WIDTH-1:0] pc_o
 );
 
     // -------------------------------------------------------------------------
     // Decode logic (combinational)
     // -------------------------------------------------------------------------
-    decoded_instr_t decoded_w;
+    decoded_instr_s decoded_w;
 
     control_unit ctrl_i (
         .instr_i (instr_i[31:2]),
@@ -57,16 +61,18 @@ module decode
     // -------------------------------------------------------------------------
     // Registered outputs
     // -------------------------------------------------------------------------
-    decoded_instr_t decoded_r;
+    decoded_instr_s decoded_r;
     logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_r;
     logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_r;
     logic [NUM_THREADS-1:0] active_mask_r;
+    logic [PC_WIDTH-1:0] pc_r;
     logic done_r;
 
     assign decoded_o     = decoded_r;
     assign rs1_data_o    = rs1_data_r;
     assign rs2_data_o    = rs2_data_r;
     assign active_mask_o = active_mask_r;
+    assign pc_o          = pc_r;
     assign done_o        = done_r;
 
     always_ff @(posedge clk) begin
@@ -76,6 +82,7 @@ module decode
             rs2_data_r    <= '0;
             active_mask_r <= '0;
             done_r        <= 1'b0;
+            pc_r          <= '0;
         end else begin
             done_r <= 1'b0;
 
@@ -85,6 +92,7 @@ module decode
                 rs2_data_r    <= rs2_data_i;
                 active_mask_r <= active_mask_i;
                 done_r        <= 1'b1;
+                pc_r          <= pc_i;
             end
         end
     end

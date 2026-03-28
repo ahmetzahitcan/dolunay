@@ -12,6 +12,7 @@ module pipeline_controller (
     input  logic rom_done_i,
     input  logic decode_done_i,
     input  logic execute_done_i,
+    input  logic memory_done_i,
     input  logic writeback_done_i,
 
     // Valid signals to each stage
@@ -19,6 +20,7 @@ module pipeline_controller (
     output logic rom_read_en_o,
     output logic decode_valid_o,
     output logic execute_valid_o,
+    output logic memory_valid_o,
     output logic writeback_valid_o
 );
 
@@ -30,7 +32,8 @@ module pipeline_controller (
         S_ROM_WAIT  = 3'd1,
         S_DECODE    = 3'd2,
         S_EXECUTE   = 3'd3,
-        S_WRITEBACK = 3'd4
+        S_MEMORY    = 3'd4,
+        S_WRITEBACK = 3'd5
     } state_t;
 
     state_t state_r, next_state_w;
@@ -45,7 +48,8 @@ module pipeline_controller (
             S_FETCH:     if (fetch_done_i)     next_state_w = S_ROM_WAIT;
             S_ROM_WAIT:  if (rom_done_i)       next_state_w = S_DECODE;
             S_DECODE:    if (decode_done_i)     next_state_w = S_EXECUTE;
-            S_EXECUTE:   if (execute_done_i)    next_state_w = S_WRITEBACK;
+            S_EXECUTE:   if (execute_done_i)    next_state_w = S_MEMORY;
+            S_MEMORY:    if (memory_done_i)     next_state_w = S_WRITEBACK;
             S_WRITEBACK: if (writeback_done_i)  next_state_w = S_FETCH;
             default:                            next_state_w = S_FETCH;
         endcase
@@ -58,6 +62,7 @@ module pipeline_controller (
     assign rom_read_en_o     = (state_r == S_FETCH);   // kick ROM read in FETCH
     assign decode_valid_o    = (state_r == S_DECODE);
     assign execute_valid_o   = (state_r == S_EXECUTE);
+    assign memory_valid_o    = (state_r == S_MEMORY);
     assign writeback_valid_o = (state_r == S_WRITEBACK);
 
     // -------------------------------------------------------------------------

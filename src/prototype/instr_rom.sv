@@ -4,7 +4,7 @@
 // `default_nettype none
 
 module instr_rom #(
-    parameter int ADDR_WIDTH = 32,
+    parameter int ADDR_WIDTH = 30,
     parameter int DATA_WIDTH = 32,
     parameter int DEPTH      = 256
 ) (
@@ -19,8 +19,9 @@ module instr_rom #(
     // -------------------------------------------------------------------------
     localparam ADD = 32'b0000000_00000_00000_000_00000_01100_11;
     localparam BEQ_P100 = 32'b000001100000000000000010011000_11;
-    localparam BINIT = 32'b0000000_00000_00000_000_00000_00001_11;
-    localparam BWAIT = 32'b0000000_00000_00000_000_00000_00011_11;
+    localparam BINIT = 32'b0000000_00000_00000_001_00000_00010_11;
+    localparam BWAIT = 32'b0000000_00000_00000_010_00000_00010_11;
+    localparam YIELD = 32'b0000000_00000_00000_100_00000_00010_11;
     localparam X1_RD = 32'b0000000_00000_00000_000_00001_00000_11;
     localparam X2_RD = 32'b0000000_00000_00000_000_00010_00000_11;
     localparam X3_RD = 32'b0000000_00000_00000_000_00011_00000_11;
@@ -38,7 +39,7 @@ module instr_rom #(
 
     initial begin
         for (int i = 0; i < DEPTH; i++) begin
-            mem_r[i] <= ADD; // NOP
+            mem_r[i] = ADD; // NOP
         end
         mem_r[0] = BINIT; // BINIT
         mem_r[1] = BEQ_P100 | X3_RS1; // BEQ x3, x0, 100
@@ -58,7 +59,7 @@ module instr_rom #(
 
     always_ff @(posedge clk) begin
         if (read_en_i) begin
-            data_r <= mem_r[addr_i[$clog2(DEPTH)+1:2]]; // word-aligned
+            data_r <= mem_r[addr_i];
         end
     end
 

@@ -6,7 +6,6 @@
 module proto_top
     import proto_pkg::*;
 #(
-    parameter ROM_INIT_FILE = "program.hex",
     parameter int ROM_DEPTH = 256
 ) (
     input wire logic clk,
@@ -22,6 +21,7 @@ module proto_top
     logic rom_read_en_w,     rom_done_w;
     logic decode_valid_w,    decode_done_w;
     logic execute_valid_w,   execute_done_w;
+    logic memory_valid_w,    memory_done_w;
     logic writeback_valid_w, writeback_done_w;
 
     // Fetch → ROM
@@ -32,18 +32,26 @@ module proto_top
     logic [31:0] rom_instr_w;
 
     // Decode → Execute
-    decoded_instr_t              dec_decoded_w;
+    decoded_instr_s              dec_decoded_w;
+    logic [PC_WIDTH-1:0]         dec_pc_w;
     logic [NUM_LANES-1:0][XLEN-1:0] dec_rs1_data_w;
     logic [NUM_LANES-1:0][XLEN-1:0] dec_rs2_data_w;
 
-    // Execute → Writeback
+    // Execute → Memory
     logic [NUM_LANES-1:0][XLEN-1:0] exe_result_w;
-    decoded_instr_t                  exe_decoded_w;
+    decoded_instr_s                  exe_decoded_w;
+
+    // Memory → Writeback
+    logic [NUM_LANES-1:0][XLEN-1:0] mem_result_w;
+    decoded_instr_s                  mem_decoded_w;
 
     // Execute → Fetch (branch)
     logic              branch_taken_w;
     logic [NUM_THREADS-1:0] branch_mask_w;
     logic [PC_WIDTH-1:0] branch_target_w;
+    logic              exe_yield_w;
+    logic              exe_binit_w;
+    logic              exe_bwait_w;
 
     // Regfile ↔ Decode / Writeback
     logic [REG_ADDR_WIDTH-1:0]        rf_rs1_addr_w;
@@ -85,11 +93,13 @@ module proto_top
         .rom_done_i        (rom_done_w),
         .decode_done_i     (decode_done_w),
         .execute_done_i    (execute_done_w),
+        .memory_done_i     (memory_done_w),
         .writeback_done_i  (writeback_done_w),
         .fetch_valid_o     (fetch_valid_w),
         .rom_read_en_o     (rom_read_en_w),
         .decode_valid_o    (decode_valid_w),
         .execute_valid_o   (execute_valid_w),
+        .memory_valid_o    (memory_valid_w),
         .writeback_valid_o (writeback_valid_w)
     );
 
@@ -101,13 +111,15 @@ module proto_top
         .branch_taken_i    (branch_taken_w),
         .branch_mask_i     (branch_mask_w),
         .branch_target_i   (branch_target_w),
+        .yield_i           (exe_yield_w),
+        .binit_i           (exe_binit_w),
+        .bwait_i           (exe_bwait_w),
         .pc_o              (fetch_pc_w),
         .active_mask_o     (active_mask_w)
     );
 
     instr_rom #(
-        .DEPTH     (ROM_DEPTH),
-        .INIT_FILE (ROM_INIT_FILE)
+        .DEPTH     (ROM_DEPTH)
     ) u_rom (
         .clk        (clk),
         .read_en_i  (rom_read_en_w),
@@ -121,6 +133,7 @@ module proto_top
         .valid_i    (decode_valid_w),
         .done_o     (decode_done_w),
         .instr_i    (rom_instr_w),
+        .pc_i       (fetch_pc_w),
         .active_mask_i (rom_active_mask_w),
         .rs1_addr_o (rf_rs1_addr_w),
         .rs2_addr_o (rf_rs2_addr_w),
@@ -129,6 +142,7 @@ module proto_top
         .decoded_o  (dec_decoded_w),
         .rs1_data_o (dec_rs1_data_w),
         .rs2_data_o (dec_rs2_data_w),
+        .pc_o       (dec_pc_w),
         .active_mask_o (dec_active_mask_w)
     );
 
@@ -140,12 +154,27 @@ module proto_top
         .decoded_i       (dec_decoded_w),
         .rs1_data_i      (dec_rs1_data_w),
         .rs2_data_i      (dec_rs2_data_w),
+        .pc_i            (dec_pc_w),
         .active_mask_i   (dec_active_mask_w),
         .result_o        (exe_result_w),
         .decoded_pass_o  (exe_decoded_w),
         .branch_taken_o  (branch_taken_w),
         .branch_mask_o   (branch_mask_w),
-        .branch_target_o (branch_target_w)
+        .branch_target_o (branch_target_w),
+        .yield_o         (exe_yield_w),
+        .binit_o         (exe_binit_w),
+        .bwait_o         (exe_bwait_w)
+    );
+
+    memory u_memory (
+        .clk       (clk),
+        .rst_n     (rst_n),
+        .valid_i   (memory_valid_w),
+        .done_o    (memory_done_w),
+        .decoded_i (exe_decoded_w),
+        .result_i  (exe_result_w),
+        .decoded_o (mem_decoded_w),
+        .result_o  (mem_result_w)
     );
 
     writeback u_writeback (
@@ -153,8 +182,8 @@ module proto_top
         .rst_n            (rst_n),
         .valid_i          (writeback_valid_w),
         .done_o           (writeback_done_w),
-        .decoded_i        (exe_decoded_w),
-        .result_i         (exe_result_w),
+        .decoded_i        (mem_decoded_w),
+        .result_i         (mem_result_w),
         .reg_write_en_o   (rf_write_en_w),
         .reg_write_addr_o (rf_write_addr_w),
         .reg_write_data_o (rf_write_data_w)

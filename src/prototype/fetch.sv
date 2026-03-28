@@ -20,6 +20,9 @@ module fetch
     input  wire logic                branch_taken_i,
     input  wire logic [NUM_THREADS-1:0] branch_mask_i,
     input  wire logic [PC_WIDTH-1:0] branch_target_i,
+    input  wire logic                yield_i,
+    input  wire logic                binit_i,
+    input  wire logic                bwait_i,
 
     // Output to instruction memory
     output logic [PC_WIDTH-1:0] pc_o,
@@ -39,12 +42,18 @@ module fetch
 
     logic sched_fetch_w;
     logic sched_branch_w;
+    logic sched_yield_w;
+    logic sched_binit_w;
+    logic sched_bwait_w;
     logic done_w;
 
     always_comb begin
         next_state_w   = state_r;
         sched_fetch_w  = 1'b0;
         sched_branch_w = 1'b0;
+        sched_yield_w  = 1'b0;
+        sched_binit_w  = 1'b0;
+        sched_bwait_w  = 1'b0;
         done_w         = 1'b0;
 
         case (state_r)
@@ -52,6 +61,15 @@ module fetch
                 if (valid_i) begin
                     if (branch_taken_i) begin
                         sched_branch_w = 1'b1;
+                        next_state_w   = DO_FETCH;
+                    end else if (yield_i) begin
+                        sched_yield_w  = 1'b1;
+                        next_state_w   = DO_FETCH;
+                    end else if (binit_i) begin
+                        sched_binit_w  = 1'b1;
+                        next_state_w   = DO_FETCH;
+                    end else if (bwait_i) begin
+                        sched_bwait_w  = 1'b1;
                         next_state_w   = DO_FETCH;
                     end else begin
                         sched_fetch_w  = 1'b1;
@@ -91,9 +109,9 @@ module fetch
         .clk           (clk),
         .rst_n         (rst_n),
         .fetch_i       (sched_fetch_w),
-        .yield_i       (1'b0),
-        .binit_i       (1'b0),
-        .bwait_i       (1'b0),
+        .yield_i       (sched_yield_w),
+        .binit_i       (sched_binit_w),
+        .bwait_i       (sched_bwait_w),
         .bsel_i        ('0),
         .branch_i      (sched_branch_w),
         .pc_branch_i   (branch_target_i),

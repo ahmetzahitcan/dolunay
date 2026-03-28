@@ -5,6 +5,7 @@
 
 module execute
     import proto_pkg::*;
+    import control_unit_pkg::*;
 (
     input  wire logic clk,
     input  wire logic rst_n,
@@ -14,19 +15,23 @@ module execute
     output logic           done_o,
 
     // Decoded instruction + operands from decode
-    input  decoded_instr_t              decoded_i,
+    input  decoded_instr_s              decoded_i,
     input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_i,
     input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_i,
+    input  wire logic [PC_WIDTH-1:0] pc_i,
     input  wire logic [NUM_THREADS-1:0]      active_mask_i,
 
     // ALU result
     output logic [NUM_LANES-1:0][XLEN-1:0] result_o,
-    output decoded_instr_t                  decoded_pass_o,
+    output decoded_instr_s                  decoded_pass_o,
 
     // Branch resolution
     output logic                branch_taken_o,
     output logic [NUM_THREADS-1:0] branch_mask_o,
-    output logic [PC_WIDTH-1:0] branch_target_o
+    output logic [PC_WIDTH-1:0] branch_target_o,
+    output logic                yield_o,
+    output logic                binit_o,
+    output logic                bwait_o
 );
 
     // -------------------------------------------------------------------------
@@ -62,16 +67,19 @@ module execute
     assign branch_taken_w = |branch_mask_w;
 
     logic [PC_WIDTH-1:0] branch_target_w;
-    assign branch_target_w = decoded_i.imm;  // TODO: add PC offset properly
+    assign branch_target_w = pc_i + decoded_i.imm; 
 
     // -------------------------------------------------------------------------
     // Registered outputs
     // -------------------------------------------------------------------------
     logic [NUM_LANES-1:0][XLEN-1:0] result_r;
-    decoded_instr_t decoded_pass_r;
+    decoded_instr_s decoded_pass_r;
     logic branch_taken_r;
     logic [NUM_THREADS-1:0] branch_mask_r;
     logic [PC_WIDTH-1:0] branch_target_r;
+    logic yield_r;
+    logic binit_r;
+    logic bwait_r;
     logic done_r;
 
     assign result_o        = result_r;
@@ -79,6 +87,9 @@ module execute
     assign branch_taken_o  = branch_taken_r;
     assign branch_mask_o   = branch_mask_r;
     assign branch_target_o = branch_target_r;
+    assign yield_o         = yield_r;
+    assign binit_o         = binit_r;
+    assign bwait_o         = bwait_r;
     assign done_o          = done_r;
 
     always_ff @(posedge clk) begin
@@ -88,6 +99,9 @@ module execute
             branch_taken_r  <= 1'b0;
             branch_mask_r   <= '0;
             branch_target_r <= '0;
+            yield_r         <= 1'b0;
+            binit_r         <= 1'b0;
+            bwait_r         <= 1'b0;
             done_r          <= 1'b0;
         end else begin
             done_r <= 1'b0;
@@ -98,6 +112,9 @@ module execute
                 branch_taken_r  <= branch_taken_w;
                 branch_mask_r   <= branch_mask_w;
                 branch_target_r <= branch_target_w;
+                yield_r         <= decoded_i.control_signals.yield;
+                binit_r         <= decoded_i.control_signals.binit;
+                bwait_r         <= decoded_i.control_signals.bwait;
                 done_r          <= 1'b1;
             end
         end
