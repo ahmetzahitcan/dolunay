@@ -13,6 +13,10 @@ _ENUM_VALUE_RE = re.compile(r'^[A-Z][A-Z0-9_]*$')
 # Values that mean "don't-care" rather than a real signal value.
 _DONT_CARE = {'x', '-', 'd', '?'}
 
+def extract_base_name(filename):
+    """Extracts the base name of a file, removing the path and extension."""
+    return re.split(r'[/\\]', filename)[-1].split('.')[0]
+
 
 def parse_csv(csv_file):
     """Parse a control-unit CSV and return a validated data object.
@@ -35,6 +39,8 @@ def parse_csv(csv_file):
             if not fields:
                 print("Error: Empty CSV file.")
                 sys.exit(1)
+            for i in range(len(fields)):
+                fields[i] = fields[i].strip()
             rows = list(reader)
     except FileNotFoundError:
         print(f"Error: Could not find file {csv_file}")
@@ -57,8 +63,8 @@ def parse_csv(csv_file):
             valid_rows.append(row)
 
     if not default_values:
-        print("Error: CSV must contain an 'INVALID' row to define default signal values.")
-        sys.exit(1)
+        print("Warning: No INVALID row found. Default values will be set to 'x'.")
+        default_values = {k: 'x' for k in fields}
 
     # Clean match strings and drop blank rows.
     instructions = []
@@ -179,25 +185,27 @@ def parse_csv(csv_file):
     }
 
 
-def emit_sv_module(data, output_file, package_name):
+def emit_sv_module(data, output_file, module_name, package_name):
     """Write a SystemVerilog control-unit module from the parsed data object."""
     control_signals = data['control_signals']
     default_values  = data['default_values']
     instructions    = data['instructions']
     enums           = data['enums']
 
-    module_name = output_file.split('/')[-1].split('.')[0]
-
     def _format_value(val, sig, rng):
         """Return a properly prefixed SV literal for a signal assignment."""
-        if val.lower() in ('x', '-', 'd', '?') or val == "":
-            if sig in enums:
-                return "UNDEFINED"
+        if sig in enums:
+            prefix = sig.upper()
+            if val.lower() in ('x', '-', 'd', '?') or val == "":
+                return f"{prefix}_UNDEFINED"
             else:
+                return f"{prefix}_{val}"
+        else:
+            if val.lower() in ('x', '-', 'd', '?') or val == "":
                 return "'x"
-        if val in ('0', '1') and not rng:
-            return f"1'b{val}"
-        return val
+            if val in ('0', '1') and not rng:
+                return f"1'b{val}"
+            return val
 
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("`default_nettype none\n\n")
@@ -247,6 +255,7 @@ def emit_sv_package(data, output_file, package_name):
         f.write(f"package {package_name};\n\n")
 
         for sig, values in enums.items():
+            prefix = sig.upper()
             bitcount = math.ceil(math.log2(len(values)))
 
             if bitcount > 1:
@@ -255,8 +264,8 @@ def emit_sv_package(data, output_file, package_name):
                 f.write(f"\ttypedef enum logic {{\n")
 
             for value in values:
-                f.write(f"\t\t{value},\n")
-            f.write("\t\tUNDEFINED='x\n")
+                f.write(f"\t\t{prefix}_{value},\n")
+            f.write(f"\t\t{prefix}_UNDEFINED='x\n")
 
             f.write(f"\t}} {sig}_e;\n\n")
 
@@ -295,11 +304,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.output_package is None:
-        base = args.output_module.rsplit('.', 1)[0]
-        args.output_package = f"{base}_pkg.sv"
+        extless = args.output_module.rsplit('.', 1)[0]
+        args.output_package = f"{extless}_pkg.sv"
 
-    package_name = args.output_package.rsplit('/', 1)[-1].rsplit('.', 1)[0]
+    package_name = extract_base_name(args.output_package)
+    module_name = extract_base_name(args.output_module)
 
     data = parse_csv(args.input_csv)
-    emit_sv_module(data, args.output_module, package_name)
+    emit_sv_module(data, args.output_module, module_name, package_name)
     emit_sv_package(data, args.output_package, package_name)

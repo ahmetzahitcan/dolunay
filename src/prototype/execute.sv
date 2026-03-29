@@ -38,21 +38,22 @@ module execute
     // ALU lanes (combinational)
     // -------------------------------------------------------------------------
     logic [NUM_LANES-1:0][XLEN-1:0] alu_result_w;
-    logic [NUM_LANES-1:0]           lane_eq_w;
+    logic [NUM_LANES-1:0]           lane_cond_w;
 
     genvar g;
     generate
         for (g = 0; g < NUM_LANES; g++) begin : alu_lane
-            always_comb begin
-                alu_result_w[g] = '0;
-                lane_eq_w[g]    = 1'b0;
-
-                case (decoded_i.control_signals.alu_funct)
-                    ALU_ADD: alu_result_w[g] = rs1_data_i[g] + rs2_data_i[g];
-                    ALU_BEQ: lane_eq_w[g]    = (rs1_data_i[g] == rs2_data_i[g]);
-                    default: ;
-                endcase
-            end
+            alu #(
+                .DATA_WIDTH(XLEN),
+                .THREAD_ID(g)
+            ) alu_inst (
+                .rs1_val_i(rs1_data_i[g]),
+                .rs2_val_i(rs2_data_i[g]),
+                .instr_i(decoded_i),
+                .warp_id_i(0), // Hardcoded to zero because we have only one warp
+                .result_o(alu_result_w[g]),
+                .cond_o(lane_cond_w[g])
+            );
         end
     endgenerate
 
@@ -62,7 +63,7 @@ module execute
     logic branch_taken_w;
     logic [NUM_THREADS-1:0] branch_mask_w;
     // Condition matches for each lane
-    assign branch_mask_w = decoded_i.control_signals.branch ? (lane_eq_w & active_mask_i) : '0;
+    assign branch_mask_w = decoded_i.control_signals.branch ? (lane_cond_w & active_mask_i) : '0;
     // Take branch if ANY active lane satisfied the condition
     assign branch_taken_w = |branch_mask_w;
 

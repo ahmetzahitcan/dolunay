@@ -103,9 +103,11 @@ assign gather_scatter_thread_lowaddr_w = addr_r[gather_scatter_working_index_w][
 
 always_ff @(posedge clk) begin
     unique0 case (state_r)
+    /* -- Not needed anymore, since "preserve inputs" part also does this
         IDLE: begin
             data_r <= data_i;
         end
+    */
         READ2: begin
             mem_data_r <= mem_data_i;
         end
