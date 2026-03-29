@@ -49,6 +49,8 @@ module instr_rom #(
         mem_r[5] = BEQ_P100 | X3_RS1 | X1_RS2; // BEQ x3, x1, 100
         mem_r[6] = BEQ_P100; // BEQ x0, x0, 100
         mem_r[106] = BWAIT; // BWAIT
+        mem_r[107] = 32'hdeadc0b7; // LUI x1, 0xdeadc
+        mem_r[108] = 32'h0de08093; // ADDI x1, x1, 0x0de
     end
 
     // -------------------------------------------------------------------------

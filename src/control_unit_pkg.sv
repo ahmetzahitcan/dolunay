@@ -2,6 +2,13 @@
 
 package control_unit_pkg;
 
+	typedef enum logic [1:0] {
+		IMM_TYPE_I,
+		IMM_TYPE_B,
+		IMM_TYPE_U,
+		IMM_TYPE_UNDEFINED='x
+	} imm_type_e;
+
 	typedef enum logic [3:0] {
 		ALU_FUNCT_HARTID,
 		ALU_FUNCT_ADD,
@@ -14,9 +21,16 @@ package control_unit_pkg;
 		ALU_FUNCT_SRA,
 		ALU_FUNCT_OR,
 		ALU_FUNCT_AND,
+		ALU_FUNCT_OP2,
 		ALU_FUNCT_ZERO,
 		ALU_FUNCT_UNDEFINED='x
 	} alu_funct_e;
+
+	typedef enum logic {
+		ALU_OP1_SEL_RS1,
+		ALU_OP1_SEL_PC,
+		ALU_OP1_SEL_UNDEFINED='x
+	} alu_op1_sel_e;
 
 	typedef enum logic {
 		ALU_OP2_SEL_RS2,
@@ -31,7 +45,9 @@ package control_unit_pkg;
 	} alu_cond_e;
 
 	typedef struct packed {
+		imm_type_e imm_type;
 		alu_funct_e alu_funct;
+		alu_op1_sel_e alu_op1_sel;
 		alu_op2_sel_e alu_op2_sel;
 		alu_cond_e alu_cond;
 		logic writeback;

@@ -10,12 +10,19 @@ module alu
     input decoded_instr_s instr_i,
     // TODO: this should not be DATA_WIDTH long
     input logic [DATA_WIDTH-1:0] warp_id_i,
+    input logic [DATA_WIDTH-1:0] pc_i,
     output logic [DATA_WIDTH-1:0] result_o,
     output logic cond_o
 );
 
 logic [DATA_WIDTH-1:0] op1_w;
-assign op1_w = rs1_val_i;
+always_comb begin
+    case (instr_i.control_signals.alu_op1_sel)
+        ALU_OP1_SEL_RS1: op1_w = rs1_val_i;
+        ALU_OP1_SEL_PC: op1_w = pc_i;
+        default: op1_w = 'x;
+    endcase
+end
 
 logic [DATA_WIDTH-1:0] op2_w;
 always_comb begin
@@ -41,6 +48,7 @@ always_comb begin
         ALU_FUNCT_AND: result_w = op1_w & op2_w;
         ALU_FUNCT_HARTID: result_w = (warp_id_i << 16) | THREAD_ID;
         ALU_FUNCT_ZERO: result_w = '0;
+        ALU_FUNCT_OP2: result_w = op2_w;
         default: result_w = 'x;
     endcase
 end

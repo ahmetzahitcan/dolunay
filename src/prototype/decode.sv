@@ -44,12 +44,16 @@ module decode
         .control_signals_o(decoded_w.control_signals)
     );
 
+    immediate_decoder imm_dec (
+        .instr_i (instr_i[31:2]),
+        .imm_type_i (decoded_w.control_signals.imm_type),
+        .imm_o (decoded_w.imm)
+    );
+
     always_comb begin
         decoded_w.rd     = instr_i[11:7];
         decoded_w.rs1    = instr_i[19:15];
         decoded_w.rs2    = instr_i[24:20];
-        decoded_w.imm    = {{20{instr_i[31]}}, instr_i[7],
-                            instr_i[30:25], instr_i[11:8], 1'b0};
     end
 
     // -------------------------------------------------------------------------
