@@ -7,8 +7,8 @@ import control_unit_pkg::*;
     // -------------------------------------------------------------------------
     parameter int XLEN          = 32;
     parameter int NUM_REGS      = 3;    // small for prototyping
-    parameter int NUM_LANES     = 4;    // SIMD width
-    parameter int NUM_THREADS   = 4;    // thread scheduler paths
+    parameter int NUM_LANES     = 8;    // SIMD width
+    parameter int NUM_THREADS   = 8;    // thread scheduler paths
     parameter int PC_WIDTH      = 30;
     parameter int REG_ADDR_WIDTH = $clog2(NUM_REGS);
 

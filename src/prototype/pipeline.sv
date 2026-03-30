@@ -49,6 +49,7 @@ module pipeline
     // Memory → Writeback
     logic [NUM_LANES-1:0][XLEN-1:0] mem_result_w;
     decoded_instr_s                  mem_decoded_w;
+    logic [NUM_THREADS-1:0]          mem_active_mask_w;
 
     // Execute → Fetch (branch)
     logic                   branch_taken_w;
@@ -63,7 +64,7 @@ module pipeline
     logic [REG_ADDR_WIDTH-1:0]       rf_rs2_addr_w;
     logic [NUM_LANES-1:0][XLEN-1:0]  rf_rs1_data_w;
     logic [NUM_LANES-1:0][XLEN-1:0]  rf_rs2_data_w;
-    logic                             rf_write_en_w;
+    logic [NUM_THREADS-1:0]          rf_write_en_w;
     logic [REG_ADDR_WIDTH-1:0]        rf_write_addr_w;
     logic [NUM_LANES-1:0][XLEN-1:0]   rf_write_data_w;
 
@@ -158,7 +159,8 @@ module pipeline
         .result_i      (exe_result_w),
         .active_mask_i (exe_active_mask_w),
         .decoded_o     (mem_decoded_w),
-        .result_o      (mem_result_w)
+        .result_o      (mem_result_w),
+        .active_mask_o (mem_active_mask_w)
     );
 
     writeback u_writeback (
@@ -169,6 +171,7 @@ module pipeline
         .decoded_i        (mem_decoded_w),
         .result_i         (mem_result_w),
         .mem_out_i        (mem_result_w),
+        .active_mask_i    (mem_active_mask_w),
         .reg_write_en_o   (rf_write_en_w),
         .reg_write_addr_o (rf_write_addr_w),
         .reg_write_data_o (rf_write_data_w)

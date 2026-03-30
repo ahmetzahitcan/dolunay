@@ -6,8 +6,9 @@ module memory_access_unit
     parameter int ADDR_WIDTH = 32,
 
     localparam int LOG_NUM_THREADS = $clog2(NUM_THREADS),
+    localparam int LOWADDR_WIDTH = LOG_NUM_THREADS + 2, // +2 for word-alignment
     localparam int MEM_DATA_WIDTH = DATA_WIDTH * NUM_THREADS,
-    localparam int MEM_ADDR_WIDTH = ADDR_WIDTH - LOG_NUM_THREADS - 2 // -2 for word-alignment
+    localparam int MEM_ADDR_WIDTH = ADDR_WIDTH - LOWADDR_WIDTH 
 ) (
     input logic clk,
     input logic rst_n,
@@ -72,12 +73,12 @@ logic [LOG_NUM_THREADS-1:0] coalesce_leader_index_w;
 assign coalesce_leader_index_w = u_pe_output_w;
 
 logic [MEM_ADDR_WIDTH-1:0] coalesce_base_addr_w;
-assign coalesce_base_addr_w = addr_r[coalesce_leader_index_w][ADDR_WIDTH-1:LOG_NUM_THREADS];
+assign coalesce_base_addr_w = addr_r[coalesce_leader_index_w][ADDR_WIDTH-1:LOWADDR_WIDTH];
 
 logic [NUM_THREADS-1:0] coalesce_mask_w;
 always_comb begin
     for (int i = 0; i < NUM_THREADS; i++) begin
-        coalesce_mask_w[i] = (addr_r[i][ADDR_WIDTH-1:LOG_NUM_THREADS] == coalesce_base_addr_w) && active_mask_r[i];
+        coalesce_mask_w[i] = (addr_r[i][ADDR_WIDTH-1:LOWADDR_WIDTH] == coalesce_base_addr_w) && active_mask_r[i];
     end
 end
 
@@ -106,8 +107,8 @@ assign gather_scatter_final_w = $onehot(gather_scatter_remaining_mask_r);
 logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] data_r;
 logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] mem_data_r;
 
-logic [LOG_NUM_THREADS-1:0] gather_scatter_thread_lowaddr_w;
-assign gather_scatter_thread_lowaddr_w = addr_r[gather_scatter_working_index_w][LOG_NUM_THREADS-1:2];
+logic [LOWADDR_WIDTH-1:2] gather_scatter_thread_lowaddr_w;
+assign gather_scatter_thread_lowaddr_w = addr_r[gather_scatter_working_index_w][LOWADDR_WIDTH-1:2];
 
 logic gather_scatter_half_offset;
 assign gather_scatter_half_offset = addr_r[gather_scatter_working_index_w][1];
@@ -128,11 +129,22 @@ logic extend_w;
 always_comb begin
     unique case (extendmode_r)
         MEM_EXTENDMODE_SIGN: begin
-            unique case (gather_scatter_byte_offset)
-                2'b00: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][7];
-                2'b01: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][15];
-                2'b10: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][23];
-                2'b11: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][31];
+            unique case (opsize_r)
+                MEM_OPSIZE_BYTE: begin
+                    unique case (gather_scatter_byte_offset)
+                        2'b00: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][7];
+                        2'b01: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][15];
+                        2'b10: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][23];
+                        2'b11: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][31];
+                    endcase
+                end
+                MEM_OPSIZE_HALF: begin
+                    unique case (gather_scatter_half_offset)
+                        1'b0: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][15];
+                        1'b1: extend_w = mem_data_r[gather_scatter_thread_lowaddr_w][31];
+                    endcase
+                end
+                MEM_OPSIZE_WORD: extend_w = 'x;
             endcase
         end
         MEM_EXTENDMODE_ZERO: extend_w = 1'b0;
@@ -142,7 +154,9 @@ end
 always_ff @(posedge clk) begin
     unique0 case (state_r)
         IDLE: begin
-            data_r <= data_i;
+            if (start_i) begin
+                data_r <= data_i;
+            end
         end
         READ2: begin
             mem_data_r <= mem_data_i;

@@ -17,7 +17,7 @@ module regfile
     output logic [NUM_LANES-1:0][XLEN-1:0]  rs2_data_o,
 
     // Write port
-    input  logic                             write_en_i,
+    input  logic [NUM_THREADS-1:0]          write_en_i,
     input  logic [REG_ADDR_WIDTH-1:0]        write_addr_i,
     input  logic [NUM_LANES-1:0][XLEN-1:0]   write_data_i
 );
@@ -45,8 +45,10 @@ module regfile
     // Synchronous write
     // -------------------------------------------------------------------------
     always_ff @(posedge clk) begin
-        if (write_en_i && (write_addr_i != '0)) begin
-            regs_r[write_addr_i] <= write_data_i;
+        for(int i = 0; i < NUM_THREADS; i++) begin
+            if (write_en_i[i] && (write_addr_i != '0)) begin
+                regs_r[write_addr_i][i] <= write_data_i[i];
+            end
         end
     end
 

@@ -22,6 +22,7 @@ module memory
 
     // Pass-through to writeback
     output decoded_instr_s                   decoded_o,
+    output logic [NUM_THREADS-1:0]           active_mask_o,
     output logic [NUM_LANES-1:0][XLEN-1:0]  result_o
 );
 
@@ -78,6 +79,9 @@ module memory
 
     assign decoded_o = decoded_r;
 
+    logic [NUM_THREADS-1:0] active_mask_r;
+    assign active_mask_o = active_mask_r;
+
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             done_r      <= 1'b0;
@@ -99,6 +103,7 @@ module memory
             if (valid_i && !captured_r) begin
                 decoded_r  <= decoded_i;
                 result_r   <= result_i;
+                active_mask_r <= active_mask_i;
                 captured_r <= 1'b1;
             end
 

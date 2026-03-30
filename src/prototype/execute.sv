@@ -70,7 +70,7 @@ module execute
     assign branch_taken_w = |branch_mask_w;
 
     logic [PC_WIDTH-1:0] branch_target_w;
-    assign branch_target_w = pc_i + decoded_i.imm; 
+    assign branch_target_w = pc_i + decoded_i.imm[31:2]; 
 
     // -------------------------------------------------------------------------
     // Registered outputs

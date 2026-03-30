@@ -10,7 +10,7 @@ module alu
     input decoded_instr_s instr_i,
     // TODO: this should not be DATA_WIDTH long
     input logic [DATA_WIDTH-1:0] warp_id_i,
-    input logic [DATA_WIDTH-1:0] pc_i,
+    input logic [DATA_WIDTH-1:2] pc_i,
     output logic [DATA_WIDTH-1:0] result_o,
     output logic cond_o
 );
@@ -19,7 +19,7 @@ logic [DATA_WIDTH-1:0] op1_w;
 always_comb begin
     case (instr_i.control_signals.alu_op1_sel)
         ALU_OP1_SEL_RS1: op1_w = rs1_val_i;
-        ALU_OP1_SEL_PC: op1_w = pc_i;
+        ALU_OP1_SEL_PC: op1_w = {pc_i, 2'b00};
         default: op1_w = 'x;
     endcase
 end
