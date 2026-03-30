@@ -43,6 +43,8 @@ module pipeline
     // Execute → Memory
     logic [NUM_LANES-1:0][XLEN-1:0] exe_result_w;
     decoded_instr_s                  exe_decoded_w;
+    logic [NUM_LANES-1:0][XLEN-1:0] exe_rs2_data_w;
+    logic [NUM_THREADS-1:0]          exe_active_mask_w;
 
     // Memory → Writeback
     logic [NUM_LANES-1:0][XLEN-1:0] mem_result_w;
@@ -136,6 +138,8 @@ module pipeline
         .active_mask_i   (dec_active_mask_w),
         .result_o        (exe_result_w),
         .decoded_pass_o  (exe_decoded_w),
+        .rs2_data_o      (exe_rs2_data_w),
+        .active_mask_o   (exe_active_mask_w),
         .branch_taken_o  (branch_taken_w),
         .branch_mask_o   (branch_mask_w),
         .branch_target_o (branch_target_w),
@@ -145,14 +149,16 @@ module pipeline
     );
 
     memory u_memory (
-        .clk       (clk),
-        .rst_n     (rst_n),
-        .valid_i   (memory_valid_w),
-        .done_o    (memory_done_w),
-        .decoded_i (exe_decoded_w),
-        .result_i  (exe_result_w),
-        .decoded_o (mem_decoded_w),
-        .result_o  (mem_result_w)
+        .clk           (clk),
+        .rst_n         (rst_n),
+        .valid_i       (memory_valid_w),
+        .done_o        (memory_done_w),
+        .decoded_i     (exe_decoded_w),
+        .rs2_data_i    (exe_rs2_data_w),
+        .result_i      (exe_result_w),
+        .active_mask_i (exe_active_mask_w),
+        .decoded_o     (mem_decoded_w),
+        .result_o      (mem_result_w)
     );
 
     writeback u_writeback (
@@ -162,6 +168,7 @@ module pipeline
         .done_o           (writeback_done_w),
         .decoded_i        (mem_decoded_w),
         .result_i         (mem_result_w),
+        .mem_out_i        (mem_result_w),
         .reg_write_en_o   (rf_write_en_w),
         .reg_write_addr_o (rf_write_addr_w),
         .reg_write_data_o (rf_write_data_w)

@@ -17,6 +17,9 @@ module writeback
     input  decoded_instr_s              decoded_i,
     input  logic [NUM_LANES-1:0][XLEN-1:0] result_i,
 
+    // From memory
+    input  logic [NUM_LANES-1:0][XLEN-1:0] mem_out_i,
+
     // Register file write interface
     output logic                        reg_write_en_o,
     output logic [REG_ADDR_WIDTH-1:0]   reg_write_addr_o,
@@ -29,9 +32,16 @@ module writeback
     logic done_r;
     assign done_o = done_r;
 
-    assign reg_write_en_o   = valid_i && decoded_i.control_signals.writeback;
+    assign reg_write_en_o   = valid_i && decoded_i.control_signals.writeback_active;
     assign reg_write_addr_o = decoded_i.rd;
-    assign reg_write_data_o = result_i;
+    
+    always_comb begin
+        case (decoded_i.control_signals.writeback_source)
+            WRITEBACK_SOURCE_ALU_OUT: reg_write_data_o = result_i;
+            WRITEBACK_SOURCE_MEM_OUT: reg_write_data_o = mem_out_i;
+            default: reg_write_data_o = 'x;
+        endcase
+    end
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin

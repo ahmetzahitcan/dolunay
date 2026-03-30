@@ -24,6 +24,8 @@ module execute
     // ALU result
     output logic [NUM_LANES-1:0][XLEN-1:0] result_o,
     output decoded_instr_s                  decoded_pass_o,
+    output logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_o,
+    output logic [NUM_THREADS-1:0]          active_mask_o,
 
     // Branch resolution
     output logic                branch_taken_o,
@@ -75,6 +77,8 @@ module execute
     // -------------------------------------------------------------------------
     logic [NUM_LANES-1:0][XLEN-1:0] result_r;
     decoded_instr_s decoded_pass_r;
+    logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_r;
+    logic [NUM_THREADS-1:0] active_mask_pass_r;
     logic branch_taken_r;
     logic [NUM_THREADS-1:0] branch_mask_r;
     logic [PC_WIDTH-1:0] branch_target_r;
@@ -85,6 +89,8 @@ module execute
 
     assign result_o        = result_r;
     assign decoded_pass_o  = decoded_pass_r;
+    assign rs2_data_o      = rs2_data_r;
+    assign active_mask_o   = active_mask_pass_r;
     assign branch_taken_o  = branch_taken_r;
     assign branch_mask_o   = branch_mask_r;
     assign branch_target_o = branch_target_r;
@@ -108,15 +114,17 @@ module execute
             done_r <= 1'b0;
 
             if (valid_i) begin
-                result_r        <= alu_result_w;
-                decoded_pass_r  <= decoded_i;
-                branch_taken_r  <= branch_taken_w;
-                branch_mask_r   <= branch_mask_w;
-                branch_target_r <= branch_target_w;
-                yield_r         <= decoded_i.control_signals.yield;
-                binit_r         <= decoded_i.control_signals.binit;
-                bwait_r         <= decoded_i.control_signals.bwait;
-                done_r          <= 1'b1;
+                result_r          <= alu_result_w;
+                decoded_pass_r    <= decoded_i;
+                rs2_data_r        <= rs2_data_i;
+                active_mask_pass_r <= active_mask_i;
+                branch_taken_r    <= branch_taken_w;
+                branch_mask_r     <= branch_mask_w;
+                branch_target_r   <= branch_target_w;
+                yield_r           <= decoded_i.control_signals.yield;
+                binit_r           <= decoded_i.control_signals.binit;
+                bwait_r           <= decoded_i.control_signals.bwait;
+                done_r            <= 1'b1;
             end
         end
     end
