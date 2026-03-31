@@ -9,29 +9,29 @@ module priority_encoder #(
     output logic valid_o
 );
 
-always_comb begin
-    valid_o = 1'b0;
-    one_hot_o = '0;
-    index_o = '0;
-    if (FROM_MSB) begin
-        for (int i = WIDTH-1; i >= 0; i--) begin
-            if (input_i[i]) begin
-                valid_o = 1'b1;
-                one_hot_o[i] = 1'b1;
-                index_o = i;
-                break;
+    always_comb begin
+        valid_o = 1'b0;
+        one_hot_o = '0;
+        index_o = '0;
+        if (FROM_MSB) begin
+            for (int i = WIDTH-1; i >= 0; i--) begin
+                if (input_i[i]) begin
+                    valid_o = 1'b1;
+                    one_hot_o[i] = 1'b1;
+                    index_o = i;
+                    break;
+                end
             end
-        end
-    end else begin
-        for (int i = 0; i < WIDTH; i++) begin
-            if (input_i[i]) begin
-                valid_o = 1'b1;
-                one_hot_o[i] = 1'b1;
-                index_o = i;
-                break;
+        end else begin
+            for (int i = 0; i < WIDTH; i++) begin
+                if (input_i[i]) begin
+                    valid_o = 1'b1;
+                    one_hot_o[i] = 1'b1;
+                    index_o = i;
+                    break;
+                end
             end
         end
     end
-end
 
 endmodule

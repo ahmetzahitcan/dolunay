@@ -1,0 +1,205 @@
+module pipeline
+    import params_pkg::*;
+    import control_unit_pkg::*;
+(
+    input logic clk,
+    input logic rst_n
+);
+
+    genvar I;
+
+    // Cross-stage signals
+    logic [XLEN-1:LOG_PC_ALIGN] ifid_pc_w;
+    logic [NUM_THREADS-1:0] ifid_mask_w;
+    logic [31:2] ifid_undec_instr32_w;
+    logic [LOG_NUM_WARPS-1:0] ifid_warp_id_r;
+
+    logic [NUM_THREADS-1:0][XLEN-1:0] idex_rs1_data_w;
+    logic [NUM_THREADS-1:0][XLEN-1:0] idex_rs2_data_w;
+    instr_s idex_instr_r;
+    logic idex_instr_valid_r;
+    logic [LOG_NUM_WARPS-1:0] idex_warp_id_r;
+    logic [XLEN-1:LOG_PC_ALIGN] idex_pc_r;
+    logic [NUM_THREADS-1:0] idex_mask_r;
+
+    logic [NUM_THREADS-1:0] ex_branch_mask_w;
+    logic ex_branching_w;
+    logic [XLEN-1:LOG_PC_ALIGN] ex_branch_target_w;
+
+    instr_s exwb_instr_r;
+    logic exwb_instr_valid_r;
+    logic [NUM_THREADS-1:0][XLEN-1:0] exwb_alu_result_r;
+    logic [NUM_THREADS-1:0] exwb_mask_r;
+    logic [LOG_NUM_WARPS-1:0] exwb_warp_id_r;
+
+    logic [NUM_THREADS-1:0] wb_write_en_mask_w;
+    logic [XLEN-1:0] wb_write_data_w;
+
+    // Warp Select
+    logic [LOG_NUM_WARPS-1:0] wsif_warp_id_w;
+    warp_scheduler u_warp_scheduler(
+        .clk(clk),
+        .rst_n(rst_n),
+        .skip_i(0), // TODO: implement
+        .skip_warp_id_i(0), // TODO: implement
+        .warp_id_o(wsif_warp_id_w)
+    );
+
+    // Fetch
+    logic [NUM_WARPS-1:0][XLEN-1:LOG_PC_ALIGN] u_thread_scheduler_pc_w;
+    logic [NUM_WARPS-1:0][NUM_THREADS-1:0] u_thread_scheduler_mask_w;
+
+    assign ifid_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_w];
+    assign ifid_mask_w = u_thread_scheduler_mask_w[wsif_warp_id_w];
+
+    // - Thread Schedulers
+    generate
+        for (I = 0; I < NUM_WARPS; I++) begin
+            logic if_en_w;
+            assign if_en_w = wsif_warp_id_w == I;
+
+            logic ex_en_w;
+            assign ex_en_w = idex_warp_id_r == I;
+
+            thread_scheduler u_thread_scheduler(
+                .clk(clk),
+                .rst_n(rst_n),
+                .fetch_i(if_en_w),
+
+                .yield_i(idex_instr_r.yield & ex_en_w),
+                .binit_i(idex_instr_r.binit & ex_en_w),
+                .bwait_i(idex_instr_r.bwait & ex_en_w),
+                .barr_idx_i(idex_instr_r.barr_idx),
+
+                .branch_i(ex_branching_w & ex_en_w),
+                .pc_branch_i(ex_branch_target_w),
+                .mask_branch_i(ex_branch_mask_w),
+
+                .pc_o(u_thread_scheduler_pc_w[I]),
+                .mask_o(u_thread_scheduler_mask_w[I])
+            );
+        end
+    endgenerate
+
+    // - Instruction Memory
+
+    instr_mem u_instr_mem(
+        .clk(clk),
+        .addr_i(ifid_pc_w),
+        .undec_instr32_o(ifid_undec_instr32_w)
+    );
+
+    // - Pipeline Registers
+
+    always_ff @( posedge clk ) begin
+        ifid_warp_id_r <= wsif_warp_id_w;
+    end
+
+    // Decode
+
+    // - Control Unit
+
+    instr_s id_instr_w;
+
+    control_unit u_control_unit(
+        .undec_instr32_i(ifid_undec_instr32_w),
+        .instr_o(id_instr_w)
+    );
+
+    // - Register File
+
+    register_file u_register_file(
+        .clk(clk),
+        .rst_n(rst_n),
+
+        .read_warp_id_i(ifid_warp_id_r),
+
+        .rs1_addr_i(id_instr_w.rs1_idx),
+        .rs1_data_o(idex_rs1_data_w),
+
+        .rs2_addr_i(id_instr_w.rs2_idx),
+        .rs2_data_o(idex_rs2_data_w),
+
+        .write_warp_id_i(exwb_warp_id_r),
+        .write_en_mask_i(wb_write_en_mask_w),
+        .write_addr_i(exwb_instr_r.rd_idx),
+        .write_data_i(wb_write_data_w)
+    );
+
+    // - Pipeline Registers
+
+    always_ff @( posedge clk ) begin
+        if (!rst_n) begin
+            idex_instr_valid_r <= '0;
+        end else begin
+            idex_instr_valid_r <= 1'b1;
+        end
+
+        idex_instr_r <= id_instr_w;
+        idex_warp_id_r <= ifid_warp_id_r;
+        idex_pc_r <= ifid_pc_w;
+        idex_mask_r <= ifid_mask_w;
+    end
+
+    // Execute
+
+    // - ALU Lanes
+
+    logic [NUM_THREADS-1:0][XLEN-1:0] ex_alu_result_w;
+    logic [NUM_THREADS-1:0] ex_branch_cond_w;
+
+    generate
+        for (I = 0; I < NUM_THREADS; I++) begin
+            alu #(
+                .THREAD_ID(I)
+            ) u_alu (
+                .rs1_val_i(idex_rs1_data_w[I]),
+                .rs2_val_i(idex_rs2_data_w[I]),
+                .instr_i(idex_instr_r),
+                .warp_id_i(idex_warp_id_r),
+                .pc_i(idex_pc_r),
+                .result_o(ex_alu_result_w[I]),
+                .branch_cond_o(ex_branch_cond_w[I])
+            );
+        end
+    endgenerate
+
+    // - Branching Logic
+ 
+    assign ex_branch_mask_w = ex_branch_cond_w & idex_mask_r; 
+    assign ex_branching_w = |ex_branch_mask_w;
+    assign ex_branch_target_w = idex_pc_r + idex_instr_r.imm[31:2];
+
+    // - Pipeline Registers
+
+    always_ff @( posedge clk ) begin
+        if (!rst_n) begin
+            exwb_instr_valid_r <= '0;
+        end else begin
+            exwb_instr_valid_r <= idex_instr_valid_r;
+        end
+
+        exwb_instr_r <= idex_instr_r;
+        exwb_alu_result_r <= ex_alu_result_w;
+        exwb_mask_r <= idex_mask_r;
+        exwb_warp_id_r <= idex_warp_id_r;
+    end
+
+    // Writeback
+
+    assign wb_write_en_mask_w = exwb_mask_r & exwb_instr_r.wb_active;
+    
+    always_comb begin
+        if (exwb_instr_valid_r) begin
+            case (exwb_instr_r.wb_source)
+                WB_SOURCE_ALU: wb_write_data_w = exwb_alu_result_r;
+                WB_SOURCE_MEM: begin // TODO
+                    $warning("LOAD operations are not implemented. Writing zero to rd instead.");
+                    wb_write_data_w = '0;
+                end
+                default: wb_write_data_w = 'x;
+            endcase
+        end 
+    end
+
+endmodule

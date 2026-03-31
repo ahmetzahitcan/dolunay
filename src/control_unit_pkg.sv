@@ -40,15 +40,16 @@ package control_unit_pkg;
 		ALU_OP2_SEL_UNDEFINED='x
 	} alu_op2_sel_e;
 
-	typedef enum logic {
-		ALU_COND_ZERO,
-		ALU_COND_NONZERO,
-		ALU_COND_UNDEFINED='x
-	} alu_cond_e;
+	typedef enum logic [1:0] {
+		BRANCH_COND_NEVER,
+		BRANCH_COND_ZERO,
+		BRANCH_COND_NONZERO,
+		BRANCH_COND_UNDEFINED='x
+	} branch_cond_e;
 
 	typedef enum logic {
-		WB_SOURCE_ALU_OUT,
-		WB_SOURCE_MEM_OUT,
+		WB_SOURCE_ALU,
+		WB_SOURCE_MEM,
 		WB_SOURCE_UNDEFINED='x
 	} wb_source_e;
 
@@ -80,10 +81,9 @@ package control_unit_pkg;
 		alu_funct_e alu_funct;
 		alu_op1_sel_e alu_op1_sel;
 		alu_op2_sel_e alu_op2_sel;
-		alu_cond_e alu_cond;
+		branch_cond_e branch_cond;
 		logic wb_active;
 		wb_source_e wb_source;
-		logic branch;
 		logic binit;
 		logic bwait;
 		logic yield;
