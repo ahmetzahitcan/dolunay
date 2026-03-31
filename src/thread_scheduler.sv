@@ -1,13 +1,9 @@
 `timescale 1ns/1ps
 // TODO: register-indexed jumps (can result in more than 2 pathes)
 
-module thread_scheduler #(
-    parameter int NUM_THREADS = 32,
-    parameter int PC_WIDTH = 30,
-    parameter int NUM_BARRIERS = 8,
-    localparam int LOG_NUM_THREADS = $clog2(NUM_THREADS),
-    localparam int LOG_NUM_BARRIERS = $clog2(NUM_BARRIERS)
-) (
+module thread_scheduler 
+    import params_pkg::*;
+(
     input logic clk,
     input logic rst_n,
 
@@ -17,14 +13,14 @@ module thread_scheduler #(
     input logic bwait_i,
     input logic [LOG_NUM_BARRIERS-1:0] bsel_i,
     input logic branch_i,
-    input logic [PC_WIDTH-1:0] pc_branch_i,
+    input logic [XLEN-1:LOG_PC_ALIGN] pc_branch_i,
     input logic [NUM_THREADS-1:0] mask_branch_i,
 
-    output logic [PC_WIDTH-1:0] pc_o,
+    output logic [XLEN-1:LOG_PC_ALIGN] pc_o,
     output logic [NUM_THREADS-1:0] mask_o
 );
 
-logic [NUM_THREADS-1:0][PC_WIDTH-1:0] pc_list_r;
+logic [NUM_THREADS-1:0][XLEN-1:LOG_PC_ALIGN] pc_list_r;
 logic [NUM_THREADS-1:0][NUM_THREADS-1:0] mask_list_r;
 logic [LOG_NUM_THREADS-1:0] path_id_r;
 
@@ -84,10 +80,10 @@ always_comb begin
     end
 end
 
-logic [PC_WIDTH-1:0] pc_w;
+logic [XLEN-1:LOG_PC_ALIGN] pc_w;
 assign pc_w = pc_list_r[path_id_r];
 
-logic [PC_WIDTH-1:0] pc_p1_w;
+logic [XLEN-1:LOG_PC_ALIGN] pc_p1_w;
 assign pc_p1_w = pc_w + 1;
 
 logic [NUM_THREADS-1:0] mask_w;

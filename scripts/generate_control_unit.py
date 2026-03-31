@@ -32,6 +32,7 @@ def parse_csv(csv_file):
                            bare UPPER_CASE identifiers (e.g. ALU_ADD, ALU_BEQ).
                            Columns not detected as enums are absent from this dict.
     """
+
     try:
         with open(csv_file, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
@@ -46,8 +47,8 @@ def parse_csv(csv_file):
         print(f"Error: Could not find file {csv_file}")
         sys.exit(1)
 
-    if 'instruction' not in fields or 'match_string' not in fields:
-        print("Error: CSV must contain 'instruction' and 'match_string' columns.")
+    if 'instruction' not in fields or 'match_string' not in fields or 'imm_type' not in fields:
+        print("Error: CSV must contain 'instruction', 'match_string' and 'imm_type' columns.")
         sys.exit(1)
 
     # Separate the INVALID (default) row from real instructions; skip comments.
@@ -120,7 +121,6 @@ def parse_csv(csv_file):
     instructions.sort(key=lambda x: x['SpecificBits'], reverse=True)
 
     # Parse control-signal columns: handle optional bit-width in header (e.g. "alu_op[2:0]").
-    # The script appends "_o" to each name in the emitted SV — do not include it in the CSV.
     control_signals = []
     for field in fields:
         if field in ('instruction', 'match_string'):
@@ -210,13 +210,24 @@ def emit_sv_module(data, output_file, module_name, package_name):
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("`default_nettype none\n\n")
         f.write(f"module {module_name}\n")
+        f.write("    import params_pkg::*;\n")
         f.write(f"    import {package_name}::*;\n")
         f.write("(\n")
-        f.write("    input  wire  [31:2] instr_i,\n")
-        f.write("    output control_signals_s control_signals_o\n")
+        f.write("    input  wire  [31:2] undec_instr32_i,\n")
+        f.write("    output instr_s instr_o\n")
         f.write(");\n\n")
+        f.write("    imm_type_e imm_type_w;\n\n")
+        f.write("    immediate_decoder u_imm(\n")
+        f.write("        .undec_instr32_i(undec_instr32_i),\n")
+        f.write("        .imm_type_i(imm_type_w),\n")
+        f.write("        .imm_o(instr_o.imm)\n")
+        f.write("    );\n\n")
         f.write("    always_comb begin\n")
-        f.write("        case (instr_i) inside\n")
+        f.write("        instr_o.rd_idx = undec_instr32_i[LOG_NUM_REGISTERS+6:7];\n")
+        f.write("        instr_o.rs1_idx = undec_instr32_i[LOG_NUM_REGISTERS+14:15];\n")
+        f.write("        instr_o.rs2_idx = undec_instr32_i[LOG_NUM_REGISTERS+19:20];\n")
+        f.write("        instr_o.barr_idx = undec_instr32_i[LOG_NUM_BARRIERS+11:12];\n\n")
+        f.write("        case (undec_instr32_i) inside\n")
 
         for row in instructions:
             inst      = row['instruction'].strip()
@@ -230,14 +241,20 @@ def emit_sv_module(data, output_file, module_name, package_name):
             f.write(f"            30'b{match_str}: begin // {inst}\n")
             for col, sig, rng in control_signals:
                 val = row[col].strip() if row.get(col) else ""
-                f.write(f"                control_signals_o.{sig} = {_format_value(val, sig, rng)};\n")
+                if sig == "imm_type":
+                    f.write(f"                imm_type_w = {_format_value(val, sig, rng)};\n")
+                else:
+                    f.write(f"                instr_o.{sig} = {_format_value(val, sig, rng)};\n")
             f.write("            end\n")
 
         # Default (INVALID) case
         f.write("            default: begin // INVALID\n")
         for col, sig, rng in control_signals:
             def_val = default_values.get(col, "")
-            f.write(f"                control_signals_o.{sig} = {_format_value(def_val, sig, rng)};\n")
+            if sig == "imm_type":
+                f.write(f"                imm_type_w = {_format_value(def_val, sig, rng)};\n")
+            else:
+                f.write(f"                instr_o.{sig} = {_format_value(def_val, sig, rng)};\n")
         f.write("            end\n")
         f.write("        endcase\n")
         f.write("    end\n\n")
@@ -252,7 +269,8 @@ def emit_sv_package(data, output_file, package_name):
 
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("`default_nettype none\n\n")
-        f.write(f"package {package_name};\n\n")
+        f.write(f"package {package_name};\n")
+        f.write("\timport params_pkg::*;\n\n")
 
         for sig, values in enums.items():
             prefix = sig.upper()
@@ -270,7 +288,15 @@ def emit_sv_package(data, output_file, package_name):
             f.write(f"\t}} {sig}_e;\n\n")
 
         f.write("\ttypedef struct packed {\n")
+        f.write("\t\tlogic [XLEN-1:0] imm;\n")
+        f.write("\t\tlogic [LOG_NUM_REGISTERS-1:0] rd_idx;\n")
+        f.write("\t\tlogic [LOG_NUM_REGISTERS-1:0] rs1_idx;\n")
+        f.write("\t\tlogic [LOG_NUM_REGISTERS-1:0] rs2_idx;\n")
+        f.write("\t\tlogic [LOG_NUM_BARRIERS-1:0] barr_idx;\n")
         for _, sig, rng in control_signals:
+            if sig == 'imm_type':
+                continue
+
             if sig in enums:
                 f.write(f"\t\t{sig}_e {sig};\n")
             else:
@@ -278,7 +304,7 @@ def emit_sv_package(data, output_file, package_name):
                     f.write(f"\t\tlogic {sig};\n")
                 else:
                     f.write(f"\t\tlogic {rng} {sig};\n")
-        f.write(f"\t}} control_signals_s;\n\n")
+        f.write(f"\t}} instr_s;\n\n")
 
 
         f.write("endpackage\n\n")

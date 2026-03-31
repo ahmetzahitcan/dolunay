@@ -1,7 +1,6 @@
-module warp_scheduler #(
-    parameter int NUM_WARPS = 8,
-    localparam int LOG_NUM_WARPS = $clog2(NUM_WARPS)
-) (
+module warp_scheduler 
+    import params_pkg::*;
+(
     input logic clk,
     input logic rst_n,
     output logic [LOG_NUM_WARPS-1:0] warp_id_p0_o,

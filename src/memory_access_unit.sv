@@ -1,13 +1,9 @@
 module memory_access_unit 
+    import params_pkg::*;
     import control_unit_pkg::*;
 #(
-    parameter int NUM_THREADS = 32,
-    parameter int DATA_WIDTH = 32,
-    parameter int ADDR_WIDTH = 32,
-
-    localparam int LOG_NUM_THREADS = $clog2(NUM_THREADS),
-    localparam int LOWADDR_WIDTH = LOG_NUM_THREADS + 2, // +2 for word-alignment
-    localparam int MEM_DATA_WIDTH = DATA_WIDTH * NUM_THREADS,
+    localparam int LOWADDR_WIDTH = LOG_NUM_THREADS + LOG_ADDR_ALIGN,
+    localparam int MEM_DATA_WIDTH = XLEN * NUM_THREADS,
     localparam int MEM_ADDR_WIDTH = ADDR_WIDTH - LOWADDR_WIDTH 
 ) (
     input logic clk,
@@ -18,8 +14,8 @@ module memory_access_unit
     input mem_extendmode_e extendmode_i,
     input logic [NUM_THREADS-1:0][ADDR_WIDTH-1:0] addr_i,
     input logic [NUM_THREADS-1:0] active_mask_i,
-    input logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] data_i,
-    output logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] data_o,
+    input logic [NUM_THREADS-1:0][XLEN-1:0] data_i,
+    output logic [NUM_THREADS-1:0][XLEN-1:0] data_o,
     output logic busy_o,
 
     input logic [MEM_DATA_WIDTH-1:0] mem_data_i,
@@ -28,6 +24,10 @@ module memory_access_unit
     output logic mem_write_o,
     output logic [MEM_ADDR_WIDTH-1:0] mem_addr_o
 );
+
+`ifndef SYNTHESIS
+    initial assert (ADDR_ALIGN == 4) else $error("Only ADDR_ALIGN = 4 is currently supported.");
+`endif
 
 typedef enum logic[2:0] {
     IDLE,
@@ -49,7 +49,7 @@ mem_opsize_e opsize_r;
 mem_extendmode_e extendmode_r;
 logic [NUM_THREADS-1:0] active_mask_r;
 logic [NUM_THREADS-1:0][ADDR_WIDTH-1:0] addr_r;
-//logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] data_r; // Not needed, gather/scatter logic handles this
+//logic [NUM_THREADS-1:0][XLEN-1:0] data_r; // Not needed, gather/scatter logic handles this
 always_ff @(posedge clk) begin
     if (state_r == IDLE) begin
         loadstore_r   <= loadstore_i;
@@ -104,11 +104,11 @@ assign gather_scatter_working_index_w = u_pe_output_w;
 logic gather_scatter_final_w;
 assign gather_scatter_final_w = $onehot(gather_scatter_remaining_mask_r);
 
-logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] data_r;
-logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] mem_data_r;
+logic [NUM_THREADS-1:0][XLEN-1:0] data_r;
+logic [NUM_THREADS-1:0][XLEN-1:0] mem_data_r;
 
-logic [LOWADDR_WIDTH-1:2] gather_scatter_thread_lowaddr_w;
-assign gather_scatter_thread_lowaddr_w = addr_r[gather_scatter_working_index_w][LOWADDR_WIDTH-1:2];
+logic [LOWADDR_WIDTH-1:LOG_ADDR_ALIGN] gather_scatter_thread_lowaddr_w;
+assign gather_scatter_thread_lowaddr_w = addr_r[gather_scatter_working_index_w][LOWADDR_WIDTH-1:LOG_ADDR_ALIGN];
 
 logic gather_scatter_half_offset;
 assign gather_scatter_half_offset = addr_r[gather_scatter_working_index_w][1];
@@ -165,16 +165,16 @@ always_ff @(posedge clk) begin
             unique case (opsize_r)
                 MEM_OPSIZE_BYTE: begin
                     unique case (gather_scatter_byte_offset)
-                        2'b00: data_r[gather_scatter_working_index_w] <= {{DATA_WIDTH-8{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][7:0]};
-                        2'b01: data_r[gather_scatter_working_index_w] <= {{DATA_WIDTH-8{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][15:8]};
-                        2'b10: data_r[gather_scatter_working_index_w] <= {{DATA_WIDTH-8{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][23:16]};
-                        2'b11: data_r[gather_scatter_working_index_w] <= {{DATA_WIDTH-8{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][31:24]};
+                        2'b00: data_r[gather_scatter_working_index_w] <= {{XLEN-8{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][7:0]};
+                        2'b01: data_r[gather_scatter_working_index_w] <= {{XLEN-8{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][15:8]};
+                        2'b10: data_r[gather_scatter_working_index_w] <= {{XLEN-8{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][23:16]};
+                        2'b11: data_r[gather_scatter_working_index_w] <= {{XLEN-8{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][31:24]};
                     endcase
                 end 
                 MEM_OPSIZE_HALF: begin
                     unique case (gather_scatter_half_offset)
-                        1'b0: data_r[gather_scatter_working_index_w] <= {{DATA_WIDTH-16{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][15:0]};
-                        1'b1: data_r[gather_scatter_working_index_w] <= {{DATA_WIDTH-16{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][31:16]};
+                        1'b0: data_r[gather_scatter_working_index_w] <= {{XLEN-16{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][15:0]};
+                        1'b1: data_r[gather_scatter_working_index_w] <= {{XLEN-16{extend_w}}, mem_data_r[gather_scatter_thread_lowaddr_w][31:16]};
                     endcase
                 end 
                 MEM_OPSIZE_WORD: data_r[gather_scatter_working_index_w] <= mem_data_r[gather_scatter_thread_lowaddr_w];
