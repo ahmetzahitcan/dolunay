@@ -2,8 +2,8 @@ module pipeline
     import params_pkg::*;
     import control_unit_pkg::*;
 (
-    input logic clk,
-    input logic rst_n
+    input wire clk,
+    input wire rst_n
 );
 
     genvar I;
@@ -33,10 +33,11 @@ module pipeline
     logic [LOG_NUM_WARPS-1:0] exwb_warp_id_r;
 
     logic [NUM_THREADS-1:0] wb_write_en_mask_w;
-    logic [XLEN-1:0] wb_write_data_w;
+    logic [NUM_THREADS-1:0][XLEN-1:0] wb_write_data_w;
 
     // Warp Select
     logic [LOG_NUM_WARPS-1:0] wsif_warp_id_w;
+    (* DONT_TOUCH = "true" *)
     warp_scheduler u_warp_scheduler(
         .clk(clk),
         .rst_n(rst_n),
@@ -61,6 +62,7 @@ module pipeline
             logic ex_en_w;
             assign ex_en_w = idex_warp_id_r == I;
 
+            (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
@@ -83,6 +85,7 @@ module pipeline
 
     // - Instruction Memory
 
+    (* DONT_TOUCH = "true" *)
     instr_mem u_instr_mem(
         .clk(clk),
         .addr_i(ifid_pc_w),
@@ -101,6 +104,7 @@ module pipeline
 
     instr_s id_instr_w;
 
+    (* DONT_TOUCH = "true" *)
     control_unit u_control_unit(
         .undec_instr32_i(ifid_undec_instr32_w),
         .instr_o(id_instr_w)
@@ -108,21 +112,21 @@ module pipeline
 
     // - Register File
 
+    (* DONT_TOUCH = "true" *)
     register_file u_register_file(
         .clk(clk),
-        .rst_n(rst_n),
 
         .read_warp_id_i(ifid_warp_id_r),
 
-        .rs1_addr_i(id_instr_w.rs1_idx),
+        .rs1_idx_i(id_instr_w.rs1_idx),
         .rs1_data_o(idex_rs1_data_w),
 
-        .rs2_addr_i(id_instr_w.rs2_idx),
+        .rs2_idx_i(id_instr_w.rs2_idx),
         .rs2_data_o(idex_rs2_data_w),
 
         .write_warp_id_i(exwb_warp_id_r),
         .write_en_mask_i(wb_write_en_mask_w),
-        .write_addr_i(exwb_instr_r.rd_idx),
+        .rd_idx_i(exwb_instr_r.rd_idx),
         .write_data_i(wb_write_data_w)
     );
 
@@ -150,6 +154,7 @@ module pipeline
 
     generate
         for (I = 0; I < NUM_THREADS; I++) begin
+            (* DONT_TOUCH = "true" *)
             alu #(
                 .THREAD_ID(I)
             ) u_alu (
@@ -187,9 +192,11 @@ module pipeline
 
     // Writeback
 
-    assign wb_write_en_mask_w = exwb_mask_r & exwb_instr_r.wb_active;
+    assign wb_write_en_mask_w = exwb_instr_r.wb_active ? exwb_mask_r : '0;
     
     always_comb begin
+        wb_write_data_w = 'x;
+
         if (exwb_instr_valid_r) begin
             case (exwb_instr_r.wb_source)
                 WB_SOURCE_ALU: wb_write_data_w = exwb_alu_result_r;
@@ -197,7 +204,6 @@ module pipeline
                     $warning("LOAD operations are not implemented. Writing zero to rd instead.");
                     wb_write_data_w = '0;
                 end
-                default: wb_write_data_w = 'x;
             endcase
         end 
     end

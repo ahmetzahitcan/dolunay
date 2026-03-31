@@ -1,5 +1,5 @@
 package params_pkg;
-
+// TODO: use localparam instead of parameter
     parameter int XLEN = 32;
 
     parameter int ADDR_WIDTH = 32;
@@ -17,5 +17,5 @@ package params_pkg;
     parameter int LOG_NUM_THREADS = $clog2(NUM_THREADS);
     parameter int LOG_NUM_REGISTERS = $clog2(NUM_REGISTERS);
     parameter int LOG_NUM_BARRIERS = $clog2(NUM_BARRIERS);
-
+    
 endpackage
