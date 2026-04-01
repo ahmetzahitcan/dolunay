@@ -118,10 +118,13 @@ module thread_scheduler
     logic barrier_release_w;
     assign barrier_release_w = (barrier_total_r[barr_idx_i] == barrier_parked_next_w);
 
+    logic [XLEN-1:LOG_PC_ALIGN] pc_out_r;
+    logic [NUM_THREADS-1:0] mask_out_r;
+
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            pc_o   <= '0;
-            mask_o <= '0;
+            pc_out_r   <= '0;
+            mask_out_r <= '0;
             path_id_r <= '0;
             pc_list_r[0] <= '0;
             mask_list_r[0] <= '1;
@@ -135,8 +138,8 @@ module thread_scheduler
             end
         end else begin
             unique0 if (fetch_i) begin
-                pc_o <= pc_w;
-                mask_o <= mask_w;
+                pc_out_r <= pc_w;
+                mask_out_r <= mask_w;
                 pc_list_r[path_id_r] <= pc_p1_w;
 
                 assert (mask_w != 0) else $error("Fetched from an inactive path.");
@@ -183,5 +186,8 @@ module thread_scheduler
             end
         end
     end
+
+    assign pc_o   = pc_out_r;
+    assign mask_o = mask_out_r;
 
 endmodule

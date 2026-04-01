@@ -8,7 +8,32 @@ module pipeline
 
     genvar I;
 
+    // Stage valid registers -- indicating whether other pipeline registers are valid
+    logic ws_stage_valid_r;
+    logic if_stage_valid_r;
+    logic id_stage_valid_r;
+    logic ex_stage_valid_r;
+    logic wb_stage_valid_r;
+
+    always_ff @( posedge clk ) begin
+        if (!rst_n) begin
+            ws_stage_valid_r <= '0;
+            if_stage_valid_r <= '0;
+            id_stage_valid_r <= '0;
+            ex_stage_valid_r <= '0;
+            wb_stage_valid_r <= '0;
+        end else begin
+            ws_stage_valid_r <= 1'b1;
+            if_stage_valid_r <= ws_stage_valid_r;
+            id_stage_valid_r <= if_stage_valid_r;
+            ex_stage_valid_r <= id_stage_valid_r;
+            wb_stage_valid_r <= ex_stage_valid_r;
+        end
+    end
+
     // Cross-stage signals
+    logic [LOG_NUM_WARPS-1:0] wsif_warp_id_r;
+
     logic [XLEN-1:LOG_PC_ALIGN] ifid_pc_w;
     logic [NUM_THREADS-1:0] ifid_mask_w;
     logic [31:2] ifid_undec_instr32_w;
@@ -17,7 +42,6 @@ module pipeline
     logic [NUM_THREADS-1:0][XLEN-1:0] idex_rs1_data_w;
     logic [NUM_THREADS-1:0][XLEN-1:0] idex_rs2_data_w;
     instr_s idex_instr_r;
-    logic idex_instr_valid_r;
     logic [LOG_NUM_WARPS-1:0] idex_warp_id_r;
     logic [XLEN-1:LOG_PC_ALIGN] idex_pc_r;
     logic [NUM_THREADS-1:0] idex_mask_r;
@@ -27,7 +51,6 @@ module pipeline
     logic [XLEN-1:LOG_PC_ALIGN] ex_branch_target_w;
 
     instr_s exwb_instr_r;
-    logic exwb_instr_valid_r;
     logic [NUM_THREADS-1:0][XLEN-1:0] exwb_alu_result_r;
     logic [NUM_THREADS-1:0] exwb_mask_r;
     logic [LOG_NUM_WARPS-1:0] exwb_warp_id_r;
@@ -36,31 +59,35 @@ module pipeline
     logic [NUM_THREADS-1:0][XLEN-1:0] wb_write_data_w;
 
     // Warp Select
-    logic [LOG_NUM_WARPS-1:0] wsif_warp_id_w;
+    logic [LOG_NUM_WARPS-1:0] ws_warp_id_w;
     (* DONT_TOUCH = "true" *)
     warp_scheduler u_warp_scheduler(
         .clk(clk),
         .rst_n(rst_n),
         .skip_i(0), // TODO: implement
         .skip_warp_id_i(0), // TODO: implement
-        .warp_id_o(wsif_warp_id_w)
+        .warp_id_o(ws_warp_id_w)
     );
+
+    always_ff @( posedge clk ) begin
+        wsif_warp_id_r <= ws_warp_id_w;
+    end
 
     // Fetch
     logic [NUM_WARPS-1:0][XLEN-1:LOG_PC_ALIGN] u_thread_scheduler_pc_w;
     logic [NUM_WARPS-1:0][NUM_THREADS-1:0] u_thread_scheduler_mask_w;
 
-    assign ifid_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_w];
-    assign ifid_mask_w = u_thread_scheduler_mask_w[wsif_warp_id_w];
+    assign ifid_pc_w = u_thread_scheduler_pc_w[ifid_warp_id_r];     // Note ifid_warp_id_r instead of wsif_warp_id_r
+    assign ifid_mask_w = u_thread_scheduler_mask_w[ifid_warp_id_r]; //    because thread schedulers also add a delay.
 
     // - Thread Schedulers
     generate
         for (I = 0; I < NUM_WARPS; I++) begin
             logic if_en_w;
-            assign if_en_w = wsif_warp_id_w == I;
+            assign if_en_w = wsif_warp_id_r == I & if_stage_valid_r;
 
             logic ex_en_w;
-            assign ex_en_w = idex_warp_id_r == I;
+            assign ex_en_w = idex_warp_id_r == I & ex_stage_valid_r;
 
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
@@ -95,7 +122,7 @@ module pipeline
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        ifid_warp_id_r <= wsif_warp_id_w;
+        ifid_warp_id_r <= wsif_warp_id_r;
     end
 
     // Decode
@@ -133,12 +160,6 @@ module pipeline
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        if (!rst_n) begin
-            idex_instr_valid_r <= '0;
-        end else begin
-            idex_instr_valid_r <= 1'b1;
-        end
-
         idex_instr_r <= id_instr_w;
         idex_warp_id_r <= ifid_warp_id_r;
         idex_pc_r <= ifid_pc_w;
@@ -178,12 +199,6 @@ module pipeline
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        if (!rst_n) begin
-            exwb_instr_valid_r <= '0;
-        end else begin
-            exwb_instr_valid_r <= idex_instr_valid_r;
-        end
-
         exwb_instr_r <= idex_instr_r;
         exwb_alu_result_r <= ex_alu_result_w;
         exwb_mask_r <= idex_mask_r;
@@ -197,7 +212,7 @@ module pipeline
     always_comb begin
         wb_write_data_w = 'x;
 
-        if (exwb_instr_valid_r) begin
+        if (wb_stage_valid_r) begin
             case (exwb_instr_r.wb_source)
                 WB_SOURCE_ALU: wb_write_data_w = exwb_alu_result_r;
                 WB_SOURCE_MEM: begin // TODO
