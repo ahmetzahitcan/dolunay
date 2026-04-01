@@ -3,10 +3,11 @@
 package control_unit_pkg;
 	import params_pkg::*;
 
-	typedef enum logic [1:0] {
+	typedef enum logic [2:0] {
 		IMM_TYPE_I,
 		IMM_TYPE_B,
 		IMM_TYPE_S,
+		IMM_TYPE_J,
 		IMM_TYPE_U,
 		IMM_TYPE_UNDEFINED='x
 	} imm_type_e;
@@ -40,15 +41,18 @@ package control_unit_pkg;
 		ALU_OP2_SEL_UNDEFINED='x
 	} alu_op2_sel_e;
 
-	typedef enum logic [1:0] {
+	typedef enum logic [2:0] {
 		BRANCH_COND_NEVER,
 		BRANCH_COND_ZERO,
 		BRANCH_COND_NONZERO,
+		BRANCH_COND_COALESCE,
+		BRANCH_COND_ALWAYS,
 		BRANCH_COND_UNDEFINED='x
 	} branch_cond_e;
 
-	typedef enum logic {
+	typedef enum logic [1:0] {
 		WB_SOURCE_ALU,
+		WB_SOURCE_PC_P4,
 		WB_SOURCE_MEM,
 		WB_SOURCE_UNDEFINED='x
 	} wb_source_e;
@@ -91,6 +95,7 @@ package control_unit_pkg;
 		mem_loadstore_e mem_loadstore;
 		mem_opsize_e mem_opsize;
 		mem_extendmode_e mem_extendmode;
+		logic is_jalr;
 	} instr_s;
 
 endpackage

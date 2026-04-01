@@ -34,8 +34,8 @@ module pipeline
     // Cross-stage signals
     logic [LOG_NUM_WARPS-1:0] wsif_warp_id_r;
 
-    logic [XLEN-1:LOG_PC_ALIGN] ifid_pc_w;
-    logic [NUM_THREADS-1:0] ifid_mask_w;
+    logic [XLEN-1:LOG_PC_ALIGN] ifid_pc_r;
+    logic [NUM_THREADS-1:0] ifid_mask_r;
     logic [31:2] ifid_undec_instr32_w;
     logic [LOG_NUM_WARPS-1:0] ifid_warp_id_r;
 
@@ -52,6 +52,7 @@ module pipeline
 
     instr_s exwb_instr_r;
     logic [NUM_THREADS-1:0][XLEN-1:0] exwb_alu_result_r;
+    logic [XLEN-1:LOG_PC_ALIGN] exwb_pc_r;
     logic [NUM_THREADS-1:0] exwb_mask_r;
     logic [LOG_NUM_WARPS-1:0] exwb_warp_id_r;
 
@@ -60,6 +61,7 @@ module pipeline
 
     // Warp Select
     logic [LOG_NUM_WARPS-1:0] ws_warp_id_w;
+    logic [LOG_NUM_WARPS-1:0] ws_warp_id_r;
     (* DONT_TOUCH = "true" *)
     warp_scheduler u_warp_scheduler(
         .clk(clk),
@@ -70,37 +72,38 @@ module pipeline
     );
 
     always_ff @( posedge clk ) begin
-        wsif_warp_id_r <= ws_warp_id_w;
+        ws_warp_id_r <= ws_warp_id_w;
+        wsif_warp_id_r <= ws_warp_id_r;
     end
 
     // Fetch
     logic [NUM_WARPS-1:0][XLEN-1:LOG_PC_ALIGN] u_thread_scheduler_pc_w;
     logic [NUM_WARPS-1:0][NUM_THREADS-1:0] u_thread_scheduler_mask_w;
 
-    assign ifid_pc_w = u_thread_scheduler_pc_w[ifid_warp_id_r];     // Note ifid_warp_id_r instead of wsif_warp_id_r
-    assign ifid_mask_w = u_thread_scheduler_mask_w[ifid_warp_id_r]; //    because thread schedulers also add a delay.
+    logic [XLEN-1:LOG_PC_ALIGN] if_pc_w;
+    logic [NUM_THREADS-1:0] if_mask_w;
+
+    assign if_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_r];   
+    assign if_mask_w = u_thread_scheduler_mask_w[wsif_warp_id_r];
 
     // - Thread Schedulers
     generate
         for (I = 0; I < NUM_WARPS; I++) begin
-            logic if_en_w;
-            assign if_en_w = wsif_warp_id_r == I & if_stage_valid_r;
-
-            logic ex_en_w;
-            assign ex_en_w = idex_warp_id_r == I & ex_stage_valid_r;
+            logic en_w;
+            assign en_w = idex_warp_id_r == I & ex_stage_valid_r;
 
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
-                .fetch_i(if_en_w),
+                .inc_pc_i(en_w & ~idex_instr_r.is_jalr),
 
-                .yield_i(idex_instr_r.yield & ex_en_w),
-                .binit_i(idex_instr_r.binit & ex_en_w),
-                .bwait_i(idex_instr_r.bwait & ex_en_w),
+                .yield_i(idex_instr_r.yield & en_w),
+                .binit_i(idex_instr_r.binit & en_w),
+                .bwait_i(idex_instr_r.bwait & en_w),
                 .barr_idx_i(idex_instr_r.barr_idx),
 
-                .branch_i(ex_branching_w & ex_en_w),
+                .branch_i(ex_branching_w & en_w),
                 .pc_branch_i(ex_branch_target_w),
                 .mask_branch_i(ex_branch_mask_w),
 
@@ -115,13 +118,15 @@ module pipeline
     (* DONT_TOUCH = "true" *)
     instr_mem u_instr_mem(
         .clk(clk),
-        .addr_i(ifid_pc_w),
+        .addr_i(if_pc_w),
         .undec_instr32_o(ifid_undec_instr32_w)
     );
 
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
+        ifid_pc_r <= if_pc_w;
+        ifid_mask_r <= if_mask_w;
         ifid_warp_id_r <= wsif_warp_id_r;
     end
 
@@ -162,11 +167,14 @@ module pipeline
     always_ff @( posedge clk ) begin
         idex_instr_r <= id_instr_w;
         idex_warp_id_r <= ifid_warp_id_r;
-        idex_pc_r <= ifid_pc_w;
-        idex_mask_r <= ifid_mask_w;
+        idex_pc_r <= ifid_pc_r;
+        idex_mask_r <= ifid_mask_r;
     end
 
     // Execute
+
+    logic [NUM_THREADS-1:0] coalesced_w;
+    logic [XLEN-1:LOG_PC_ALIGN] leader_target_w;
 
     // - ALU Lanes
 
@@ -184,9 +192,29 @@ module pipeline
                 .instr_i(idex_instr_r),
                 .warp_id_i(idex_warp_id_r),
                 .pc_i(idex_pc_r),
+                .coalesced_i(coalesced_w[I]),
                 .result_o(ex_alu_result_w[I]),
                 .branch_cond_o(ex_branch_cond_w[I])
             );
+        end
+    endgenerate
+
+    // - JALR Coalescing Logic
+
+    logic [LOG_NUM_THREADS-1:0] leader_id_w;
+
+    priority_encoder #(
+        .WIDTH(NUM_THREADS)
+    ) u_priority_encoder (
+        .input_i(idex_mask_r),
+        .index_o(leader_id_w)
+    );
+
+    assign leader_target_w = ex_alu_result_w[leader_id_w][XLEN-1:LOG_PC_ALIGN];
+
+    generate
+        for(I = 0; I < NUM_THREADS; I++) begin
+            assign coalesced_w[I] = ex_alu_result_w[I][XLEN-1:LOG_PC_ALIGN] == leader_target_w;
         end
     endgenerate
 
@@ -194,7 +222,7 @@ module pipeline
  
     assign ex_branch_mask_w = ex_branch_cond_w & idex_mask_r; 
     assign ex_branching_w = |ex_branch_mask_w;
-    assign ex_branch_target_w = idex_pc_r + idex_instr_r.imm[31:2];
+    assign ex_branch_target_w = idex_instr_r.is_jalr ? leader_target_w : idex_pc_r + idex_instr_r.imm[31:2];
 
     // - Pipeline Registers
 
@@ -202,10 +230,14 @@ module pipeline
         exwb_instr_r <= idex_instr_r;
         exwb_alu_result_r <= ex_alu_result_w;
         exwb_mask_r <= idex_mask_r;
+        exwb_pc_r <= idex_pc_r;
         exwb_warp_id_r <= idex_warp_id_r;
     end
 
     // Writeback
+
+    logic [XLEN-1:0] wb_pc_p4_w;
+    assign wb_pc_p4_w ={exwb_pc_r + 1'b1, 2'b00};
 
     assign wb_write_en_mask_w = exwb_instr_r.wb_active ? exwb_mask_r : '0;
     
@@ -218,6 +250,11 @@ module pipeline
                 WB_SOURCE_MEM: begin // TODO
                     $warning("LOAD operations are not implemented. Writing zero to rd instead.");
                     wb_write_data_w = '0;
+                end
+                WB_SOURCE_PC_P4: begin
+                    for (int i = 0; i < NUM_THREADS; i++) begin
+                        wb_write_data_w[i] = wb_pc_p4_w;
+                    end
                 end
             endcase
         end 

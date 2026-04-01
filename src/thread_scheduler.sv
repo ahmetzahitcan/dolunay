@@ -7,7 +7,7 @@ module thread_scheduler
     input logic clk,
     input logic rst_n,
 
-    input logic fetch_i,
+    input logic inc_pc_i,
     input logic yield_i,
     input logic binit_i,
     input logic bwait_i,
@@ -137,13 +137,16 @@ module thread_scheduler
                 barrier_parked_r[i] <= '0;
             end
         end else begin
-            unique0 if (fetch_i) begin
-                pc_out_r <= pc_w;
-                mask_out_r <= mask_w;
+            pc_out_r <= pc_w;
+            mask_out_r <= mask_w;
+
+            if (inc_pc_i) begin
                 pc_list_r[path_id_r] <= pc_p1_w;
 
                 assert (mask_w != 0) else $error("Fetched from an inactive path.");
-            end else if (yield_i) begin
+            end 
+            
+            unique0 if (yield_i) begin
                 path_id_r <= path_id_next_w;
             end else if (binit_i) begin
                 assert (barrier_total_r[barr_idx_i] == '0) else $warning("binit_i called on a barrier that is already initialized.");

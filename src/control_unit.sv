@@ -38,6 +38,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b111100010100?????????????11100: begin // CSR_MHARTID
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -54,6 +55,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????000?????01100: begin // ADD
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -70,6 +72,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0100000??????????000?????01100: begin // SUB
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -86,6 +89,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????001?????01100: begin // SLL
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -102,6 +106,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????010?????01100: begin // SLT
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -118,6 +123,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????011?????01100: begin // SLTU
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -134,6 +140,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????100?????01100: begin // XOR
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -150,6 +157,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????101?????01100: begin // SRL
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -166,6 +174,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0100000??????????101?????01100: begin // SRA
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -182,6 +191,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????110?????01100: begin // OR
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -198,6 +208,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????111?????01100: begin // AND
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -214,6 +225,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????001?????00100: begin // SLLI
                 imm_type_w = IMM_TYPE_I;
@@ -230,6 +242,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0000000??????????101?????00100: begin // SRLI
                 imm_type_w = IMM_TYPE_I;
@@ -246,6 +259,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0100000??????????101?????00100: begin // SRAI
                 imm_type_w = IMM_TYPE_I;
@@ -262,6 +276,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b1000000??????????????????00010: begin // BINIT
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -278,6 +293,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b0100000??????????????????00010: begin // BWAIT
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -294,6 +310,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????000?????00100: begin // ADDI
                 imm_type_w = IMM_TYPE_I;
@@ -310,6 +327,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????010?????00100: begin // SLTI
                 imm_type_w = IMM_TYPE_I;
@@ -326,6 +344,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????011?????00100: begin // SLTIU
                 imm_type_w = IMM_TYPE_I;
@@ -342,6 +361,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????100?????00100: begin // XORI
                 imm_type_w = IMM_TYPE_I;
@@ -358,6 +378,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????110?????00100: begin // ORI
                 imm_type_w = IMM_TYPE_I;
@@ -374,6 +395,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????111?????00100: begin // ANDI
                 imm_type_w = IMM_TYPE_I;
@@ -390,6 +412,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????000?????11000: begin // BEQ
                 imm_type_w = IMM_TYPE_B;
@@ -406,6 +429,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????001?????11000: begin // BNE
                 imm_type_w = IMM_TYPE_B;
@@ -422,6 +446,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????100?????11000: begin // BLT
                 imm_type_w = IMM_TYPE_B;
@@ -438,6 +463,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????101?????11000: begin // BGE
                 imm_type_w = IMM_TYPE_B;
@@ -454,6 +480,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????110?????11000: begin // BLTU
                 imm_type_w = IMM_TYPE_B;
@@ -470,6 +497,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????111?????11000: begin // BGEU
                 imm_type_w = IMM_TYPE_B;
@@ -486,6 +514,24 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+            end
+            30'b?????????????????000?????11001: begin // JALR
+                imm_type_w = IMM_TYPE_I;
+                instr_o.alu_funct = ALU_FUNCT_ADD;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
+                instr_o.branch_cond = BRANCH_COND_COALESCE;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_PC_P4;
+                instr_o.binit = 1'b0;
+                instr_o.bwait = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b1;
             end
             30'b?????????????????000?????00000: begin // LB
                 imm_type_w = IMM_TYPE_I;
@@ -502,6 +548,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
                 instr_o.mem_opsize = MEM_OPSIZE_BYTE;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_SIGN;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????001?????00000: begin // LH
                 imm_type_w = IMM_TYPE_I;
@@ -518,6 +565,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
                 instr_o.mem_opsize = MEM_OPSIZE_HALF;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_SIGN;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????010?????00000: begin // LW
                 imm_type_w = IMM_TYPE_I;
@@ -534,6 +582,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
                 instr_o.mem_opsize = MEM_OPSIZE_WORD;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????100?????00000: begin // LBU
                 imm_type_w = IMM_TYPE_I;
@@ -550,6 +599,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
                 instr_o.mem_opsize = MEM_OPSIZE_BYTE;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_ZERO;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????101?????00000: begin // LHU
                 imm_type_w = IMM_TYPE_I;
@@ -566,6 +616,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
                 instr_o.mem_opsize = MEM_OPSIZE_HALF;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_ZERO;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????000?????01000: begin // SB
                 imm_type_w = IMM_TYPE_S;
@@ -582,6 +633,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
                 instr_o.mem_opsize = MEM_OPSIZE_BYTE;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????001?????01000: begin // SH
                 imm_type_w = IMM_TYPE_S;
@@ -598,6 +650,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
                 instr_o.mem_opsize = MEM_OPSIZE_HALF;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????010?????01000: begin // SW
                 imm_type_w = IMM_TYPE_S;
@@ -614,6 +667,24 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
                 instr_o.mem_opsize = MEM_OPSIZE_WORD;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+            end
+            30'b?????????????????????????11011: begin // JAL
+                imm_type_w = IMM_TYPE_J;
+                instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_ALWAYS;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_PC_P4;
+                instr_o.binit = 1'b0;
+                instr_o.bwait = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????????????01101: begin // LUI
                 imm_type_w = IMM_TYPE_U;
@@ -630,6 +701,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????????????00101: begin // AUIPC
                 imm_type_w = IMM_TYPE_U;
@@ -646,6 +718,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             30'b?????????????????????????11100: begin // CSR_OTHER
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -662,6 +735,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
             end
             default: begin // INVALID
                 imm_type_w = IMM_TYPE_UNDEFINED;
@@ -678,6 +752,7 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
                 instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 'x;
             end
         endcase
     end

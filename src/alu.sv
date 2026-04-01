@@ -9,6 +9,7 @@ module alu
     input instr_s instr_i,
     input logic [LOG_NUM_WARPS-1:0] warp_id_i,
     input logic [XLEN-1:LOG_PC_ALIGN] pc_i,
+    input logic coalesced_i,
     output logic [XLEN-1:0] result_o,
     output logic branch_cond_o
 );
@@ -59,6 +60,8 @@ module alu
             BRANCH_COND_ZERO: branch_cond_w = (result_w == '0);
             BRANCH_COND_NONZERO: branch_cond_w = (result_w != '0);
             BRANCH_COND_NEVER: branch_cond_w = 1'b0;
+            BRANCH_COND_ALWAYS: branch_cond_w = 1'b1;
+            BRANCH_COND_COALESCE: branch_cond_w = coalesced_i;
             default: branch_cond_w = 'x;
         endcase
     end
