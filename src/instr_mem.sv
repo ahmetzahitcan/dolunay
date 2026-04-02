@@ -35,7 +35,7 @@ module instr_mem
         for (int i = 0; i < DEPTH; i++) begin
             mem_r[i] = ADD; // NOP
         end
-
+/*
         mem_r[0] = BINIT; // BINIT
         mem_r[1] = 32'hf1401173; // CSRRW x2, mhartid, x0
         mem_r[2] = 32'h0fe17113; // ANDI x2, x2, 254
@@ -44,8 +44,8 @@ module instr_mem
         mem_r[5] = 32'h000100e7; // JALR x1, 0(x2)
         mem_r[6] = BWAIT; // BWAIT
         mem_r[132] = 32'h00008067; // JALR x0, 0(x1)
-
-        /*
+*/
+        
         mem_r[0] = BINIT; // BINIT
         mem_r[1] = BEQ_P100 | X3_RS1; // BEQ x3, x0, 100
         mem_r[2] = BEQ_P100 | X3_RS1 | X1_RS2; // BEQ x3, x1, 100
@@ -78,7 +78,7 @@ module instr_mem
         mem_r[128] = 32'h00015183; // LHU x3, 0(x2)
         mem_r[129] = 32'h00012103; // LW x2, 0(x2)
         mem_r[130] = BWAIT; // BWAIT
-        */
+        
     end
 
     // -------------------------------------------------------------------------
