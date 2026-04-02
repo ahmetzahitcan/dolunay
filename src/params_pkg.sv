@@ -24,6 +24,7 @@ package params_pkg;
     localparam int WRAM_BANK_SIZE = 4096;
     localparam int WRAM_BANK_DEPTH = WRAM_BANK_SIZE / ADDR_ALIGN;
     localparam int W_WRAM_BANK_ADDR = $clog2(WRAM_BANK_SIZE);
+    localparam int W_WRAM_ADDR = W_WRAM_BANKS + W_WRAM_BANK_ADDR;
 
 endpackage
 
