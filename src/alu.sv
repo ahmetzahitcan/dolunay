@@ -1,3 +1,5 @@
+`default_nettype none
+
 module alu 
     import params_pkg::*;
     import control_unit_pkg::*;
@@ -70,3 +72,5 @@ module alu
 
 
 endmodule
+
+`default_nettype wire

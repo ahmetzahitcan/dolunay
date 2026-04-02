@@ -1,5 +1,4 @@
-`timescale 1ns/1ps
-// TODO: register-indexed jumps (can result in more than 2 pathes)
+`default_nettype none
 
 module thread_scheduler 
     import params_pkg::*;
@@ -194,3 +193,5 @@ module thread_scheduler
     assign mask_o = mask_out_r;
 
 endmodule
+
+`default_nettype wire

@@ -1,3 +1,5 @@
+`default_nettype none
+
 module immediate_decoder 
     import params_pkg::*;
     import control_unit_pkg::*;
@@ -28,3 +30,5 @@ module immediate_decoder
     end
 
 endmodule
+
+`default_nettype wire

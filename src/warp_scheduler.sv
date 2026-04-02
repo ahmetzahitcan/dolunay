@@ -1,3 +1,5 @@
+`default_nettype none
+
 module warp_scheduler 
     import params_pkg::*;
 (
@@ -32,3 +34,5 @@ module warp_scheduler
     assign warp_id_o = current_warp_r;
 
 endmodule
+
+`default_nettype wire

@@ -1,3 +1,5 @@
+`default_nettype none
+
 module pipeline
     import params_pkg::*;
     import control_unit_pkg::*;
@@ -261,3 +263,5 @@ module pipeline
     end
 
 endmodule
+
+`default_nettype wire

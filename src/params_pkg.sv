@@ -1,3 +1,5 @@
+`default_nettype none
+
 package params_pkg;
 
     localparam int XLEN = 32;
@@ -20,3 +22,5 @@ package params_pkg;
     localparam int LOG_NUM_BANKS = $clog2(NUM_BANKS);
     
 endpackage
+
+`default_nettype wire

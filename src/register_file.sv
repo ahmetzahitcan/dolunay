@@ -1,3 +1,5 @@
+`default_nettype none
+
 // =============================================================================
 // register_file.sv — SIMD register file (NUM_WARPS × NUM_REGISTERS × NUM_THREADS × XLEN)
 // =============================================================================
@@ -61,3 +63,5 @@ module register_file
     assign rs2_data_o = rs2_zero_r ? '0 : rs2_data_r;
 
 endmodule
+
+`default_nettype wire

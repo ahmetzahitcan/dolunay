@@ -1,3 +1,5 @@
+`default_nettype none
+
 module instr_mem 
     import params_pkg::*;
 #(
@@ -92,3 +94,5 @@ module instr_mem
     end
 
 endmodule
+
+`default_nettype wire

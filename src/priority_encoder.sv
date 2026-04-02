@@ -1,3 +1,5 @@
+`default_nettype none
+
 module priority_encoder #(
     parameter int WIDTH = 32,
     parameter int FROM_MSB = 0,
@@ -35,3 +37,5 @@ module priority_encoder #(
     end
 
 endmodule
+
+`default_nettype wire
