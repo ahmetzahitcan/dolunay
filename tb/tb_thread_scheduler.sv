@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`default_nettype none
 
 module tb_thread_scheduler;
 
@@ -208,3 +209,5 @@ module tb_thread_scheduler;
     end
 
 endmodule
+
+`default_nettype wire

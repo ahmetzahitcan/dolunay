@@ -2,6 +2,7 @@
 // tb_shuffle_any.sv — Basic testbench for shuffle_any
 // =============================================================================
 `timescale 1ns/1ps
+`default_nettype none
 
 module tb_pipeline;
     import tb_config_pkg::RST_CYCLES;
@@ -36,3 +37,5 @@ module tb_pipeline;
 
 
 endmodule
+
+`default_nettype wire
