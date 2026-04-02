@@ -1,5 +1,5 @@
 // =============================================================================
-// regfile.sv — SIMD register file (NUM_REGS × NUM_LANES × XLEN)
+// regfile.sv — SIMD register file (N_REGS × N_LANES × XLEN)
 // =============================================================================
 // `default_nettype none
 
@@ -10,25 +10,25 @@ module regfile
 
     // Read port 1
     input  logic [REG_ADDR_WIDTH-1:0]       rs1_addr_i,
-    output logic [NUM_LANES-1:0][XLEN-1:0]  rs1_data_o,
+    output logic [N_LANES-1:0][XLEN-1:0]  rs1_data_o,
 
     // Read port 2
     input  logic [REG_ADDR_WIDTH-1:0]       rs2_addr_i,
-    output logic [NUM_LANES-1:0][XLEN-1:0]  rs2_data_o,
+    output logic [N_LANES-1:0][XLEN-1:0]  rs2_data_o,
 
     // Write port
-    input  logic [NUM_THREADS-1:0]          write_en_i,
+    input  logic [N_THREADS-1:0]          write_en_i,
     input  logic [REG_ADDR_WIDTH-1:0]        write_addr_i,
-    input  logic [NUM_LANES-1:0][XLEN-1:0]   write_data_i
+    input  logic [N_LANES-1:0][XLEN-1:0]   write_data_i
 );
 
     // -------------------------------------------------------------------------
-    // Storage: each register holds NUM_LANES × XLEN bits
+    // Storage: each register holds N_LANES × XLEN bits
     // -------------------------------------------------------------------------
-    logic [NUM_LANES-1:0][XLEN-1:0] regs_r [1:NUM_REGS];
+    logic [N_LANES-1:0][XLEN-1:0] regs_r [1:N_REGS];
 
     initial begin
-        for(int j = 0; j < NUM_LANES; j++) begin
+        for(int j = 0; j < N_LANES; j++) begin
             regs_r[1][j] <= 1;
             regs_r[2][j] <= 2;
             regs_r[3][j] <= j;
@@ -45,7 +45,7 @@ module regfile
     // Synchronous write
     // -------------------------------------------------------------------------
     always_ff @(posedge clk) begin
-        for(int i = 0; i < NUM_THREADS; i++) begin
+        for(int i = 0; i < N_THREADS; i++) begin
             if (write_en_i[i] && (write_addr_i != '0)) begin
                 regs_r[write_addr_i][i] <= write_data_i[i];
             end

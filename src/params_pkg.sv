@@ -5,22 +5,26 @@ package params_pkg;
     localparam int XLEN = 32;
 
     localparam int ADDR_ALIGN = 4;
-    localparam int LOG_ADDR_ALIGN = $clog2(ADDR_ALIGN);
+    localparam int Z_ADDR = $clog2(ADDR_ALIGN);
 
     localparam int PC_ALIGN = 4;
-    localparam int LOG_PC_ALIGN = $clog2(PC_ALIGN);
+    localparam int Z_PC = $clog2(PC_ALIGN);
 
-    localparam int NUM_WARPS = 4;
-    localparam int NUM_THREADS = 8;
-    localparam int NUM_REGISTERS = 16; // RV32E
-    localparam int NUM_BARRIERS = 2; // Max 8
-    localparam int NUM_BANKS = 16;
-    localparam int LOG_NUM_WARPS = $clog2(NUM_WARPS);
-    localparam int LOG_NUM_THREADS = $clog2(NUM_THREADS);
-    localparam int LOG_NUM_REGISTERS = $clog2(NUM_REGISTERS);
-    localparam int LOG_NUM_BARRIERS = $clog2(NUM_BARRIERS);
-    localparam int LOG_NUM_BANKS = $clog2(NUM_BANKS);
-    
+    localparam int N_WARPS = 4;
+    localparam int N_THREADS = 8;
+    localparam int N_REGISTERS = 16; // RV32E
+    localparam int N_BARRIERS = 2; // Max 8
+    localparam int W_WARPS = $clog2(N_WARPS);
+    localparam int W_THREADS = $clog2(N_THREADS);
+    localparam int W_REGISTERS = $clog2(N_REGISTERS);
+    localparam int W_BARRIERS = $clog2(N_BARRIERS);
+
+    localparam int N_WRAM_BANKS = 16;
+    localparam int W_WRAM_BANKS = $clog2(N_WRAM_BANKS);
+    localparam int WRAM_BANK_SIZE = 4096;
+    localparam int WRAM_BANK_DEPTH = WRAM_BANK_SIZE / ADDR_ALIGN;
+    localparam int W_WRAM_BANK_ADDR = $clog2(WRAM_BANK_SIZE);
+
 endpackage
 
 `default_nettype wire

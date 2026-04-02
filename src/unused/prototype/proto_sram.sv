@@ -10,9 +10,9 @@ module proto_sram
     parameter int DEPTH = 256,
 
     // Mirror MAU localparams so widths match automatically
-    localparam int MEM_DATA_WIDTH  = XLEN * NUM_THREADS,
-    localparam int LOG_NUM_THREADS = $clog2(NUM_THREADS),
-    localparam int MEM_ADDR_WIDTH  = 32 - LOG_NUM_THREADS - 2,
+    localparam int MEM_DATA_WIDTH  = XLEN * N_THREADS,
+    localparam int W_THREADS = $clog2(N_THREADS),
+    localparam int MEM_ADDR_WIDTH  = 32 - W_THREADS - 2,
     localparam int ADDR_BITS       = $clog2(DEPTH)
 ) (
     input  logic clk,

@@ -34,36 +34,36 @@ module pipeline
     end
 
     // Cross-stage signals
-    logic [LOG_NUM_WARPS-1:0] wsif_warp_id_r;
+    logic [W_WARPS-1:0] wsif_warp_id_r;
 
-    logic [XLEN-1:LOG_PC_ALIGN] ifid_pc_r;
-    logic [NUM_THREADS-1:0] ifid_mask_r;
+    logic [XLEN-1:Z_PC] ifid_pc_r;
+    logic [N_THREADS-1:0] ifid_mask_r;
     logic [31:2] ifid_undec_instr32_w;
-    logic [LOG_NUM_WARPS-1:0] ifid_warp_id_r;
+    logic [W_WARPS-1:0] ifid_warp_id_r;
 
-    logic [NUM_THREADS-1:0][XLEN-1:0] idex_rs1_data_w;
-    logic [NUM_THREADS-1:0][XLEN-1:0] idex_rs2_data_w;
+    logic [N_THREADS-1:0][XLEN-1:0] idex_rs1_data_w;
+    logic [N_THREADS-1:0][XLEN-1:0] idex_rs2_data_w;
     instr_s idex_instr_r;
-    logic [LOG_NUM_WARPS-1:0] idex_warp_id_r;
-    logic [XLEN-1:LOG_PC_ALIGN] idex_pc_r;
-    logic [NUM_THREADS-1:0] idex_mask_r;
+    logic [W_WARPS-1:0] idex_warp_id_r;
+    logic [XLEN-1:Z_PC] idex_pc_r;
+    logic [N_THREADS-1:0] idex_mask_r;
 
-    logic [NUM_THREADS-1:0] ex_branch_mask_w;
+    logic [N_THREADS-1:0] ex_branch_mask_w;
     logic ex_branching_w;
-    logic [XLEN-1:LOG_PC_ALIGN] ex_branch_target_w;
+    logic [XLEN-1:Z_PC] ex_branch_target_w;
 
     instr_s exwb_instr_r;
-    logic [NUM_THREADS-1:0][XLEN-1:0] exwb_alu_result_r;
-    logic [XLEN-1:LOG_PC_ALIGN] exwb_pc_r;
-    logic [NUM_THREADS-1:0] exwb_mask_r;
-    logic [LOG_NUM_WARPS-1:0] exwb_warp_id_r;
+    logic [N_THREADS-1:0][XLEN-1:0] exwb_alu_result_r;
+    logic [XLEN-1:Z_PC] exwb_pc_r;
+    logic [N_THREADS-1:0] exwb_mask_r;
+    logic [W_WARPS-1:0] exwb_warp_id_r;
 
-    logic [NUM_THREADS-1:0] wb_write_en_mask_w;
-    logic [NUM_THREADS-1:0][XLEN-1:0] wb_write_data_w;
+    logic [N_THREADS-1:0] wb_write_en_mask_w;
+    logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
 
     // Warp Select
-    logic [LOG_NUM_WARPS-1:0] ws_warp_id_w;
-    logic [LOG_NUM_WARPS-1:0] ws_warp_id_r;
+    logic [W_WARPS-1:0] ws_warp_id_w;
+    logic [W_WARPS-1:0] ws_warp_id_r;
     (* DONT_TOUCH = "true" *)
     warp_scheduler u_warp_scheduler(
         .clk(clk),
@@ -79,18 +79,18 @@ module pipeline
     end
 
     // Fetch
-    logic [NUM_WARPS-1:0][XLEN-1:LOG_PC_ALIGN] u_thread_scheduler_pc_w;
-    logic [NUM_WARPS-1:0][NUM_THREADS-1:0] u_thread_scheduler_mask_w;
+    logic [N_WARPS-1:0][XLEN-1:Z_PC] u_thread_scheduler_pc_w;
+    logic [N_WARPS-1:0][N_THREADS-1:0] u_thread_scheduler_mask_w;
 
-    logic [XLEN-1:LOG_PC_ALIGN] if_pc_w;
-    logic [NUM_THREADS-1:0] if_mask_w;
+    logic [XLEN-1:Z_PC] if_pc_w;
+    logic [N_THREADS-1:0] if_mask_w;
 
     assign if_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_r];   
     assign if_mask_w = u_thread_scheduler_mask_w[wsif_warp_id_r];
 
     // - Thread Schedulers
     generate
-        for (I = 0; I < NUM_WARPS; I++) begin
+        for (I = 0; I < N_WARPS; I++) begin
             logic en_w;
             assign en_w = idex_warp_id_r == I & ex_stage_valid_r;
 
@@ -175,16 +175,16 @@ module pipeline
 
     // Execute
 
-    logic [NUM_THREADS-1:0] coalesced_w;
-    logic [XLEN-1:LOG_PC_ALIGN] leader_target_w;
+    logic [N_THREADS-1:0] coalesced_w;
+    logic [XLEN-1:Z_PC] leader_target_w;
 
     // - ALU Lanes
 
-    logic [NUM_THREADS-1:0][XLEN-1:0] ex_alu_result_w;
-    logic [NUM_THREADS-1:0] ex_branch_cond_w;
+    logic [N_THREADS-1:0][XLEN-1:0] ex_alu_result_w;
+    logic [N_THREADS-1:0] ex_branch_cond_w;
 
     generate
-        for (I = 0; I < NUM_THREADS; I++) begin
+        for (I = 0; I < N_THREADS; I++) begin
             (* DONT_TOUCH = "true" *)
             alu #(
                 .THREAD_ID(I)
@@ -203,20 +203,20 @@ module pipeline
 
     // - JALR Coalescing Logic
 
-    logic [LOG_NUM_THREADS-1:0] leader_id_w;
+    logic [W_THREADS-1:0] leader_id_w;
 
     priority_encoder #(
-        .WIDTH(NUM_THREADS)
+        .WIDTH(N_THREADS)
     ) u_priority_encoder (
         .input_i(idex_mask_r),
         .index_o(leader_id_w)
     );
 
-    assign leader_target_w = ex_alu_result_w[leader_id_w][XLEN-1:LOG_PC_ALIGN];
+    assign leader_target_w = ex_alu_result_w[leader_id_w][XLEN-1:Z_PC];
 
     generate
-        for(I = 0; I < NUM_THREADS; I++) begin
-            assign coalesced_w[I] = ex_alu_result_w[I][XLEN-1:LOG_PC_ALIGN] == leader_target_w;
+        for(I = 0; I < N_THREADS; I++) begin
+            assign coalesced_w[I] = ex_alu_result_w[I][XLEN-1:Z_PC] == leader_target_w;
         end
     endgenerate
 
@@ -254,7 +254,7 @@ module pipeline
                     wb_write_data_w = '0;
                 end
                 WB_SOURCE_PC_P4: begin
-                    for (int i = 0; i < NUM_THREADS; i++) begin
+                    for (int i = 0; i < N_THREADS; i++) begin
                         wb_write_data_w[i] = wb_pc_p4_w;
                     end
                 end

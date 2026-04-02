@@ -10,28 +10,28 @@ module thread_scheduler
     input logic yield_i,
     input logic binit_i,
     input logic bwait_i,
-    input logic [LOG_NUM_BARRIERS-1:0] barr_idx_i,
+    input logic [W_BARRIERS-1:0] barr_idx_i,
     input logic branch_i,
-    input logic [XLEN-1:LOG_PC_ALIGN] pc_branch_i,
-    input logic [NUM_THREADS-1:0] mask_branch_i,
+    input logic [XLEN-1:Z_PC] pc_branch_i,
+    input logic [N_THREADS-1:0] mask_branch_i,
 
-    output logic [XLEN-1:LOG_PC_ALIGN] pc_o,
-    output logic [NUM_THREADS-1:0] mask_o
+    output logic [XLEN-1:Z_PC] pc_o,
+    output logic [N_THREADS-1:0] mask_o
 );
 
-    logic [NUM_THREADS-1:0][XLEN-1:LOG_PC_ALIGN] pc_list_r;
-    logic [NUM_THREADS-1:0][NUM_THREADS-1:0] mask_list_r;
-    logic [LOG_NUM_THREADS-1:0] path_id_r;
+    logic [N_THREADS-1:0][XLEN-1:Z_PC] pc_list_r;
+    logic [N_THREADS-1:0][N_THREADS-1:0] mask_list_r;
+    logic [W_THREADS-1:0] path_id_r;
 
-    logic [NUM_THREADS-1:0] path_valid_w;
+    logic [N_THREADS-1:0] path_valid_w;
 
     always_comb begin
-        for (int i = 0; i < NUM_THREADS; i++) begin
+        for (int i = 0; i < N_THREADS; i++) begin
             path_valid_w[i] = |mask_list_r[i];
         end
     end
 
-    logic [LOG_NUM_THREADS-1:0] path_id_next_w;
+    logic [W_THREADS-1:0] path_id_next_w;
     logic next_found_w;
 
     always_comb begin
@@ -40,18 +40,18 @@ module thread_scheduler
         next_found_w   = 1'b0;
 
         // Pass 1: Scan for the next valid path ID strictly greater than the current path
-        for (int i = 0; i < NUM_THREADS; i++) begin
+        for (int i = 0; i < N_THREADS; i++) begin
             if (!next_found_w && (i > path_id_r) && path_valid_w[i]) begin
-                path_id_next_w = i[LOG_NUM_THREADS-1:0];
+                path_id_next_w = i[W_THREADS-1:0];
                 next_found_w   = 1'b1;
             end
         end
 
         if (!next_found_w) begin
             // Pass 2: Wrap around and scan from 0 up to the current path
-            for (int i = 0; i < NUM_THREADS; i++) begin
+            for (int i = 0; i < N_THREADS; i++) begin
                 if (!next_found_w && (i <= path_id_r) && path_valid_w[i]) begin
-                    path_id_next_w = i[LOG_NUM_THREADS-1:0];
+                    path_id_next_w = i[W_THREADS-1:0];
                     next_found_w   = 1'b1;
                 end
             end
@@ -64,28 +64,28 @@ module thread_scheduler
     `endif
     end
 
-    logic [LOG_NUM_THREADS-1:0] path_id_empty_w;
+    logic [W_THREADS-1:0] path_id_empty_w;
     logic empty_found_w;
 
     always_comb begin
         path_id_empty_w = '0;
         empty_found_w   = 1'b0;
 
-        for (int i = 0; i < NUM_THREADS; i++) begin
+        for (int i = 0; i < N_THREADS; i++) begin
             if (!empty_found_w && !path_valid_w[i]) begin
-                path_id_empty_w = i[LOG_NUM_THREADS-1:0];
+                path_id_empty_w = i[W_THREADS-1:0];
                 empty_found_w   = 1'b1;
             end
         end
     end
 
-    logic [XLEN-1:LOG_PC_ALIGN] pc_w;
+    logic [XLEN-1:Z_PC] pc_w;
     assign pc_w = pc_list_r[path_id_r];
 
-    logic [XLEN-1:LOG_PC_ALIGN] pc_p1_w;
+    logic [XLEN-1:Z_PC] pc_p1_w;
     assign pc_p1_w = pc_w + 1;
 
-    logic [NUM_THREADS-1:0] mask_w;
+    logic [N_THREADS-1:0] mask_w;
     assign mask_w = mask_list_r[path_id_r];
 
     `ifndef SYNTHESIS
@@ -102,23 +102,23 @@ module thread_scheduler
     assert property (p_branch_not_empty) else $error("Branch fired with empty taken mask.");
     `endif
 
-    logic [NUM_THREADS-1:0] mask_remain_w;
+    logic [N_THREADS-1:0] mask_remain_w;
     assign mask_remain_w = mask_w & ~mask_branch_i;
 
     logic mask_remain_valid_w;
     assign mask_remain_valid_w = |mask_remain_w;
 
-    logic [NUM_BARRIERS-1:0][NUM_THREADS-1:0] barrier_total_r;
-    logic [NUM_BARRIERS-1:0][NUM_THREADS-1:0] barrier_parked_r;
+    logic [N_BARRIERS-1:0][N_THREADS-1:0] barrier_total_r;
+    logic [N_BARRIERS-1:0][N_THREADS-1:0] barrier_parked_r;
 
-    logic [NUM_THREADS-1:0] barrier_parked_next_w;
+    logic [N_THREADS-1:0] barrier_parked_next_w;
     assign barrier_parked_next_w = barrier_parked_r[barr_idx_i] | mask_w;
 
     logic barrier_release_w;
     assign barrier_release_w = (barrier_total_r[barr_idx_i] == barrier_parked_next_w);
 
-    logic [XLEN-1:LOG_PC_ALIGN] pc_out_r;
-    logic [NUM_THREADS-1:0] mask_out_r;
+    logic [XLEN-1:Z_PC] pc_out_r;
+    logic [N_THREADS-1:0] mask_out_r;
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -127,11 +127,11 @@ module thread_scheduler
             path_id_r <= '0;
             pc_list_r[0] <= '0;
             mask_list_r[0] <= '1;
-            for (int i = 1; i < NUM_THREADS; i++) begin
+            for (int i = 1; i < N_THREADS; i++) begin
                 pc_list_r[i] <= '0;
                 mask_list_r[i] <= '0;
             end
-            for (int i = 0; i < NUM_BARRIERS; i++) begin
+            for (int i = 0; i < N_BARRIERS; i++) begin
                 barrier_total_r[i] <= '0;
                 barrier_parked_r[i] <= '0;
             end
@@ -174,7 +174,7 @@ module thread_scheduler
             end else if (branch_i) begin
                 if (mask_remain_valid_w) begin
                     // Divergent Jump: Path splinters. Allocate an empty slot for the taken threads, keeping the fall-through threads here.
-                    // Mathematical Guarantee: Because NUM_THREADS == MAX_PATHS, we can never run out of empty slots during divergence.
+                    // Mathematical Guarantee: Because N_THREADS == MAX_PATHS, we can never run out of empty slots during divergence.
                     assert (empty_found_w) else $error("No empty path found during divergence.");
 
                     pc_list_r[path_id_empty_w] <= pc_branch_i;

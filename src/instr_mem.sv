@@ -6,7 +6,7 @@ module instr_mem
     parameter int DEPTH      = 256
 ) (
     input  logic clk,
-    input  logic [XLEN-1:LOG_PC_ALIGN]   addr_i,
+    input  logic [XLEN-1:Z_PC]   addr_i,
     output logic [31:2]   undec_instr32_o
 );
 

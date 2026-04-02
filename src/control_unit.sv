@@ -17,10 +17,10 @@ module control_unit
     );
 
     always_comb begin
-        instr_o.rd_idx = undec_instr32_i[LOG_NUM_REGISTERS+6:7];
-        instr_o.rs1_idx = undec_instr32_i[LOG_NUM_REGISTERS+14:15];
-        instr_o.rs2_idx = undec_instr32_i[LOG_NUM_REGISTERS+19:20];
-        instr_o.barr_idx = undec_instr32_i[LOG_NUM_BARRIERS+11:12];
+        instr_o.rd_idx = undec_instr32_i[W_REGISTERS+6:7];
+        instr_o.rs1_idx = undec_instr32_i[W_REGISTERS+14:15];
+        instr_o.rs2_idx = undec_instr32_i[W_REGISTERS+19:20];
+        instr_o.barr_idx = undec_instr32_i[W_BARRIERS+11:12];
 
         case (undec_instr32_i) inside
             30'b001000000000000000000000000010: begin // YIELD

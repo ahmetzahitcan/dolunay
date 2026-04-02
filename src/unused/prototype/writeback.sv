@@ -16,18 +16,18 @@ module writeback
 
     // From execute
     input  decoded_instr_s              decoded_i,
-    input  logic [NUM_LANES-1:0][XLEN-1:0] result_i,
+    input  logic [N_LANES-1:0][XLEN-1:0] result_i,
 
     // From memory
-    input  logic [NUM_LANES-1:0][XLEN-1:0] mem_out_i,
+    input  logic [N_LANES-1:0][XLEN-1:0] mem_out_i,
 
     // Active mask
-    input  logic [NUM_THREADS-1:0] active_mask_i,
+    input  logic [N_THREADS-1:0] active_mask_i,
 
     // Register file write interface
-    output logic [NUM_THREADS-1:0] reg_write_en_o,
+    output logic [N_THREADS-1:0] reg_write_en_o,
     output logic [REG_ADDR_WIDTH-1:0]   reg_write_addr_o,
-    output logic [NUM_LANES-1:0][XLEN-1:0] reg_write_data_o
+    output logic [N_LANES-1:0][XLEN-1:0] reg_write_data_o
 );
 
     // -------------------------------------------------------------------------

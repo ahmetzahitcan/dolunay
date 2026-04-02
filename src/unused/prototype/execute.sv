@@ -16,20 +16,20 @@ module execute
 
     // Decoded instruction + operands from decode
     input  decoded_instr_s              decoded_i,
-    input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_i,
-    input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_i,
+    input  wire logic [N_LANES-1:0][XLEN-1:0] rs1_data_i,
+    input  wire logic [N_LANES-1:0][XLEN-1:0] rs2_data_i,
     input  wire logic [PC_WIDTH-1:0] pc_i,
-    input  wire logic [NUM_THREADS-1:0]      active_mask_i,
+    input  wire logic [N_THREADS-1:0]      active_mask_i,
 
     // ALU result
-    output logic [NUM_LANES-1:0][XLEN-1:0] result_o,
+    output logic [N_LANES-1:0][XLEN-1:0] result_o,
     output decoded_instr_s                  decoded_pass_o,
-    output logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_o,
-    output logic [NUM_THREADS-1:0]          active_mask_o,
+    output logic [N_LANES-1:0][XLEN-1:0] rs2_data_o,
+    output logic [N_THREADS-1:0]          active_mask_o,
 
     // Branch resolution
     output logic                branch_taken_o,
-    output logic [NUM_THREADS-1:0] branch_mask_o,
+    output logic [N_THREADS-1:0] branch_mask_o,
     output logic [PC_WIDTH-1:0] branch_target_o,
     output logic                yield_o,
     output logic                binit_o,
@@ -39,12 +39,12 @@ module execute
     // -------------------------------------------------------------------------
     // ALU lanes (combinational)
     // -------------------------------------------------------------------------
-    logic [NUM_LANES-1:0][XLEN-1:0] alu_result_w;
-    logic [NUM_LANES-1:0]           lane_cond_w;
+    logic [N_LANES-1:0][XLEN-1:0] alu_result_w;
+    logic [N_LANES-1:0]           lane_cond_w;
 
     genvar g;
     generate
-        for (g = 0; g < NUM_LANES; g++) begin : alu_lane
+        for (g = 0; g < N_LANES; g++) begin : alu_lane
             alu #(
                 .DATA_WIDTH(XLEN),
                 .THREAD_ID(g)
@@ -63,7 +63,7 @@ module execute
     // Branch logic
     // -------------------------------------------------------------------------
     logic branch_taken_w;
-    logic [NUM_THREADS-1:0] branch_mask_w;
+    logic [N_THREADS-1:0] branch_mask_w;
     // Condition matches for each lane
     assign branch_mask_w = decoded_i.control_signals.branch ? (lane_cond_w & active_mask_i) : '0;
     // Take branch if ANY active lane satisfied the condition
@@ -75,12 +75,12 @@ module execute
     // -------------------------------------------------------------------------
     // Registered outputs
     // -------------------------------------------------------------------------
-    logic [NUM_LANES-1:0][XLEN-1:0] result_r;
+    logic [N_LANES-1:0][XLEN-1:0] result_r;
     decoded_instr_s decoded_pass_r;
-    logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_r;
-    logic [NUM_THREADS-1:0] active_mask_pass_r;
+    logic [N_LANES-1:0][XLEN-1:0] rs2_data_r;
+    logic [N_THREADS-1:0] active_mask_pass_r;
     logic branch_taken_r;
-    logic [NUM_THREADS-1:0] branch_mask_r;
+    logic [N_THREADS-1:0] branch_mask_r;
     logic [PC_WIDTH-1:0] branch_target_r;
     logic yield_r;
     logic binit_r;

@@ -9,8 +9,8 @@ module alu
     input logic [XLEN-1:0] rs1_val_i,
     input logic [XLEN-1:0] rs2_val_i,
     input instr_s instr_i,
-    input logic [LOG_NUM_WARPS-1:0] warp_id_i,
-    input logic [XLEN-1:LOG_PC_ALIGN] pc_i,
+    input logic [W_WARPS-1:0] warp_id_i,
+    input logic [XLEN-1:Z_PC] pc_i,
     input logic coalesced_i,
     output logic [XLEN-1:0] result_o,
     output logic branch_cond_o
@@ -20,7 +20,7 @@ module alu
     always_comb begin
         case (instr_i.alu_op1_sel)
             ALU_OP1_SEL_RS1: op1_w = rs1_val_i;
-            ALU_OP1_SEL_PC: op1_w = {pc_i, {LOG_PC_ALIGN{1'b0}}};
+            ALU_OP1_SEL_PC: op1_w = {pc_i, {Z_PC{1'b0}}};
             default: op1_w = 'x;
         endcase
     end

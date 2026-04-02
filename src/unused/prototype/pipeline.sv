@@ -12,10 +12,10 @@ module pipeline
     // ROM interface (instr_rom lives in proto_top)
     output logic                         rom_read_en_o,
     output logic [PC_WIDTH-1:0]          rom_addr_o,
-    output logic [NUM_THREADS-1:0]       active_mask_o,      // for proto_top delay logic
+    output logic [N_THREADS-1:0]       active_mask_o,      // for proto_top delay logic
     input  wire  logic [31:0]            rom_instr_i,
     input  wire  logic                   rom_done_i,
-    input  wire  logic [NUM_THREADS-1:0] rom_active_mask_i
+    input  wire  logic [N_THREADS-1:0] rom_active_mask_i
 );
 
     // =========================================================================
@@ -31,29 +31,29 @@ module pipeline
 
     // Fetch outputs
     logic [PC_WIDTH-1:0]    fetch_pc_w;
-    logic [NUM_THREADS-1:0] active_mask_w;
+    logic [N_THREADS-1:0] active_mask_w;
 
     // Decode → Execute
     decoded_instr_s                  dec_decoded_w;
     logic [PC_WIDTH-1:0]             dec_pc_w;
-    logic [NUM_LANES-1:0][XLEN-1:0] dec_rs1_data_w;
-    logic [NUM_LANES-1:0][XLEN-1:0] dec_rs2_data_w;
-    logic [NUM_THREADS-1:0]         dec_active_mask_w;
+    logic [N_LANES-1:0][XLEN-1:0] dec_rs1_data_w;
+    logic [N_LANES-1:0][XLEN-1:0] dec_rs2_data_w;
+    logic [N_THREADS-1:0]         dec_active_mask_w;
 
     // Execute → Memory
-    logic [NUM_LANES-1:0][XLEN-1:0] exe_result_w;
+    logic [N_LANES-1:0][XLEN-1:0] exe_result_w;
     decoded_instr_s                  exe_decoded_w;
-    logic [NUM_LANES-1:0][XLEN-1:0] exe_rs2_data_w;
-    logic [NUM_THREADS-1:0]          exe_active_mask_w;
+    logic [N_LANES-1:0][XLEN-1:0] exe_rs2_data_w;
+    logic [N_THREADS-1:0]          exe_active_mask_w;
 
     // Memory → Writeback
-    logic [NUM_LANES-1:0][XLEN-1:0] mem_result_w;
+    logic [N_LANES-1:0][XLEN-1:0] mem_result_w;
     decoded_instr_s                  mem_decoded_w;
-    logic [NUM_THREADS-1:0]          mem_active_mask_w;
+    logic [N_THREADS-1:0]          mem_active_mask_w;
 
     // Execute → Fetch (branch)
     logic                   branch_taken_w;
-    logic [NUM_THREADS-1:0] branch_mask_w;
+    logic [N_THREADS-1:0] branch_mask_w;
     logic [PC_WIDTH-1:0]    branch_target_w;
     logic                   exe_yield_w;
     logic                   exe_binit_w;
@@ -62,11 +62,11 @@ module pipeline
     // Regfile ↔ Decode / Writeback
     logic [REG_ADDR_WIDTH-1:0]       rf_rs1_addr_w;
     logic [REG_ADDR_WIDTH-1:0]       rf_rs2_addr_w;
-    logic [NUM_LANES-1:0][XLEN-1:0]  rf_rs1_data_w;
-    logic [NUM_LANES-1:0][XLEN-1:0]  rf_rs2_data_w;
-    logic [NUM_THREADS-1:0]          rf_write_en_w;
+    logic [N_LANES-1:0][XLEN-1:0]  rf_rs1_data_w;
+    logic [N_LANES-1:0][XLEN-1:0]  rf_rs2_data_w;
+    logic [N_THREADS-1:0]          rf_write_en_w;
     logic [REG_ADDR_WIDTH-1:0]        rf_write_addr_w;
-    logic [NUM_LANES-1:0][XLEN-1:0]   rf_write_data_w;
+    logic [N_LANES-1:0][XLEN-1:0]   rf_write_data_w;
 
     // ROM address and active mask come from fetch stage
     assign rom_addr_o    = fetch_pc_w;

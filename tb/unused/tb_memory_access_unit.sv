@@ -1,7 +1,7 @@
 // =============================================================================
 // tb_memory_access_unit.sv — Testbench for memory_access_unit
 //
-// Uses NUM_THREADS=4 for clarity.
+// Uses N_THREADS=4 for clarity.
 // Includes a 1-cycle-latency synchronous memory model.
 //
 // Test cases
@@ -17,13 +17,13 @@ module tb_memory_access_unit;
     import tb_config_pkg::*;
 
     // -----------------------------------------------------------------------
-    // Parameters — keep NUM_THREADS small so waveforms are readable
+    // Parameters — keep N_THREADS small so waveforms are readable
     // -----------------------------------------------------------------------
-    localparam int NUM_THREADS     = 4;
+    localparam int N_THREADS     = 4;
     localparam int DATA_WIDTH      = 32;
     localparam int ADDR_WIDTH      = 32;
-    localparam int LOG_N           = $clog2(NUM_THREADS);   // 2
-    localparam int MEM_DATA_WIDTH  = DATA_WIDTH * NUM_THREADS;
+    localparam int LOG_N           = $clog2(N_THREADS);   // 2
+    localparam int MEM_DATA_WIDTH  = DATA_WIDTH * N_THREADS;
     localparam int MEM_ADDR_WIDTH  = ADDR_WIDTH - LOG_N;
     localparam int MEM_LINES       = 64;
 
@@ -39,10 +39,10 @@ module tb_memory_access_unit;
     logic rst_n         = 0;
     logic start_i       = 0;
     logic store_i       = 0;
-    logic [NUM_THREADS-1:0][ADDR_WIDTH-1:0]  addr_i;
-    logic [NUM_THREADS-1:0]                   active_mask_i = '0;
-    logic [NUM_THREADS-1:0][DATA_WIDTH-1:0]  data_i;
-    logic [NUM_THREADS-1:0][DATA_WIDTH-1:0]  data_o;
+    logic [N_THREADS-1:0][ADDR_WIDTH-1:0]  addr_i;
+    logic [N_THREADS-1:0]                   active_mask_i = '0;
+    logic [N_THREADS-1:0][DATA_WIDTH-1:0]  data_i;
+    logic [N_THREADS-1:0][DATA_WIDTH-1:0]  data_o;
     logic                                     busy_o;
     logic [MEM_DATA_WIDTH-1:0]               mem_data_i;
     logic [MEM_DATA_WIDTH-1:0]               mem_data_o;
@@ -62,7 +62,7 @@ module tb_memory_access_unit;
     // DUT
     // -----------------------------------------------------------------------
     memory_access_unit #(
-        .NUM_THREADS(NUM_THREADS),
+        .N_THREADS(N_THREADS),
         .DATA_WIDTH (DATA_WIDTH),
         .ADDR_WIDTH (ADDR_WIDTH)
     ) dut (
@@ -111,9 +111,9 @@ module tb_memory_access_unit;
     task automatic run_access(
         input string                             tname,
         input logic                              store,
-        input logic [NUM_THREADS-1:0]            mask,
-        input logic [NUM_THREADS-1:0][ADDR_WIDTH-1:0] addrs,
-        input logic [NUM_THREADS-1:0][DATA_WIDTH-1:0] wdata
+        input logic [N_THREADS-1:0]            mask,
+        input logic [N_THREADS-1:0][ADDR_WIDTH-1:0] addrs,
+        input logic [N_THREADS-1:0][DATA_WIDTH-1:0] wdata
     );
         int start_cycle;
         start_cycle = cycle_count;
@@ -135,7 +135,7 @@ module tb_memory_access_unit;
             // These shouldn't change the result.
             store_i       = $urandom();
             active_mask_i = $urandom();
-            for (int i = 0; i < NUM_THREADS; i++) begin
+            for (int i = 0; i < N_THREADS; i++) begin
                 addr_i[i] = $urandom();
                 data_i[i] = $urandom();
             end
@@ -153,7 +153,7 @@ module tb_memory_access_unit;
     initial begin
         // Initialise memory: mem[line][word] = 32'h1000_0000 + line*16 + word
         for (int l = 0; l < MEM_LINES; l++)
-            for (int w = 0; w < NUM_THREADS; w++)
+            for (int w = 0; w < N_THREADS; w++)
                 mem[l][w * DATA_WIDTH +: DATA_WIDTH] = 32'h1000_0000 + l * 16 + w;
 
         // Reset
@@ -173,7 +173,7 @@ module tb_memory_access_unit;
             '{mkaddr(5,3), mkaddr(5,2), mkaddr(5,1), mkaddr(5,0)},
             '{default: '0});
 
-        for (int t = 0; t < NUM_THREADS; t++) begin
+        for (int t = 0; t < N_THREADS; t++) begin
             automatic logic [DATA_WIDTH-1:0] exp = mem_word(5, t);
             assert (data_o[t] === exp)
                 else $error("T1: data_o[%0d] = %0h, expected %0h", t, data_o[t], exp);

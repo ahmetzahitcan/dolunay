@@ -24,8 +24,8 @@ module proto_top
     // to generate rom_done and the mask that aligns with the instruction output.
     logic                    rom_done_w;
     logic                    rom_read_en_d1_r;
-    logic [NUM_THREADS-1:0]  active_mask_w;
-    logic [NUM_THREADS-1:0]  active_mask_d1_r;
+    logic [N_THREADS-1:0]  active_mask_w;
+    logic [N_THREADS-1:0]  active_mask_d1_r;
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin

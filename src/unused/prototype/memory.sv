@@ -16,22 +16,22 @@ module memory
 
     // From execute
     input  decoded_instr_s                   decoded_i,
-    input  logic [NUM_LANES-1:0][XLEN-1:0]  rs2_data_i,   // store data (rs2 per lane)
-    input  logic [NUM_LANES-1:0][XLEN-1:0]  result_i,      // effective addresses (ALU result)
-    input  logic [NUM_THREADS-1:0]           active_mask_i,
+    input  logic [N_LANES-1:0][XLEN-1:0]  rs2_data_i,   // store data (rs2 per lane)
+    input  logic [N_LANES-1:0][XLEN-1:0]  result_i,      // effective addresses (ALU result)
+    input  logic [N_THREADS-1:0]           active_mask_i,
 
     // Pass-through to writeback
     output decoded_instr_s                   decoded_o,
-    output logic [NUM_THREADS-1:0]           active_mask_o,
-    output logic [NUM_LANES-1:0][XLEN-1:0]  result_o
+    output logic [N_THREADS-1:0]           active_mask_o,
+    output logic [N_LANES-1:0][XLEN-1:0]  result_o
 );
 
     // =========================================================================
     // MAU / SRAM wire widths (mirror memory_access_unit localparams)
     // =========================================================================
-    localparam int MEM_DATA_WIDTH  = XLEN * NUM_THREADS;
-    localparam int LOG_NUM_THREADS = $clog2(NUM_THREADS);
-    localparam int MEM_ADDR_WIDTH  = 32 - LOG_NUM_THREADS - 2;
+    localparam int MEM_DATA_WIDTH  = XLEN * N_THREADS;
+    localparam int W_THREADS = $clog2(N_THREADS);
+    localparam int MEM_ADDR_WIDTH  = 32 - W_THREADS - 2;
 
     // =========================================================================
     // MAU ↔ SRAM wires
@@ -42,7 +42,7 @@ module memory
     logic                        mau_write_w;
     logic [MEM_ADDR_WIDTH-1:0]  mau_addr_w;
 
-    logic [NUM_THREADS-1:0][XLEN-1:0] mau_result_w;  // gathered load data
+    logic [N_THREADS-1:0][XLEN-1:0] mau_result_w;  // gathered load data
     logic                               mau_busy_w;
 
     // =========================================================================
@@ -74,12 +74,12 @@ module memory
 
     // Latch decoded/result once per transaction (first valid cycle)
     decoded_instr_s                  decoded_r;
-    logic [NUM_LANES-1:0][XLEN-1:0] result_r;
+    logic [N_LANES-1:0][XLEN-1:0] result_r;
     logic captured_r;
 
     assign decoded_o = decoded_r;
 
-    logic [NUM_THREADS-1:0] active_mask_r;
+    logic [N_THREADS-1:0] active_mask_r;
     assign active_mask_o = active_mask_r;
 
     always_ff @(posedge clk) begin
@@ -134,7 +134,7 @@ module memory
     // memory_access_unit instance
     // =========================================================================
     memory_access_unit #(
-        .NUM_THREADS (NUM_THREADS),
+        .N_THREADS (N_THREADS),
         .DATA_WIDTH  (XLEN),
         .ADDR_WIDTH  (32)
     ) u_mau (

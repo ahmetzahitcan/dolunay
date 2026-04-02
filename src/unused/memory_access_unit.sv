@@ -2,8 +2,8 @@ module memory_access_unit
     import params_pkg::*;
     import control_unit_pkg::*;
 #(
-    localparam int LOWADDR_WIDTH = LOG_NUM_THREADS + LOG_ADDR_ALIGN,
-    localparam int MEM_DATA_WIDTH = XLEN * NUM_THREADS,
+    localparam int LOWADDR_WIDTH = W_THREADS + Z_ADDR,
+    localparam int MEM_DATA_WIDTH = XLEN * N_THREADS,
     localparam int MEM_ADDR_WIDTH = ADDR_WIDTH - LOWADDR_WIDTH 
 ) (
     input logic clk,
@@ -12,10 +12,10 @@ module memory_access_unit
     input mem_loadstore_e loadstore_i,
     input mem_opsize_e opsize_i,
     input mem_extendmode_e extendmode_i,
-    input logic [NUM_THREADS-1:0][ADDR_WIDTH-1:0] addr_i,
-    input logic [NUM_THREADS-1:0] active_mask_i,
-    input logic [NUM_THREADS-1:0][XLEN-1:0] data_i,
-    output logic [NUM_THREADS-1:0][XLEN-1:0] data_o,
+    input logic [N_THREADS-1:0][ADDR_WIDTH-1:0] addr_i,
+    input logic [N_THREADS-1:0] active_mask_i,
+    input logic [N_THREADS-1:0][XLEN-1:0] data_i,
+    output logic [N_THREADS-1:0][XLEN-1:0] data_o,
     output logic busy_o,
 
     input logic [MEM_DATA_WIDTH-1:0] mem_data_i,
@@ -47,9 +47,9 @@ module memory_access_unit
     mem_loadstore_e loadstore_r;
     mem_opsize_e opsize_r;
     mem_extendmode_e extendmode_r;
-    logic [NUM_THREADS-1:0] active_mask_r;
-    logic [NUM_THREADS-1:0][ADDR_WIDTH-1:0] addr_r;
-    //logic [NUM_THREADS-1:0][XLEN-1:0] data_r; // Not needed, gather/scatter logic handles this
+    logic [N_THREADS-1:0] active_mask_r;
+    logic [N_THREADS-1:0][ADDR_WIDTH-1:0] addr_r;
+    //logic [N_THREADS-1:0][XLEN-1:0] data_r; // Not needed, gather/scatter logic handles this
     always_ff @(posedge clk) begin
         if (state_r == IDLE) begin
             loadstore_r   <= loadstore_i;
@@ -63,21 +63,21 @@ module memory_access_unit
 
     // Priority encoder input/output
 
-    logic [NUM_THREADS-1:0] u_pe_input_r;
-    logic [LOG_NUM_THREADS-1:0] u_pe_output_w;
+    logic [N_THREADS-1:0] u_pe_input_r;
+    logic [W_THREADS-1:0] u_pe_output_w;
 
     // Coalesce logic
 
-    logic [NUM_THREADS-1:0] coalesce_remaining_mask_r;
-    logic [LOG_NUM_THREADS-1:0] coalesce_leader_index_w;
+    logic [N_THREADS-1:0] coalesce_remaining_mask_r;
+    logic [W_THREADS-1:0] coalesce_leader_index_w;
     assign coalesce_leader_index_w = u_pe_output_w;
 
     logic [MEM_ADDR_WIDTH-1:0] coalesce_base_addr_w;
     assign coalesce_base_addr_w = addr_r[coalesce_leader_index_w][ADDR_WIDTH-1:LOWADDR_WIDTH];
 
-    logic [NUM_THREADS-1:0] coalesce_mask_w;
+    logic [N_THREADS-1:0] coalesce_mask_w;
     always_comb begin
-        for (int i = 0; i < NUM_THREADS; i++) begin
+        for (int i = 0; i < N_THREADS; i++) begin
             coalesce_mask_w[i] = (addr_r[i][ADDR_WIDTH-1:LOWADDR_WIDTH] == coalesce_base_addr_w) && active_mask_r[i];
         end
     end
@@ -97,18 +97,18 @@ module memory_access_unit
 
     // Gather/scatter logic
 
-    logic [NUM_THREADS-1:0] gather_scatter_remaining_mask_r;
-    logic [LOG_NUM_THREADS-1:0] gather_scatter_working_index_w;
+    logic [N_THREADS-1:0] gather_scatter_remaining_mask_r;
+    logic [W_THREADS-1:0] gather_scatter_working_index_w;
     assign gather_scatter_working_index_w = u_pe_output_w;
 
     logic gather_scatter_final_w;
     assign gather_scatter_final_w = $onehot(gather_scatter_remaining_mask_r);
 
-    logic [NUM_THREADS-1:0][XLEN-1:0] data_r;
-    logic [NUM_THREADS-1:0][XLEN-1:0] mem_data_r;
+    logic [N_THREADS-1:0][XLEN-1:0] data_r;
+    logic [N_THREADS-1:0][XLEN-1:0] mem_data_r;
 
-    logic [LOWADDR_WIDTH-1:LOG_ADDR_ALIGN] gather_scatter_thread_lowaddr_w;
-    assign gather_scatter_thread_lowaddr_w = addr_r[gather_scatter_working_index_w][LOWADDR_WIDTH-1:LOG_ADDR_ALIGN];
+    logic [LOWADDR_WIDTH-1:Z_ADDR] gather_scatter_thread_lowaddr_w;
+    assign gather_scatter_thread_lowaddr_w = addr_r[gather_scatter_working_index_w][LOWADDR_WIDTH-1:Z_ADDR];
 
     logic gather_scatter_half_offset;
     assign gather_scatter_half_offset = addr_r[gather_scatter_working_index_w][1];
@@ -216,7 +216,7 @@ module memory_access_unit
     end
 
     priority_encoder #(
-        .WIDTH(NUM_THREADS)
+        .WIDTH(N_THREADS)
     ) u_pe (
         .input_i(u_pe_input_r),
         .index_o(u_pe_output_w)
@@ -225,8 +225,8 @@ module memory_access_unit
 
     // Iteration logic
 
-    logic [NUM_THREADS-1:0] next_coalesce_remaining_mask_w;
-    logic [NUM_THREADS-1:0] next_gather_scatter_remaining_mask_w;
+    logic [N_THREADS-1:0] next_coalesce_remaining_mask_w;
+    logic [N_THREADS-1:0] next_gather_scatter_remaining_mask_w;
 
     always_comb begin
         next_coalesce_remaining_mask_w = coalesce_remaining_mask_r;

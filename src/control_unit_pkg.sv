@@ -78,10 +78,10 @@ package control_unit_pkg;
 
 	typedef struct packed {
 		logic [XLEN-1:0] imm;
-		logic [LOG_NUM_REGISTERS-1:0] rd_idx;
-		logic [LOG_NUM_REGISTERS-1:0] rs1_idx;
-		logic [LOG_NUM_REGISTERS-1:0] rs2_idx;
-		logic [LOG_NUM_BARRIERS-1:0] barr_idx;
+		logic [W_REGISTERS-1:0] rd_idx;
+		logic [W_REGISTERS-1:0] rs1_idx;
+		logic [W_REGISTERS-1:0] rs2_idx;
+		logic [W_BARRIERS-1:0] barr_idx;
 		alu_funct_e alu_funct;
 		alu_op1_sel_e alu_op1_sel;
 		alu_op2_sel_e alu_op2_sel;

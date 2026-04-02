@@ -6,7 +6,7 @@
 module fetch
     import proto_pkg::*;
 #(
-    parameter int NUM_THREADS = proto_pkg::NUM_THREADS,
+    parameter int N_THREADS = proto_pkg::N_THREADS,
     parameter int PC_WIDTH    = proto_pkg::PC_WIDTH
 ) (
     input  wire logic clk,
@@ -18,7 +18,7 @@ module fetch
 
     // Branch feedback from execute
     input  wire logic                branch_taken_i,
-    input  wire logic [NUM_THREADS-1:0] branch_mask_i,
+    input  wire logic [N_THREADS-1:0] branch_mask_i,
     input  wire logic [PC_WIDTH-1:0] branch_target_i,
     input  wire logic                yield_i,
     input  wire logic                binit_i,
@@ -26,7 +26,7 @@ module fetch
 
     // Output to instruction memory
     output logic [PC_WIDTH-1:0] pc_o,
-    output logic [NUM_THREADS-1:0] active_mask_o
+    output logic [N_THREADS-1:0] active_mask_o
 );
 
     // =========================================================================
@@ -102,9 +102,9 @@ module fetch
     //  Thread Scheduler Instance
     // =========================================================================
     thread_scheduler #(
-        .NUM_THREADS  (NUM_THREADS),
+        .N_THREADS  (N_THREADS),
         .PC_WIDTH     (PC_WIDTH),
-        .NUM_BARRIERS (8) // Default
+        .N_BARRIERS (8) // Default
     ) u_scheduler (
         .clk           (clk),
         .rst_n         (rst_n),

@@ -223,10 +223,10 @@ def emit_sv_module(data, output_file, module_name, package_name):
         f.write("        .imm_o(instr_o.imm)\n")
         f.write("    );\n\n")
         f.write("    always_comb begin\n")
-        f.write("        instr_o.rd_idx = undec_instr32_i[LOG_NUM_REGISTERS+6:7];\n")
-        f.write("        instr_o.rs1_idx = undec_instr32_i[LOG_NUM_REGISTERS+14:15];\n")
-        f.write("        instr_o.rs2_idx = undec_instr32_i[LOG_NUM_REGISTERS+19:20];\n")
-        f.write("        instr_o.barr_idx = undec_instr32_i[LOG_NUM_BARRIERS+11:12];\n\n")
+        f.write("        instr_o.rd_idx = undec_instr32_i[W_REGISTERS+6:7];\n")
+        f.write("        instr_o.rs1_idx = undec_instr32_i[W_REGISTERS+14:15];\n")
+        f.write("        instr_o.rs2_idx = undec_instr32_i[W_REGISTERS+19:20];\n")
+        f.write("        instr_o.barr_idx = undec_instr32_i[W_BARRIERS+11:12];\n\n")
         f.write("        case (undec_instr32_i) inside\n")
 
         for row in instructions:
@@ -289,10 +289,10 @@ def emit_sv_package(data, output_file, package_name):
 
         f.write("\ttypedef struct packed {\n")
         f.write("\t\tlogic [XLEN-1:0] imm;\n")
-        f.write("\t\tlogic [LOG_NUM_REGISTERS-1:0] rd_idx;\n")
-        f.write("\t\tlogic [LOG_NUM_REGISTERS-1:0] rs1_idx;\n")
-        f.write("\t\tlogic [LOG_NUM_REGISTERS-1:0] rs2_idx;\n")
-        f.write("\t\tlogic [LOG_NUM_BARRIERS-1:0] barr_idx;\n")
+        f.write("\t\tlogic [W_REGISTERS-1:0] rd_idx;\n")
+        f.write("\t\tlogic [W_REGISTERS-1:0] rs1_idx;\n")
+        f.write("\t\tlogic [W_REGISTERS-1:0] rs2_idx;\n")
+        f.write("\t\tlogic [W_BARRIERS-1:0] barr_idx;\n")
         for _, sig, rng in control_signals:
             if sig == 'imm_type':
                 continue

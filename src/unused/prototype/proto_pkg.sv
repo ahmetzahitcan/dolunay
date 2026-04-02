@@ -6,11 +6,11 @@ import control_unit_pkg::*;
     // Core parameters
     // -------------------------------------------------------------------------
     parameter int XLEN          = 32;
-    parameter int NUM_REGS      = 3;    // small for prototyping
-    parameter int NUM_LANES     = 8;    // SIMD width
-    parameter int NUM_THREADS   = 8;    // thread scheduler paths
+    parameter int N_REGS      = 3;    // small for prototyping
+    parameter int N_LANES     = 8;    // SIMD width
+    parameter int N_THREADS   = 8;    // thread scheduler paths
     parameter int PC_WIDTH      = 30;
-    parameter int REG_ADDR_WIDTH = $clog2(NUM_REGS);
+    parameter int REG_ADDR_WIDTH = $clog2(N_REGS);
 
     // -------------------------------------------------------------------------
     // Decoded instruction

@@ -15,19 +15,19 @@ module decode
 
     // Raw instruction from ROM
     input  wire logic [31:0]    instr_i,
-    input  wire logic [NUM_THREADS-1:0] active_mask_i,
+    input  wire logic [N_THREADS-1:0] active_mask_i,
 
     // Register file read interface
     output logic [REG_ADDR_WIDTH-1:0] rs1_addr_o,
     output logic [REG_ADDR_WIDTH-1:0] rs2_addr_o,
-    input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_i,
-    input  wire logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_i,
+    input  wire logic [N_LANES-1:0][XLEN-1:0] rs1_data_i,
+    input  wire logic [N_LANES-1:0][XLEN-1:0] rs2_data_i,
 
     // Decoded outputs
     output decoded_instr_s              decoded_o,
-    output logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_o,
-    output logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_o,
-    output logic [NUM_THREADS-1:0]      active_mask_o,
+    output logic [N_LANES-1:0][XLEN-1:0] rs1_data_o,
+    output logic [N_LANES-1:0][XLEN-1:0] rs2_data_o,
+    output logic [N_THREADS-1:0]      active_mask_o,
 
     // PC
     input  wire [PC_WIDTH-1:0] pc_i,
@@ -66,9 +66,9 @@ module decode
     // Registered outputs
     // -------------------------------------------------------------------------
     decoded_instr_s decoded_r;
-    logic [NUM_LANES-1:0][XLEN-1:0] rs1_data_r;
-    logic [NUM_LANES-1:0][XLEN-1:0] rs2_data_r;
-    logic [NUM_THREADS-1:0] active_mask_r;
+    logic [N_LANES-1:0][XLEN-1:0] rs1_data_r;
+    logic [N_LANES-1:0][XLEN-1:0] rs2_data_r;
+    logic [N_THREADS-1:0] active_mask_r;
     logic [PC_WIDTH-1:0] pc_r;
     logic done_r;
 

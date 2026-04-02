@@ -4,10 +4,10 @@
 module tb_thread_scheduler;
 
     // Parameters
-    localparam int NUM_THREADS = 32;
+    localparam int N_THREADS = 32;
     localparam int PC_WIDTH = 30;
-    localparam int NUM_BARRIERS = 8;
-    localparam int LOG_NUM_BARRIERS = $clog2(NUM_BARRIERS);
+    localparam int N_BARRIERS = 8;
+    localparam int W_BARRIERS = $clog2(N_BARRIERS);
 
     // Signals
     logic clk;
@@ -17,19 +17,19 @@ module tb_thread_scheduler;
     logic yield_i;
     logic binit_i;
     logic bwait_i;
-    logic [LOG_NUM_BARRIERS-1:0] bsel_i;
+    logic [W_BARRIERS-1:0] bsel_i;
     logic branch_i;
     logic [PC_WIDTH-1:0] pc_branch_i;
-    logic [NUM_THREADS-1:0] mask_branch_i;
+    logic [N_THREADS-1:0] mask_branch_i;
 
     logic [PC_WIDTH-1:0] pc_o;
-    logic [NUM_THREADS-1:0] mask_o;
+    logic [N_THREADS-1:0] mask_o;
 
     // DUT instantiation
     thread_scheduler #(
-        .NUM_THREADS(NUM_THREADS),
+        .N_THREADS(N_THREADS),
         .PC_WIDTH(PC_WIDTH),
-        .NUM_BARRIERS(NUM_BARRIERS)
+        .N_BARRIERS(N_BARRIERS)
     ) dut (
         .clk(clk),
         .rst_n(rst_n),
