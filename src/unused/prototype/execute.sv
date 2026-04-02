@@ -42,9 +42,8 @@ module execute
     logic [N_LANES-1:0][XLEN-1:0] alu_result_w;
     logic [N_LANES-1:0]           lane_cond_w;
 
-    genvar g;
     generate
-        for (g = 0; g < N_LANES; g++) begin : alu_lane
+        for (genvar g = 0; g < N_LANES; g++) begin : alu_lane
             alu #(
                 .DATA_WIDTH(XLEN),
                 .THREAD_ID(g)

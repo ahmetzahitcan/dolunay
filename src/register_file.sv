@@ -34,9 +34,8 @@ module register_file
     logic [N_THREADS-1:0][XLEN-1:0] rs1_data_r;
     logic [N_THREADS-1:0][XLEN-1:0] rs2_data_r;
 
-    genvar T;
     generate
-        for (T = 0; T < N_THREADS; T++) begin
+        for (genvar T = 0; T < N_THREADS; T++) begin
             (* ram_style = "block" *)    
             logic [XLEN-1:0] regs_r [0:(N_WARPS * N_REGISTERS) - 1];
             

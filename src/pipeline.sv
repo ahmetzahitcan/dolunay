@@ -8,8 +8,6 @@ module pipeline
     input wire rst_n
 );
 
-    genvar I;
-
     // Stage valid registers -- indicating whether other pipeline registers are valid
     logic ws_stage_valid_r;
     logic if_stage_valid_r;
@@ -90,7 +88,7 @@ module pipeline
 
     // - Thread Schedulers
     generate
-        for (I = 0; I < N_WARPS; I++) begin
+        for (genvar I = 0; I < N_WARPS; I++) begin
             logic en_w;
             assign en_w = idex_warp_id_r == I & ex_stage_valid_r;
 
@@ -184,7 +182,7 @@ module pipeline
     logic [N_THREADS-1:0] ex_branch_cond_w;
 
     generate
-        for (I = 0; I < N_THREADS; I++) begin
+        for (genvar I = 0; I < N_THREADS; I++) begin
             (* DONT_TOUCH = "true" *)
             alu #(
                 .THREAD_ID(I)
@@ -215,7 +213,7 @@ module pipeline
     assign leader_target_w = ex_alu_result_w[leader_id_w][XLEN-1:Z_PC];
 
     generate
-        for(I = 0; I < N_THREADS; I++) begin
+        for(genvar I = 0; I < N_THREADS; I++) begin
             assign coalesced_w[I] = ex_alu_result_w[I][XLEN-1:Z_PC] == leader_target_w;
         end
     endgenerate
@@ -239,7 +237,7 @@ module pipeline
     // Writeback
 
     logic [XLEN-1:0] wb_pc_p4_w;
-    assign wb_pc_p4_w ={exwb_pc_r + 1'b1, 2'b00};
+    assign wb_pc_p4_w = {exwb_pc_r + 1'b1, 2'b00};
 
     assign wb_write_en_mask_w = exwb_instr_r.wb_active ? exwb_mask_r : '0;
     
