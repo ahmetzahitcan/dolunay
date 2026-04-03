@@ -8,8 +8,8 @@ module proto_top
 #(
     parameter int ROM_DEPTH = 256
 ) (
-    input wire logic clk,
-    input wire logic rst_n
+    input wire wire logic clk,
+    input wire wire logic rst_n
 );
 
     // =========================================================================

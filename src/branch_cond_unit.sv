@@ -4,9 +4,9 @@ module branch_cond_unit
     import params_pkg::*;
     import control_unit_pkg::*;
 (
-    input logic [N_THREADS-1:0] alu_result_i,
-    input logic jalr_coalesced_i,
-    input branch_cond_e branch_cond_i,
+    input wire logic [N_THREADS-1:0] alu_result_i,
+    input wire logic jalr_coalesced_i,
+    input wire branch_cond_e branch_cond_i,
     output logic [N_THREADS-1:0] branch_flag_o
 );
 

@@ -6,11 +6,11 @@ module alu
 #(
     parameter int THREAD_ID = 0
 ) (
-    input logic [XLEN-1:0] rs1_val_i,
-    input logic [XLEN-1:0] rs2_val_i,
-    input instr_s instr_i,
-    input logic [W_WARPS-1:0] warp_id_i,
-    input logic [XLEN-1:Z_PC] pc_i,
+    input wire logic [XLEN-1:0] rs1_val_i,
+    input wire logic [XLEN-1:0] rs2_val_i,
+    input wire instr_s instr_i,
+    input wire logic [W_WARPS-1:0] warp_id_i,
+    input wire logic [XLEN-1:Z_PC] pc_i,
     output logic [XLEN-1:0] result_o
 );
 

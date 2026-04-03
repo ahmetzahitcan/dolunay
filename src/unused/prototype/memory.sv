@@ -7,18 +7,18 @@ module memory
     import proto_pkg::*;
     import control_unit_pkg::*;
 (
-    input  logic clk,
-    input  logic rst_n,
+    input wire  logic clk,
+    input wire  logic rst_n,
 
     // Pipeline handshake
-    input  logic           valid_i,
+    input wire  logic           valid_i,
     output logic           done_o,
 
     // From execute
-    input  decoded_instr_s                   decoded_i,
-    input  logic [N_LANES-1:0][XLEN-1:0]  rs2_data_i,   // store data (rs2 per lane)
-    input  logic [N_LANES-1:0][XLEN-1:0]  result_i,      // effective addresses (ALU result)
-    input  logic [N_THREADS-1:0]           active_mask_i,
+    input wire  decoded_instr_s                   decoded_i,
+    input wire  logic [N_LANES-1:0][XLEN-1:0]  rs2_data_i,   // store data (rs2 per lane)
+    input wire  logic [N_LANES-1:0][XLEN-1:0]  result_i,      // effective addresses (ALU result)
+    input wire  logic [N_THREADS-1:0]           active_mask_i,
 
     // Pass-through to writeback
     output decoded_instr_s                   decoded_o,
@@ -99,7 +99,7 @@ module memory
                 mau_done_r   <= 1'b0;
             end
 
-            // Latch inputs once on the first cycle valid_i asserts
+            // Latch input wires once on the first cycle valid_i asserts
             if (valid_i && !captured_r) begin
                 decoded_r  <= decoded_i;
                 result_r   <= result_i;

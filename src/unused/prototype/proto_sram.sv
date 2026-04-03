@@ -15,13 +15,13 @@ module proto_sram
     localparam int MEM_ADDR_WIDTH  = 32 - W_THREADS - 2,
     localparam int ADDR_BITS       = $clog2(DEPTH)
 ) (
-    input  logic clk,
+    input wire  logic clk,
 
-    input  logic [MEM_DATA_WIDTH-1:0] mem_data_i,   // write data
+    input wire  logic [MEM_DATA_WIDTH-1:0] mem_data_i,   // write data
     output logic [MEM_DATA_WIDTH-1:0] mem_data_o,   // read data (registered)
-    input  logic                       mem_en_i,
-    input  logic                       mem_write_i,
-    input  logic [MEM_ADDR_WIDTH-1:0] mem_addr_i
+    input wire  logic                       mem_en_i,
+    input wire  logic                       mem_write_i,
+    input wire  logic [MEM_ADDR_WIDTH-1:0] mem_addr_i
 );
 
     logic [MEM_DATA_WIDTH-1:0] mem_r [0:DEPTH-1];

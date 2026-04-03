@@ -3,8 +3,8 @@
 module wram_bank_manager 
     import params_pkg::*;
 (
-    input logic [N_THREADS-1:0] active_mask_i,
-    input logic [N_THREADS-1:0][W_WRAM_ADDR-1:Z_ADDR] p_addr_i,
+    input wire logic [N_THREADS-1:0] active_mask_i,
+    input wire logic [N_THREADS-1:0][W_WRAM_ADDR-1:Z_ADDR] p_addr_i,
     output logic [N_THREADS-1:0] valid_mask_o,
 
     output logic [N_WRAM_BANKS-1:0][W_WRAM_BANK_ADDR-1:Z_ADDR] m_addr_o,

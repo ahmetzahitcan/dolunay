@@ -4,16 +4,16 @@
 // `default_nettype none
 
 module pipeline_controller (
-    input  logic clk,
-    input  logic rst_n,
+    input wire  logic clk,
+    input wire  logic rst_n,
 
     // Done signals from each stage
-    input  logic fetch_done_i,
-    input  logic rom_done_i,
-    input  logic decode_done_i,
-    input  logic execute_done_i,
-    input  logic memory_done_i,
-    input  logic writeback_done_i,
+    input wire  logic fetch_done_i,
+    input wire  logic rom_done_i,
+    input wire  logic decode_done_i,
+    input wire  logic execute_done_i,
+    input wire  logic memory_done_i,
+    input wire  logic writeback_done_i,
 
     // Valid signals to each stage
     output logic fetch_valid_o,

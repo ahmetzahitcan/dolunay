@@ -6,20 +6,20 @@
 module regfile
     import proto_pkg::*;
 (
-    input  logic clk,
+    input wire  logic clk,
 
     // Read port 1
-    input  logic [REG_ADDR_WIDTH-1:0]       rs1_addr_i,
+    input wire  logic [REG_ADDR_WIDTH-1:0]       rs1_addr_i,
     output logic [N_LANES-1:0][XLEN-1:0]  rs1_data_o,
 
     // Read port 2
-    input  logic [REG_ADDR_WIDTH-1:0]       rs2_addr_i,
+    input wire  logic [REG_ADDR_WIDTH-1:0]       rs2_addr_i,
     output logic [N_LANES-1:0][XLEN-1:0]  rs2_data_o,
 
     // Write port
-    input  logic [N_THREADS-1:0]          write_en_i,
-    input  logic [REG_ADDR_WIDTH-1:0]        write_addr_i,
-    input  logic [N_LANES-1:0][XLEN-1:0]   write_data_i
+    input wire  logic [N_THREADS-1:0]          write_en_i,
+    input wire  logic [REG_ADDR_WIDTH-1:0]        write_addr_i,
+    input wire  logic [N_LANES-1:0][XLEN-1:0]   write_data_i
 );
 
     // -------------------------------------------------------------------------

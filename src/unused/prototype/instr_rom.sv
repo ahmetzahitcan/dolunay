@@ -8,10 +8,10 @@ module instr_rom #(
     parameter int DATA_WIDTH = 32,
     parameter int DEPTH      = 256
 ) (
-    input  logic clk,
+    input wire  logic clk,
 
-    input  logic                    read_en_i,
-    input  logic [ADDR_WIDTH-1:0]   addr_i,
+    input wire  logic                    read_en_i,
+    input wire  logic [ADDR_WIDTH-1:0]   addr_i,
     output logic [DATA_WIDTH-1:0]   instr_o
 );
     // -------------------------------------------------------------------------

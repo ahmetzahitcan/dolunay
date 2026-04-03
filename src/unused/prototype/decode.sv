@@ -6,22 +6,22 @@
 module decode
     import proto_pkg::*;
 (
-    input  wire logic clk,
-    input  wire logic rst_n,
+    input wire  wire logic clk,
+    input wire  wire logic rst_n,
 
     // Pipeline handshake
-    input  wire logic           valid_i,
+    input wire  wire logic           valid_i,
     output logic           done_o,
 
     // Raw instruction from ROM
-    input  wire logic [31:0]    instr_i,
-    input  wire logic [N_THREADS-1:0] active_mask_i,
+    input wire  wire logic [31:0]    instr_i,
+    input wire  wire logic [N_THREADS-1:0] active_mask_i,
 
     // Register file read interface
     output logic [REG_ADDR_WIDTH-1:0] rs1_addr_o,
     output logic [REG_ADDR_WIDTH-1:0] rs2_addr_o,
-    input  wire logic [N_LANES-1:0][XLEN-1:0] rs1_data_i,
-    input  wire logic [N_LANES-1:0][XLEN-1:0] rs2_data_i,
+    input wire  wire logic [N_LANES-1:0][XLEN-1:0] rs1_data_i,
+    input wire  wire logic [N_LANES-1:0][XLEN-1:0] rs2_data_i,
 
     // Decoded outputs
     output decoded_instr_s              decoded_o,
@@ -30,7 +30,7 @@ module decode
     output logic [N_THREADS-1:0]      active_mask_o,
 
     // PC
-    input  wire [PC_WIDTH-1:0] pc_i,
+    input wire  wire [PC_WIDTH-1:0] pc_i,
     output logic [PC_WIDTH-1:0] pc_o
 );
 

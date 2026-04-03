@@ -10,7 +10,7 @@
 //   rst_n        : asynchronous active-low reset
 //   start_i      : pulse high for one cycle to begin a new shuffle operation;
 //                  latches data_i and mask_i on that same rising edge.
-//   data_i       : input  array to shuffle
+//   data_i       : input wire  array to shuffle
 //   mask_i       : arbitrary M-bit shuffle mask.  A mask with K ones takes
 //                  exactly K clock cycles to complete.
 //   data_o       : shuffled output array; valid whenever done_o=1.
@@ -37,11 +37,11 @@ module shuffle_any #(
     parameter int M = 8,
     parameter int N = 8
 ) (
-    input  logic                 clk,
-    input  logic                 rst_n,
-    input  logic                 start_i,
-    input  logic [M-1:0][N-1:0] data_i,
-    input  logic [M-1:0]        mask_i,
+    input wire  logic                 clk,
+    input wire  logic                 rst_n,
+    input wire  logic                 start_i,
+    input wire  logic [M-1:0][N-1:0] data_i,
+    input wire  logic [M-1:0]        mask_i,
     output logic [M-1:0][N-1:0] data_o,
     output logic                 done_o
 );

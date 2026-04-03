@@ -4,8 +4,8 @@ module pipeline
     import params_pkg::*;
     import control_unit_pkg::*;
 (
-    input wire clk,
-    input wire rst_n
+    input wire logic clk,
+    input wire logic rst_n
 );
 
     // Stage valid registers -- indicating whether other pipeline registers are valid

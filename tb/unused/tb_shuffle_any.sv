@@ -47,8 +47,8 @@ module tb_shuffle_any;
     // Helper: compute expected result of chained one-hot XOR shuffles
     // -----------------------------------------------------------------------
     function automatic logic [M-1:0][N-1:0] expected_result(
-        input logic [M-1:0][N-1:0] din,
-        input logic [M-1:0]        msk
+        input wire logic [M-1:0][N-1:0] din,
+        input wire logic [M-1:0]        msk
     );
         automatic logic [M-1:0][N-1:0] tmp = din;
         automatic logic [M-1:0]        rem = msk;
@@ -71,9 +71,9 @@ module tb_shuffle_any;
     // Task: run one shuffle transaction and verify
     // -----------------------------------------------------------------------
     task automatic run_shuffle(
-        input string          test_name,
-        input logic [M-1:0][N-1:0] din,
-        input logic [M-1:0]        msk
+        input wire string          test_name,
+        input wire logic [M-1:0][N-1:0] din,
+        input wire logic [M-1:0]        msk
     );
         automatic int popcount = $countones(msk);
         automatic logic [M-1:0][N-1:0] exp;

@@ -6,19 +6,19 @@ module memory_access_unit
     localparam int MEM_DATA_WIDTH = XLEN * N_THREADS,
     localparam int MEM_ADDR_WIDTH = ADDR_WIDTH - LOWADDR_WIDTH 
 ) (
-    input logic clk,
-    input logic rst_n,
-    input logic start_i,
-    input mem_loadstore_e loadstore_i,
-    input mem_opsize_e opsize_i,
-    input mem_extendmode_e extendmode_i,
-    input logic [N_THREADS-1:0][ADDR_WIDTH-1:0] addr_i,
-    input logic [N_THREADS-1:0] active_mask_i,
-    input logic [N_THREADS-1:0][XLEN-1:0] data_i,
+    input wire logic clk,
+    input wire logic rst_n,
+    input wire logic start_i,
+    input wire mem_loadstore_e loadstore_i,
+    input wire mem_opsize_e opsize_i,
+    input wire mem_extendmode_e extendmode_i,
+    input wire logic [N_THREADS-1:0][ADDR_WIDTH-1:0] addr_i,
+    input wire logic [N_THREADS-1:0] active_mask_i,
+    input wire logic [N_THREADS-1:0][XLEN-1:0] data_i,
     output logic [N_THREADS-1:0][XLEN-1:0] data_o,
     output logic busy_o,
 
-    input logic [MEM_DATA_WIDTH-1:0] mem_data_i,
+    input wire logic [MEM_DATA_WIDTH-1:0] mem_data_i,
     output logic [MEM_DATA_WIDTH-1:0] mem_data_o,
     output logic mem_en_o,
     output logic mem_write_o,
@@ -42,7 +42,7 @@ module memory_access_unit
 
     assign busy_o = (state_r != IDLE);
 
-    // Preserve inputs
+    // Preserve input wires
 
     mem_loadstore_e loadstore_r;
     mem_opsize_e opsize_r;
@@ -61,7 +61,7 @@ module memory_access_unit
         end
     end
 
-    // Priority encoder input/output
+    // Priority encoder input wire/output
 
     logic [N_THREADS-1:0] u_pe_input_r;
     logic [W_THREADS-1:0] u_pe_output_w;

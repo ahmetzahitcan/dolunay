@@ -4,8 +4,8 @@ module immediate_decoder
     import params_pkg::*;
     import control_unit_pkg::*;
 (
-    input wire [31:2] undec_instr32_i,
-    input imm_type_e imm_type_i,
+    input wire logic [31:2] undec_instr32_i,
+    input wire imm_type_e imm_type_i,
     output logic [XLEN-1:0] imm_o
 );
 

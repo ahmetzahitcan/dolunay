@@ -7,19 +7,19 @@ module execute
     import proto_pkg::*;
     import control_unit_pkg::*;
 (
-    input  wire logic clk,
-    input  wire logic rst_n,
+    input wire  wire logic clk,
+    input wire  wire logic rst_n,
 
     // Pipeline handshake
-    input  wire logic           valid_i,
+    input wire  wire logic           valid_i,
     output logic           done_o,
 
     // Decoded instruction + operands from decode
-    input  decoded_instr_s              decoded_i,
-    input  wire logic [N_LANES-1:0][XLEN-1:0] rs1_data_i,
-    input  wire logic [N_LANES-1:0][XLEN-1:0] rs2_data_i,
-    input  wire logic [PC_WIDTH-1:0] pc_i,
-    input  wire logic [N_THREADS-1:0]      active_mask_i,
+    input wire  decoded_instr_s              decoded_i,
+    input wire  wire logic [N_LANES-1:0][XLEN-1:0] rs1_data_i,
+    input wire  wire logic [N_LANES-1:0][XLEN-1:0] rs2_data_i,
+    input wire  wire logic [PC_WIDTH-1:0] pc_i,
+    input wire  wire logic [N_THREADS-1:0]      active_mask_i,
 
     // ALU result
     output logic [N_LANES-1:0][XLEN-1:0] result_o,

@@ -7,7 +7,7 @@
 //   N : element width in bits.
 //
 // Ports
-//   data_i  [M-1:0][N-1:0] : input  array
+//   data_i  [M-1:0][N-1:0] : input wire  array
 //   mask_i  [M-1:0]         : one-hot shuffle mask  (undefined behaviour if
 //                              not one-hot)
 //   data_o  [M-1:0][N-1:0] : output array
@@ -20,8 +20,8 @@ module shuffle_one_hot #(
     parameter int M = 8,
     parameter int N = 8
 ) (
-    input  logic [M-1:0][N-1:0] data_i,
-    input  logic [M-1:0]        mask_i,
+    input wire  logic [M-1:0][N-1:0] data_i,
+    input wire  logic [M-1:0]        mask_i,
     output logic [M-1:0][N-1:0] data_o
 );
     // Assertion that mask_i is one-hot or zero

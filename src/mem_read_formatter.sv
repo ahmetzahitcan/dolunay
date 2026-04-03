@@ -2,10 +2,10 @@ module mem_read_formatter
     import params_pkg::*;
     import control_unit_pkg::*;
 (
-    input  mem_opsize_e opsize_i,
-    input  mem_signextend_e signextend_i,
-    input  logic [XLEN-1:0] m_data_i,
-    input  logic [Z_ADDR-1:0] alignment_i,
+    input wire  mem_opsize_e opsize_i,
+    input wire  mem_signextend_e signextend_i,
+    input wire  logic [XLEN-1:0] m_data_i,
+    input wire  logic [Z_ADDR-1:0] alignment_i,
     output logic [XLEN-1:0] p_data_o
 )
 

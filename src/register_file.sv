@@ -6,23 +6,23 @@
 module register_file
     import params_pkg::*;
 (
-    input logic clk,
+    input wire logic clk,
 
-    input logic [W_WARPS-1:0] read_warp_id_i,
-    input logic [W_WARPS-1:0] write_warp_id_i,
+    input wire logic [W_WARPS-1:0] read_warp_id_i,
+    input wire logic [W_WARPS-1:0] write_warp_id_i,
 
     // Read port 1
-    input  logic [W_REGISTERS-1:0]       rs1_idx_i,
+    input wire  logic [W_REGISTERS-1:0]       rs1_idx_i,
     output logic [N_THREADS-1:0][XLEN-1:0]  rs1_data_o,
 
     // Read port 2
-    input  logic [W_REGISTERS-1:0]       rs2_idx_i,
+    input wire  logic [W_REGISTERS-1:0]       rs2_idx_i,
     output logic [N_THREADS-1:0][XLEN-1:0]  rs2_data_o,
 
     // Write port
-    input  logic [N_THREADS-1:0]          write_en_mask_i,
-    input  logic [W_REGISTERS-1:0]        rd_idx_i,
-    input  logic [N_THREADS-1:0][XLEN-1:0]   write_data_i
+    input wire  logic [N_THREADS-1:0]          write_en_mask_i,
+    input wire  logic [W_REGISTERS-1:0]        rd_idx_i,
+    input wire  logic [N_THREADS-1:0][XLEN-1:0]   write_data_i
 );
 
     `ifndef SYNTHESIS

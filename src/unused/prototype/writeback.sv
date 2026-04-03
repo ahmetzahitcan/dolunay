@@ -7,22 +7,22 @@ module writeback
     import proto_pkg::*;
     import control_unit_pkg::*;
 (
-    input  logic clk,
-    input  logic rst_n,
+    input wire  logic clk,
+    input wire  logic rst_n,
 
     // Pipeline handshake
-    input  logic           valid_i,
+    input wire  logic           valid_i,
     output logic           done_o,
 
     // From execute
-    input  decoded_instr_s              decoded_i,
-    input  logic [N_LANES-1:0][XLEN-1:0] result_i,
+    input wire  decoded_instr_s              decoded_i,
+    input wire  logic [N_LANES-1:0][XLEN-1:0] result_i,
 
     // From memory
-    input  logic [N_LANES-1:0][XLEN-1:0] mem_out_i,
+    input wire  logic [N_LANES-1:0][XLEN-1:0] mem_out_i,
 
     // Active mask
-    input  logic [N_THREADS-1:0] active_mask_i,
+    input wire  logic [N_THREADS-1:0] active_mask_i,
 
     // Register file write interface
     output logic [N_THREADS-1:0] reg_write_en_o,

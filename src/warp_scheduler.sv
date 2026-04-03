@@ -3,10 +3,10 @@
 module warp_scheduler 
     import params_pkg::*;
 (
-    input logic clk,
-    input logic rst_n,
-    input logic skip_i,
-    input logic [W_WARPS-1:0] skip_warp_id_i,
+    input wire logic clk,
+    input wire logic rst_n,
+    input wire logic skip_i,
+    input wire logic [W_WARPS-1:0] skip_warp_id_i,
     output logic [W_WARPS-1:0] warp_id_o
 );
 

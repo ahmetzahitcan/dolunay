@@ -3,17 +3,17 @@
 module thread_scheduler 
     import params_pkg::*;
 (
-    input logic clk,
-    input logic rst_n,
+    input wire logic clk,
+    input wire logic rst_n,
 
-    input logic inc_pc_i,
-    input logic yield_i,
-    input logic binit_i,
-    input logic bwait_i,
-    input logic [W_BARRIERS-1:0] barr_idx_i,
-    input logic branch_i,
-    input logic [XLEN-1:Z_PC] pc_branch_i,
-    input logic [N_THREADS-1:0] mask_branch_i,
+    input wire logic inc_pc_i,
+    input wire logic yield_i,
+    input wire logic binit_i,
+    input wire logic bwait_i,
+    input wire logic [W_BARRIERS-1:0] barr_idx_i,
+    input wire logic branch_i,
+    input wire logic [XLEN-1:Z_PC] pc_branch_i,
+    input wire logic [N_THREADS-1:0] mask_branch_i,
 
     output logic [XLEN-1:Z_PC] pc_o,
     output logic [N_THREADS-1:0] mask_o

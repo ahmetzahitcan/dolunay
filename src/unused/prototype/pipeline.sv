@@ -6,16 +6,16 @@
 module pipeline
     import proto_pkg::*;
 (
-    input  wire logic                    clk,
-    input  wire logic                    rst_n,
+    input wire  wire logic                    clk,
+    input wire  wire logic                    rst_n,
 
     // ROM interface (instr_rom lives in proto_top)
     output logic                         rom_read_en_o,
     output logic [PC_WIDTH-1:0]          rom_addr_o,
     output logic [N_THREADS-1:0]       active_mask_o,      // for proto_top delay logic
-    input  wire  logic [31:0]            rom_instr_i,
-    input  wire  logic                   rom_done_i,
-    input  wire  logic [N_THREADS-1:0] rom_active_mask_i
+    input wire  wire  logic [31:0]            rom_instr_i,
+    input wire  wire  logic                   rom_done_i,
+    input wire  wire  logic [N_THREADS-1:0] rom_active_mask_i
 );
 
     // =========================================================================

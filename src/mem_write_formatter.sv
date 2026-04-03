@@ -2,9 +2,9 @@ module mem_write_formatter
     import params_pkg::*;
     import control_unit_pkg::*;
 (
-    input logic p_data_i;
-    input mem_opsize_e opsize_i;
-    input logic [Z_ADDR-1:0] alignment_i;
+    input wire logic p_data_i;
+    input wire mem_opsize_e opsize_i;
+    input wire logic [Z_ADDR-1:0] alignment_i;
     output logic [XLEN-1:0] m_data_o;
     output logic [ADDR_ALIGN-1:0] m_wen_o;
 );

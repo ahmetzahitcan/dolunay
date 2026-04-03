@@ -28,7 +28,7 @@ module tb_memory_access_unit;
     localparam int MEM_LINES       = 64;
 
     // Convenience: build a full address from (block, offset)
-    function automatic logic [ADDR_WIDTH-1:0] mkaddr(input int blk, input int ofs);
+    function automatic logic [ADDR_WIDTH-1:0] mkaddr(input wire int blk, input wire int ofs);
         return ADDR_WIDTH'((blk << LOG_N) | ofs);
     endfunction
 
@@ -101,7 +101,7 @@ module tb_memory_access_unit;
     // -----------------------------------------------------------------------
     // Helper: read one DATA_WIDTH word from a memory line
     // -----------------------------------------------------------------------
-    function automatic logic [DATA_WIDTH-1:0] mem_word(input int line, input int ofs);
+    function automatic logic [DATA_WIDTH-1:0] mem_word(input wire int line, input wire int ofs);
         return mem[line][ofs * DATA_WIDTH +: DATA_WIDTH];
     endfunction
 
@@ -109,16 +109,16 @@ module tb_memory_access_unit;
     // Task: drive one memory access, hold en_i high until busy_o de-asserts
     // -----------------------------------------------------------------------
     task automatic run_access(
-        input string                             tname,
-        input logic                              store,
-        input logic [N_THREADS-1:0]            mask,
-        input logic [N_THREADS-1:0][ADDR_WIDTH-1:0] addrs,
-        input logic [N_THREADS-1:0][DATA_WIDTH-1:0] wdata
+        input wire string                             tname,
+        input wire logic                              store,
+        input wire logic [N_THREADS-1:0]            mask,
+        input wire logic [N_THREADS-1:0][ADDR_WIDTH-1:0] addrs,
+        input wire logic [N_THREADS-1:0][DATA_WIDTH-1:0] wdata
     );
         int start_cycle;
         start_cycle = cycle_count;
 
-        // Align to the cycle after the current edge, then apply inputs
+        // Align to the cycle after the current edge, then apply input wires
         @(posedge clk); #1;
         store_i       = store;
         active_mask_i = mask;

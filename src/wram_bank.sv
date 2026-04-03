@@ -3,10 +3,10 @@
 module wram_bank
     import params_pkg::*;
 (
-    input logic clk,
-    input logic [W_WRAM_BANK_ADDR:Z_ADDR] addr_i,
-    input logic [XLEN-1:0] w_data_i,
-    input logic [ADDR_ALIGN-1:0] wen_i,
+    input wire logic clk,
+    input wire logic [W_WRAM_BANK_ADDR:Z_ADDR] addr_i,
+    input wire logic [XLEN-1:0] w_data_i,
+    input wire logic [ADDR_ALIGN-1:0] wen_i,
     output logic [XLEN-1:0] r_data_o
 );
 

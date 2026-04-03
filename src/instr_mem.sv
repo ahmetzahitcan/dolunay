@@ -5,8 +5,8 @@ module instr_mem
 #(
     parameter int DEPTH      = 256
 ) (
-    input  logic clk,
-    input  logic [XLEN-1:Z_PC]   addr_i,
+    input wire  logic clk,
+    input wire  logic [XLEN-1:Z_PC]   addr_i,
     output logic [31:2]   undec_instr32_o
 );
 

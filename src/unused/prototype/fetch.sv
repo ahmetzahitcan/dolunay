@@ -9,22 +9,22 @@ module fetch
     parameter int N_THREADS = proto_pkg::N_THREADS,
     parameter int PC_WIDTH    = proto_pkg::PC_WIDTH
 ) (
-    input  wire logic clk,
-    input  wire logic rst_n,
+    input wire  wire logic clk,
+    input wire  wire logic rst_n,
 
     // Pipeline handshake
-    input  wire logic                valid_i,
+    input wire  wire logic                valid_i,
     output logic                done_o,
 
     // Branch feedback from execute
-    input  wire logic                branch_taken_i,
-    input  wire logic [N_THREADS-1:0] branch_mask_i,
-    input  wire logic [PC_WIDTH-1:0] branch_target_i,
-    input  wire logic                yield_i,
-    input  wire logic                binit_i,
-    input  wire logic                bwait_i,
+    input wire  wire logic                branch_taken_i,
+    input wire  wire logic [N_THREADS-1:0] branch_mask_i,
+    input wire  wire logic [PC_WIDTH-1:0] branch_target_i,
+    input wire  wire logic                yield_i,
+    input wire  wire logic                binit_i,
+    input wire  wire logic                bwait_i,
 
-    // Output to instruction memory
+    // output to instruction memory
     output logic [PC_WIDTH-1:0] pc_o,
     output logic [N_THREADS-1:0] active_mask_o
 );

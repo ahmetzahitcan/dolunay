@@ -31,9 +31,9 @@ module tb_shuffle_one_hot;
     // Task: apply one stimulus and verify all output indices
     // -----------------------------------------------------------------------
     task automatic check(
-        input string          test_name,
-        input logic [M-1:0][N-1:0] din,
-        input logic [M-1:0]        msk
+        input wire string          test_name,
+        input wire logic [M-1:0][N-1:0] din,
+        input wire logic [M-1:0]        msk
     );
         data_i = din;
         mask_i = msk;

@@ -5,7 +5,7 @@ module priority_encoder #(
     parameter int FROM_MSB = 0,
     localparam int LOG_WIDTH = $clog2(WIDTH)
 ) (
-    input logic [WIDTH-1:0] input_i,
+    input wire logic [WIDTH-1:0] input_i,
     output logic [WIDTH-1:0] one_hot_o,
     output logic [LOG_WIDTH-1:0] index_o,
     output logic valid_o
