@@ -13,6 +13,7 @@ module pipeline
     logic if_stage_valid_r;
     logic id_stage_valid_r;
     logic ex_stage_valid_r;
+    logic mem_stage_valid_r;
     logic wb_stage_valid_r;
 
     always_ff @( posedge clk ) begin
@@ -21,13 +22,15 @@ module pipeline
             if_stage_valid_r <= '0;
             id_stage_valid_r <= '0;
             ex_stage_valid_r <= '0;
+            mem_stage_valid_r <= '0;
             wb_stage_valid_r <= '0;
         end else begin
             ws_stage_valid_r <= 1'b1;
             if_stage_valid_r <= ws_stage_valid_r;
             id_stage_valid_r <= if_stage_valid_r;
             ex_stage_valid_r <= id_stage_valid_r;
-            wb_stage_valid_r <= ex_stage_valid_r;
+            mem_stage_valid_r <= ex_stage_valid_r;
+            wb_stage_valid_r <= mem_stage_valid_r;
         end
     end
 
@@ -46,15 +49,17 @@ module pipeline
     logic [XLEN-1:Z_PC] idex_pc_r;
     logic [N_THREADS-1:0] idex_mask_r;
 
-    logic [N_THREADS-1:0] ex_branch_mask_w;
-    logic ex_branching_w;
-    logic [XLEN-1:Z_PC] ex_branch_target_w;
+    instr_s exmem_instr_r;
+    logic [N_THREADS-1:0][XLEN-1:0] exmem_alu_result_r;
+    logic [XLEN-1:Z_PC] exmem_pc_r;
+    logic [N_THREADS-1:0] exmem_mask_r;
+    logic [W_WARPS-1:0] exmem_warp_id_r;
 
-    instr_s exwb_instr_r;
-    logic [N_THREADS-1:0][XLEN-1:0] exwb_alu_result_r;
-    logic [XLEN-1:Z_PC] exwb_pc_r;
-    logic [N_THREADS-1:0] exwb_mask_r;
-    logic [W_WARPS-1:0] exwb_warp_id_r;
+    instr_s memwb_instr_r;
+    logic [N_THREADS-1:0][XLEN-1:0] memwb_alu_result_r;
+    logic [XLEN-1:Z_PC] memwb_pc_r;
+    logic [N_THREADS-1:0] memwb_mask_r;
+    logic [W_WARPS-1:0] memwb_warp_id_r;
 
     logic [N_THREADS-1:0] wb_write_en_mask_w;
     logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
@@ -90,22 +95,22 @@ module pipeline
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin
             logic en_w;
-            assign en_w = idex_warp_id_r == I & ex_stage_valid_r;
+            assign en_w = exmem_warp_id_r == I & mem_stage_valid_r;
 
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
-                .inc_pc_i(en_w & ~idex_instr_r.is_jalr),
+                .inc_pc_i(en_w & ~exmem_instr_r.is_jalr),
 
-                .yield_i(idex_instr_r.yield & en_w),
-                .binit_i(idex_instr_r.binit & en_w),
-                .bwait_i(idex_instr_r.bwait & en_w),
-                .barr_idx_i(idex_instr_r.barr_idx),
+                .yield_i(exmem_instr_r.yield & en_w),
+                .binit_i(exmem_instr_r.binit & en_w),
+                .bwait_i(exmem_instr_r.bwait & en_w),
+                .barr_idx_i(exmem_instr_r.barr_idx),
 
-                .branch_i(ex_branching_w & en_w),
-                .pc_branch_i(ex_branch_target_w),
-                .mask_branch_i(ex_branch_mask_w),
+                .branch_i(mem_branching_w & en_w),
+                .pc_branch_i(mem_branch_target_w),
+                .mask_branch_i(mem_branch_mask_w),
 
                 .pc_o(u_thread_scheduler_pc_w[I]),
                 .mask_o(u_thread_scheduler_mask_w[I])
@@ -156,9 +161,9 @@ module pipeline
         .rs2_idx_i(id_instr_w.rs2_idx),
         .rs2_data_o(idex_rs2_data_w),
 
-        .write_warp_id_i(exwb_warp_id_r),
+        .write_warp_id_i(memwb_warp_id_r),
         .write_en_mask_i(wb_write_en_mask_w),
-        .rd_idx_i(exwb_instr_r.rd_idx),
+        .rd_idx_i(memwb_instr_r.rd_idx),
         .write_data_i(wb_write_data_w)
     );
 
@@ -173,13 +178,11 @@ module pipeline
 
     // Execute
 
-    logic [N_THREADS-1:0] coalesced_w;
     logic [XLEN-1:Z_PC] leader_target_w;
 
     // - ALU Lanes
 
     logic [N_THREADS-1:0][XLEN-1:0] ex_alu_result_w;
-    logic [N_THREADS-1:0] ex_branch_cond_w;
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin
@@ -192,61 +195,89 @@ module pipeline
                 .instr_i(idex_instr_r),
                 .warp_id_i(idex_warp_id_r),
                 .pc_i(idex_pc_r),
-                .coalesced_i(coalesced_w[I]),
-                .result_o(ex_alu_result_w[I]),
-                .branch_cond_o(ex_branch_cond_w[I])
+                .result_o(ex_alu_result_w[I])
             );
         end
     endgenerate
 
-    // - JALR Coalescing Logic
+    // - Pipeline Registers
+
+    always_ff @( posedge clk ) begin
+        exmem_instr_r <= idex_instr_r;
+        exmem_alu_result_r <= ex_alu_result_w;
+        exmem_mask_r <= idex_mask_r;
+        exmem_pc_r <= idex_pc_r;
+        exmem_warp_id_r <= idex_warp_id_r;
+    end
+
+    // Memory -- TODO
+
+     // - JALR Coalescing Logic
 
     logic [W_THREADS-1:0] leader_id_w;
+    logic [N_THREADS-1:0] jalr_coalesced_w;
 
     priority_encoder #(
         .WIDTH(N_THREADS)
     ) u_priority_encoder (
-        .input_i(idex_mask_r),
+        .input_i(exmem_mask_r),
         .index_o(leader_id_w)
     );
 
-    assign leader_target_w = ex_alu_result_w[leader_id_w][XLEN-1:Z_PC];
+    assign leader_target_w = exmem_alu_result_r[leader_id_w][XLEN-1:Z_PC];
 
     generate
         for(genvar I = 0; I < N_THREADS; I++) begin
-            assign coalesced_w[I] = ex_alu_result_w[I][XLEN-1:Z_PC] == leader_target_w;
+            assign jalr_coalesced_w[I] = exmem_alu_result_r[I][XLEN-1:Z_PC] == leader_target_w;
         end
     endgenerate
 
     // - Branching Logic
+
+    logic [N_THREADS-1:0] mem_branch_flag_w;
+    logic [N_THREADS-1:0] mem_branch_mask_w;
+    logic mem_branching_w;
+    logic [XLEN-1:Z_PC] mem_branch_target_w;
+
+    generate
+        for (genvar I = 0; I < N_THREADS; I++) begin
+            (* DONT_TOUCH = "true" *)
+            branch_cond_unit u_bcu(
+                .alu_result_i(exmem_alu_result_r[I]),
+                .jalr_coalesced_i(jalr_coalesced_w[I]),
+                .branch_cond_i(exmem_instr_r.branch_cond),
+                .branch_flag_o(mem_branch_flag_w[I])
+            );
+        end
+    endgenerate
  
-    assign ex_branch_mask_w = ex_branch_cond_w & idex_mask_r; 
-    assign ex_branching_w = |ex_branch_mask_w;
-    assign ex_branch_target_w = idex_instr_r.is_jalr ? leader_target_w : idex_pc_r + idex_instr_r.imm[31:2];
+    assign mem_branch_mask_w = mem_branch_flag_w & exmem_mask_r; 
+    assign mem_branching_w = |mem_branch_mask_w;
+    assign mem_branch_target_w = exmem_instr_r.is_jalr ? leader_target_w : exmem_pc_r + exmem_instr_r.imm[31:2];
 
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        exwb_instr_r <= idex_instr_r;
-        exwb_alu_result_r <= ex_alu_result_w;
-        exwb_mask_r <= idex_mask_r;
-        exwb_pc_r <= idex_pc_r;
-        exwb_warp_id_r <= idex_warp_id_r;
+        memwb_instr_r <= exmem_instr_r;
+        memwb_alu_result_r <= exmem_alu_result_r;
+        memwb_mask_r <= exmem_mask_r;
+        memwb_pc_r <= exmem_pc_r;
+        memwb_warp_id_r <= exmem_warp_id_r;
     end
 
     // Writeback
 
     logic [XLEN-1:0] wb_pc_p4_w;
-    assign wb_pc_p4_w = {exwb_pc_r + 1'b1, 2'b00};
+    assign wb_pc_p4_w = {memwb_pc_r + 1'b1, 2'b00};
 
-    assign wb_write_en_mask_w = exwb_instr_r.wb_active ? exwb_mask_r : '0;
+    assign wb_write_en_mask_w = memwb_instr_r.wb_active ? memwb_mask_r : '0;
     
     always_comb begin
         wb_write_data_w = 'x;
 
         if (wb_stage_valid_r) begin
-            case (exwb_instr_r.wb_source)
-                WB_SOURCE_ALU: wb_write_data_w = exwb_alu_result_r;
+            case (memwb_instr_r.wb_source)
+                WB_SOURCE_ALU: wb_write_data_w = memwb_alu_result_r;
                 WB_SOURCE_MEM: begin // TODO
                     $warning("LOAD operations are not implemented. Writing zero to rd instead.");
                     wb_write_data_w = '0;

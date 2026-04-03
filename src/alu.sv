@@ -11,9 +11,7 @@ module alu
     input instr_s instr_i,
     input logic [W_WARPS-1:0] warp_id_i,
     input logic [XLEN-1:Z_PC] pc_i,
-    input logic coalesced_i,
-    output logic [XLEN-1:0] result_o,
-    output logic branch_cond_o
+    output logic [XLEN-1:0] result_o
 );
 
     logic [XLEN-1:0] op1_w;
@@ -55,20 +53,6 @@ module alu
     end
 
     assign result_o = result_w;
-
-    logic branch_cond_w;
-    always_comb begin
-        case (instr_i.branch_cond)
-            BRANCH_COND_ZERO: branch_cond_w = (result_w == '0);
-            BRANCH_COND_NONZERO: branch_cond_w = (result_w != '0);
-            BRANCH_COND_NEVER: branch_cond_w = 1'b0;
-            BRANCH_COND_ALWAYS: branch_cond_w = 1'b1;
-            BRANCH_COND_COALESCE: branch_cond_w = coalesced_i;
-            default: branch_cond_w = 'x;
-        endcase
-    end
-
-    assign branch_cond_o = branch_cond_w;
 
 
 endmodule
