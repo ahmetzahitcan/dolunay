@@ -3,7 +3,7 @@ module mem_read_formatter
     import control_unit_pkg::*;
 (
     input wire  mem_opsize_e opsize_i,
-    input wire  mem_signextend_e signextend_i,
+    input wire  mem_extendmode_e extendmode_i,
     input wire  logic [XLEN-1:0] m_data_i,
     input wire  logic [Z_ADDR-1:0] alignment_i,
     output logic [XLEN-1:0] p_data_o
@@ -52,7 +52,7 @@ module mem_read_formatter
     end
 
     logic extend_w;
-    assign extend_w = signextend_i == MEM_SIGNEXTEND_SIGN ? sign_w : 1'b0;
+    assign extend_w = extendmode_i == MEM_EXTENDMODE_SIGN ? sign_w : 1'b0;
 
     logic [XLEN-1:0] reg_data_w;
 
