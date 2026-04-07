@@ -179,7 +179,7 @@ module pipeline
 
     // Execute
 
-    logic [XLEN-1:Z_PC] leader_target_w;
+    logic [XLEN-1:Z_PC] mem_leader_target_w;
 
     // - ALU Lanes
 
@@ -214,24 +214,69 @@ module pipeline
 
     // Memory -- TODO: shared memory
 
-    logic [N_THREADS-1:0][XLEN-1:0] mem_store_data_formatted_w;
+    enum logic {MSEL_SPAD, MSEL_SHARED} [N_THREADS-1:0] mem_msel_w;
+
+    always_comb begin
+        for (int i = 0; i < N_THREADS; i++) begin
+            mem_msel_w[i] = exmem_alu_result_r[i][XLEN-1] ? MSEL_SHARED : MSEL_SPAD;
+        end
+    end
+
+    logic [N_THREADS-1:0][XLEN-1:0] mem_store_data_fmt_w;
     logic [N_THREADS-1:0][ADDR_ALIGN-1:0] mem_store_wen_w;
+
+    // - Leader Selection
+
+    logic [W_THREADS-1:0] mem_leader_id_w;
+
+    priority_encoder #(
+        .WIDTH(N_THREADS)
+    ) u_priority_encoder (
+        .input_i(exmem_mask_r),
+        .index_o(mem_leader_id_w)
+    );
+
+    // - Shared Memory
+
+    logic [XLEN-1:0] mem_shared_rdata_w;
+    logic [XLEN-1:0] mem_shared_rdata_fmt_w;
+
+    logic [Z_ADDR-1:0] mem_leader_alignment_w;
+    assign mem_leader_alignment_w = exmem_alu_result_r[mem_leader_id_w][Z_ADDR-1:0];
+
+    wram #(
+        .DEPTH(SHARED_MEM_DEPTH)
+    ) u_shared_mem (
+        .clk(clk),
+        .addr_i(exmem_alu_result_r[mem_leader_id_w][W_SHARED_MEM_ADDR-1:Z_ADDR]),
+        .wdata_i(mem_store_data_fmt_w[mem_leader_id_w]),
+        .wen_i(mem_store_wen_w[mem_leader_id_w]),
+        .rdata_o(mem_shared_rdata_w)
+    );
 
     // - Scratchpad
 
     logic [N_THREADS-1:0][XLEN-1:0] mem_spad_rdata_w;
-    logic [N_THREADS-1:0][XLEN-1:0] mem_spad_rdata_formatted_w;
+    logic [N_THREADS-1:0][XLEN-1:0] mem_spad_rdata_fmt_w;
     
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin
             logic [W_SPAD_BANK_ADDR-1:Z_ADDR] bank_addr;
             assign bank_addr = {exmem_warp_id_r, exmem_alu_result_r[I][W_SPAD_BANK_ADDR-1:Z_ADDR]};
 
-            spad_bank sb (
+            logic wen_any_w;
+            assign wen_any_w = exmem_mask_r[I] & exmem_instr_r.mem_loadstore == MEM_LOADSTORE_STORE & mem_msel_w[I] == MSEL_SPAD;
+
+            logic [ADDR_ALIGN-1:0] wen_byte_w;
+            assign wen_byte_w = wen_any_w ? mem_store_wen_w[I] : '0;
+
+            wram #(
+                .DEPTH(SPAD_BANK_DEPTH)
+            ) u_spad_bank (
                 .clk(clk),
                 .addr_i(bank_addr),
-                .wdata_i(mem_store_data_formatted_w[I]),
-                .wen_i((exmem_mask_r[I] & exmem_instr_r.mem_loadstore == MEM_LOADSTORE_STORE) ? mem_store_wen_w[I] : '0),
+                .wdata_i(mem_store_data_fmt_w[I]),
+                .wen_i(wen_byte_w),
                 .rdata_o(mem_spad_rdata_w[I])
             );
         end
@@ -247,14 +292,14 @@ module pipeline
         end
     end
 
-    mem_read_formatter #( // TODO: shared memory
-        .DATA_LEN(N_THREADS)
+    mem_read_formatter #(
+        .DATA_LEN(N_THREADS + 1)
     ) u_rfmt (
         .opsize_i(exmem_instr_r.mem_opsize),
         .extendmode_i(exmem_instr_r.mem_extendmode),
-        .m_data_i(mem_spad_rdata_w),
-        .alignment_i(mem_alignment_w),
-        .p_data_o(mem_spad_rdata_formatted_w)
+        .m_data_i({mem_shared_rdata_w, mem_spad_rdata_w}),
+        .alignment_i({mem_leader_alignment_w, mem_alignment_w}),
+        .p_data_o({mem_shared_rdata_fmt_w, mem_spad_rdata_fmt_w})
     );
 
     mem_write_formatter #(
@@ -263,27 +308,19 @@ module pipeline
         .p_data_i(exmem_store_data_r),
         .opsize_i(exmem_instr_r.mem_opsize),
         .alignment_i(mem_alignment_w),
-        .m_data_o(mem_store_data_formatted_w),
+        .m_data_o(mem_store_data_fmt_w),
         .m_wen_o(mem_store_wen_w)
     );
 
     // - JALR Coalescing Logic
 
-    logic [W_THREADS-1:0] leader_id_w;
     logic [N_THREADS-1:0] jalr_coalesced_w;
 
-    priority_encoder #(
-        .WIDTH(N_THREADS)
-    ) u_priority_encoder (
-        .input_i(exmem_mask_r),
-        .index_o(leader_id_w)
-    );
-
-    assign leader_target_w = exmem_alu_result_r[leader_id_w][XLEN-1:Z_PC];
+    assign mem_leader_target_w = exmem_alu_result_r[mem_leader_id_w][XLEN-1:Z_PC];
 
     generate
         for(genvar I = 0; I < N_THREADS; I++) begin
-            assign jalr_coalesced_w[I] = exmem_alu_result_r[I][XLEN-1:Z_PC] == leader_target_w;
+            assign jalr_coalesced_w[I] = exmem_alu_result_r[I][XLEN-1:Z_PC] == mem_leader_target_w;
         end
     endgenerate
 
@@ -296,10 +333,14 @@ module pipeline
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin
+            logic mem_access_failed_w;
+            assign mem_access_failed_w = (mem_msel_w == MSEL_SHARED) & (mem_leader_id_w != I);
+            
             (* DONT_TOUCH = "true" *)
             branch_cond_unit u_bcu(
                 .alu_result_i(exmem_alu_result_r[I]),
                 .jalr_coalesced_i(jalr_coalesced_w[I]),
+                .memory_access_failed_i(mem_access_failed_w),
                 .branch_cond_i(exmem_instr_r.branch_cond),
                 .branch_flag_o(mem_branch_flag_w[I])
             );
@@ -308,7 +349,16 @@ module pipeline
  
     assign mem_branch_mask_w = mem_branch_flag_w & exmem_mask_r; 
     assign mem_branching_w = |mem_branch_mask_w;
-    assign mem_branch_target_w = exmem_instr_r.is_jalr ? leader_target_w : exmem_pc_r + exmem_instr_r.imm[31:2];
+    
+    always_comb begin // FIXME: THIS IS TOO COMPLICATED, AND IT'S NOT AT ALL OBVIOUS WHY IT NEEDS TO BE LIKE THIS
+        if (exmem_instr_r.is_jalr) begin
+            mem_branch_target_w = mem_leader_target_w;
+        end else if (exmem_instr_r.mem_active) begin
+            mem_branch_target_w = exmem_pc_r;
+        end else begin
+            mem_branch_target_w = exmem_pc_r + exmem_instr_r.imm[31:2];
+        end
+    end
 
     // - Writeback Result
 
@@ -323,12 +373,11 @@ module pipeline
         if (mem_stage_valid_r) begin
             case (exmem_instr_r.wb_source)
                 WB_SOURCE_ALU: mem_result_w = exmem_alu_result_r;
-                WB_SOURCE_MEM: mem_result_w = mem_spad_rdata_formatted_w; // TODO: Shared Memory
-                WB_SOURCE_PC_P4: begin
-                    for (int i = 0; i < N_THREADS; i++) begin
-                        mem_result_w[i] = mem_pc_p4_w;
-                    end
-                end
+                WB_SOURCE_MEM: case (mem_msel_w) 
+                    MSEL_SPAD: mem_result_w = mem_spad_rdata_fmt_w;
+                    MSEL_SHARED: for (int i = 0; i < N_THREADS; i++) mem_result_w[i] = mem_shared_rdata_fmt_w;
+                endcase
+                WB_SOURCE_PC_P4: for (int i = 0; i < N_THREADS; i++) mem_result_w[i] = mem_pc_p4_w;
             endcase
         end 
     end

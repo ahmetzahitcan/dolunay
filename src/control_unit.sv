@@ -538,7 +538,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.branch_cond = BRANCH_COND_MEMORY;
                 instr_o.wb_active = 1'b1;
                 instr_o.wb_source = WB_SOURCE_MEM;
                 instr_o.binit = 1'b0;
@@ -555,7 +555,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.branch_cond = BRANCH_COND_MEMORY;
                 instr_o.wb_active = 1'b1;
                 instr_o.wb_source = WB_SOURCE_MEM;
                 instr_o.binit = 1'b0;
@@ -572,7 +572,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.branch_cond = BRANCH_COND_MEMORY;
                 instr_o.wb_active = 1'b1;
                 instr_o.wb_source = WB_SOURCE_MEM;
                 instr_o.binit = 1'b0;
@@ -589,7 +589,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.branch_cond = BRANCH_COND_MEMORY;
                 instr_o.wb_active = 1'b1;
                 instr_o.wb_source = WB_SOURCE_MEM;
                 instr_o.binit = 1'b0;
@@ -606,7 +606,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.branch_cond = BRANCH_COND_MEMORY;
                 instr_o.wb_active = 1'b1;
                 instr_o.wb_source = WB_SOURCE_MEM;
                 instr_o.binit = 1'b0;
@@ -623,7 +623,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.branch_cond = BRANCH_COND_MEMORY;
                 instr_o.wb_active = 1'b0;
                 instr_o.wb_source = WB_SOURCE_UNDEFINED;
                 instr_o.binit = 1'b0;
@@ -640,7 +640,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.branch_cond = BRANCH_COND_MEMORY;
                 instr_o.wb_active = 1'b0;
                 instr_o.wb_source = WB_SOURCE_UNDEFINED;
                 instr_o.binit = 1'b0;
@@ -657,7 +657,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.branch_cond = BRANCH_COND_MEMORY;
                 instr_o.wb_active = 1'b0;
                 instr_o.wb_source = WB_SOURCE_UNDEFINED;
                 instr_o.binit = 1'b0;
