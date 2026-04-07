@@ -10,7 +10,7 @@ package params_pkg;
     localparam int PC_ALIGN = 4;
     localparam int Z_PC = $clog2(PC_ALIGN);
 
-    localparam int N_WARPS = 8;
+    localparam int N_WARPS = 4; // Min 4
     localparam int N_THREADS = 8;
     localparam int N_REGISTERS = 32; // RV32I
     localparam int N_BARRIERS = 2; // Max 8
@@ -19,12 +19,11 @@ package params_pkg;
     localparam int W_REGISTERS = $clog2(N_REGISTERS);
     localparam int W_BARRIERS = $clog2(N_BARRIERS);
 
-    localparam int N_WRAM_BANKS = 16;
-    localparam int W_WRAM_BANKS = $clog2(N_WRAM_BANKS);
-    localparam int WRAM_BANK_SIZE = 4096;
-    localparam int WRAM_BANK_DEPTH = WRAM_BANK_SIZE / ADDR_ALIGN;
-    localparam int W_WRAM_BANK_ADDR = $clog2(WRAM_BANK_SIZE);
-    localparam int W_WRAM_ADDR = W_WRAM_BANKS + W_WRAM_BANK_ADDR;
+    localparam int SPAD_SIZE_PT = 1024; // per thread
+    localparam int SPAD_BANK_SIZE = SPAD_SIZE_PT * N_WARPS;
+    localparam int SPAD_BANK_DEPTH = SPAD_BANK_SIZE / ADDR_ALIGN;
+    localparam int W_SPAD_ADDR_PT = $clog2(SPAD_SIZE_PT);
+    localparam int W_SPAD_BANK_ADDR = $clog2(SPAD_BANK_SIZE);
 
 endpackage
 

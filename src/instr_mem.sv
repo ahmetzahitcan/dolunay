@@ -28,16 +28,44 @@ module instr_mem
     localparam X2_RS2 = 32'b0000000_00010_00000_000_00000_00000_11;
     localparam X3_RS2 = 32'b0000000_00011_00000_000_00000_00000_11;
 
+    localparam NOP = ADD;
+
     // -------------------------------------------------------------------------
     // Memory
     // -------------------------------------------------------------------------
+    `ifndef SYNTHESIS
+        int code, fd;
+        byte bytes [0:3];
+    `endif
+
     logic [31:0] mem_r [0:DEPTH-1];
 
     initial begin
+        `ifdef SYNTHESIS
+            $readmemh("synth_irom.mem", mem_r);
+        `else
+            fd = $fopen("spad_test.mem", "rb");
+            if (fd == 0) begin
+                $error("Failed to open file");
+            end else begin
+                for (int i = 0; i < DEPTH; i++) begin
+                    code = $fread(bytes, fd);
+                    if (code == 4) begin
+                        mem_r[i] = {bytes[3], bytes[2], bytes[1], bytes[0]};
+                    end else begin
+                        assert (code == 0) else $error("IROM file size is not a multiple of 4");
+                        mem_r[i] = NOP;
+                    end
+                end
+                $fclose(fd);
+            end
+        `endif
+
+/*
         for (int i = 0; i < DEPTH; i++) begin
             mem_r[i] = ADD; // NOP
         end
-/*
+
         mem_r[0] = BINIT; // BINIT
         mem_r[1] = 32'hf1401173; // CSRRW x2, mhartid, x0
         mem_r[2] = 32'h0fe17113; // ANDI x2, x2, 254
@@ -46,7 +74,6 @@ module instr_mem
         mem_r[5] = 32'h000100e7; // JALR x1, 0(x2)
         mem_r[6] = BWAIT; // BWAIT
         mem_r[132] = 32'h00008067; // JALR x0, 0(x1)
-*/
         
         mem_r[0] = BINIT; // BINIT
         mem_r[1] = BEQ_P100 | X3_RS1; // BEQ x3, x0, 100
@@ -80,7 +107,7 @@ module instr_mem
         mem_r[128] = 32'h00015183; // LHU x3, 0(x2)
         mem_r[129] = 32'h00012103; // LW x2, 0(x2)
         mem_r[130] = BWAIT; // BWAIT
-        
+*/
     end
 
     // -------------------------------------------------------------------------
