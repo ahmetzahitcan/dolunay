@@ -2,7 +2,7 @@ module wram
     import params_pkg::*;
 #(
     parameter int DEPTH,
-    localparam int W_ADDR = $clog2(DEPTH)
+    localparam int W_ADDR = $clog2(DEPTH) + Z_ADDR
 )(
     input wire logic clk,
     input wire logic [W_ADDR-1:Z_ADDR] addr_i,

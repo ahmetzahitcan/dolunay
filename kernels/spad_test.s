@@ -1,6 +1,7 @@
 .section .text
 
 li x15, 0x80000000
+# csrr x8, mhartid
 li x8, 0x0badbabe
 sw x8, 0(x15)
 lb x1, 0(x15)
