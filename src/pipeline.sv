@@ -57,7 +57,7 @@ module pipeline
     logic [W_WARPS-1:0] exmem_warp_id_r;
 
 
-    logic [N_THREADS-1:0] mem_instr_replay_w;
+    logic [N_THREADS-1:0] mem_instr_replay_mask_w;
     instr_s memwb_instr_r;
     logic [N_THREADS-1:0][XLEN-1:0] memwb_alu_result_r;
     logic [XLEN-1:Z_PC] memwb_pc_r;
@@ -109,7 +109,7 @@ module pipeline
                 .clk(clk),
                 .rst_n(rst_n),
                 .instr_completed_i(en_w),
-                .instr_replay_i(mem_instr_replay_w),
+                .instr_replay_mask_i(mem_instr_replay_mask_w),
 
                 .yield_i(exmem_instr_r.yield & en_w),
                 .binit_i(exmem_instr_r.binit & en_w),
@@ -386,13 +386,13 @@ module pipeline
 
     always_comb begin
         if (exmem_instr_r.is_jalr) begin
-            mem_instr_replay_w = '1; // Note: Replay value is ignored for threads that are not part of this path.
+            mem_instr_replay_mask_w = exmem_mask_r & ~jalr_coalesced_w;
         end else if (exmem_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
-                mem_instr_replay_w[i] = (mem_leader_id_w != i) & (mem_msel_w[i] == MSEL_SHARED);
+                mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (mem_leader_id_w != i) & (mem_msel_w[i] == MSEL_SHARED);
             end
         end else begin
-            mem_instr_replay_w = '0;
+            mem_instr_replay_mask_w = '0;
         end
     end
 

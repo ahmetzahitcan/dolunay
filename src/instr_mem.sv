@@ -44,7 +44,7 @@ module instr_mem
         `ifdef SYNTHESIS
             $readmemh("synth_irom.mem", mem_r);
         `else
-            fd = $fopen("czero_test.mem", "rb");
+            fd = $fopen("shared_mem_test.mem", "rb");
             if (fd == 0) begin
                 $error("Failed to open file");
             end else begin
