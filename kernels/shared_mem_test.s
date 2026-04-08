@@ -19,3 +19,4 @@ read_value:
     lw x3, 0(x0)
 halt:
     j halt
+    

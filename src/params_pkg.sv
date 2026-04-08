@@ -27,7 +27,7 @@ package params_pkg;
 
     localparam int SHARED_MEM_SIZE = 65536; // 64 KB
     localparam int SHARED_MEM_DEPTH = SHARED_MEM_SIZE / ADDR_ALIGN;
-    localparam int W_SHARED_MEM_ADDR = $clog2(SHARED_MEM_DEPTH);
+    localparam int W_SHARED_MEM_ADDR = $clog2(SHARED_MEM_SIZE);
 
 endpackage
 
