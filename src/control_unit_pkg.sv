@@ -41,12 +41,10 @@ package control_unit_pkg;
 		ALU_OP2_SEL_UNDEFINED='x
 	} alu_op2_sel_e;
 
-	typedef enum logic [2:0] {
+	typedef enum logic [1:0] {
 		BRANCH_COND_NEVER,
 		BRANCH_COND_ZERO,
 		BRANCH_COND_NONZERO,
-		BRANCH_COND_COALESCE,
-		BRANCH_COND_MEMORY,
 		BRANCH_COND_ALWAYS,
 		BRANCH_COND_UNDEFINED='x
 	} branch_cond_e;

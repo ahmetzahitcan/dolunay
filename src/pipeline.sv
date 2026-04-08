@@ -56,6 +56,8 @@ module pipeline
     logic [N_THREADS-1:0] exmem_mask_r;
     logic [W_WARPS-1:0] exmem_warp_id_r;
 
+
+    logic [N_THREADS-1:0] mem_instr_replay_w;
     instr_s memwb_instr_r;
     logic [N_THREADS-1:0][XLEN-1:0] memwb_alu_result_r;
     logic [XLEN-1:Z_PC] memwb_pc_r;
@@ -106,7 +108,8 @@ module pipeline
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
-                .inc_pc_i(en_w & ~exmem_instr_r.is_jalr),
+                .instr_completed_i(en_w),
+                .instr_replay_i(mem_instr_replay_w),
 
                 .yield_i(exmem_instr_r.yield & en_w),
                 .binit_i(exmem_instr_r.binit & en_w),
@@ -360,14 +363,9 @@ module pipeline
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin
-            logic mem_access_failed_w;
-            assign mem_access_failed_w = (mem_msel_w[I] == MSEL_SHARED) & (mem_leader_id_w != I);
-            
             (* DONT_TOUCH = "true" *)
             branch_cond_unit u_bcu(
                 .alu_result_i(exmem_alu_result_r[I]),
-                .jalr_coalesced_i(jalr_coalesced_w[I]),
-                .memory_access_failed_i(mem_access_failed_w),
                 .branch_cond_i(exmem_instr_r.branch_cond),
                 .branch_flag_o(mem_branch_flag_w[I])
             );
@@ -377,13 +375,25 @@ module pipeline
     assign mem_branch_mask_w = mem_branch_flag_w & exmem_mask_r; 
     assign mem_branching_w = |mem_branch_mask_w;
     
-    always_comb begin // FIXME: THIS IS TOO COMPLICATED, AND IT'S NOT AT ALL OBVIOUS WHY IT NEEDS TO BE LIKE THIS
+    always_comb begin
         if (exmem_instr_r.is_jalr) begin
             mem_branch_target_w = mem_leader_target_w;
-        end else if (exmem_instr_r.mem_active) begin
-            mem_branch_target_w = exmem_pc_r;
         end else begin
             mem_branch_target_w = exmem_pc_r + exmem_instr_r.imm[31:2];
+        end
+    end
+
+    // - Replay Logic
+
+    always_comb begin
+        if (exmem_instr_r.is_jalr) begin
+            mem_instr_replay_w = '1; // Note: Replay value is ignored for threads that are not part of this path.
+        end else if (exmem_instr_r.mem_active) begin
+            for (int i = 0; i < N_THREADS; i++) begin
+                mem_instr_replay_w[i] = (mem_leader_id_w != i) & (mem_msel_w[i] == MSEL_SHARED);
+            end
+        end else begin
+            mem_instr_replay_w = '0;
         end
     end
 

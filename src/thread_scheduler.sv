@@ -6,7 +6,9 @@ module thread_scheduler
     input wire logic clk,
     input wire logic rst_n,
 
-    input wire logic inc_pc_i,
+    input wire logic instr_completed_i,
+    input wire logic [N_THREADS-1:0] instr_replay_i,
+
     input wire logic yield_i,
     input wire logic binit_i,
     input wire logic bwait_i,
@@ -18,7 +20,6 @@ module thread_scheduler
     output logic [XLEN-1:Z_PC] pc_o,
     output logic [N_THREADS-1:0] mask_o
 );
-
     logic [N_THREADS-1:0][XLEN-1:Z_PC] pc_list_r;
     logic [N_THREADS-1:0][N_THREADS-1:0] mask_list_r;
     logic [W_THREADS-1:0] path_id_r;
@@ -102,12 +103,6 @@ module thread_scheduler
     assert property (p_branch_not_empty) else $error("Branch fired with empty taken mask.");
     `endif
 
-    logic [N_THREADS-1:0] mask_remain_w;
-    assign mask_remain_w = mask_w & ~mask_branch_i;
-
-    logic mask_remain_valid_w;
-    assign mask_remain_valid_w = |mask_remain_w;
-
     logic [N_BARRIERS-1:0][N_THREADS-1:0] barrier_total_r;
     logic [N_BARRIERS-1:0][N_THREADS-1:0] barrier_parked_r;
 
@@ -117,11 +112,34 @@ module thread_scheduler
     logic barrier_release_w;
     assign barrier_release_w = (barrier_total_r[barr_idx_i] == barrier_parked_next_w);
 
+    // FIXME: CONFUSING!!!
+
+    logic [N_THREADS-1:0] play_mask_r;
+
+    logic [N_THREADS-1:0] mask_active_and_playing_w;
+    assign mask_active_and_playing_w = mask_w & play_mask_r;
+
+    logic [N_THREADS-1:0] active_replay_mask_w;
+    assign active_replay_mask_w = instr_replay_i & mask_active_and_playing_w;
+
+    logic replay_any_w;
+    assign replay_any_w = |active_replay_mask_w;
+
+    logic [N_THREADS-1:0] mask_branch_valid_w;
+    assign mask_branch_valid_w = mask_branch_i & ~instr_replay_i;
+
+    logic [N_THREADS-1:0] mask_remain_w;
+    assign mask_remain_w = mask_w & ~mask_branch_valid_w;
+
+    logic mask_remain_valid_w;
+    assign mask_remain_valid_w = |mask_remain_w;
+
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             path_id_r <= '0;
             pc_list_r[0] <= '0;
             mask_list_r[0] <= '1;
+            play_mask_r <= '1;
             for (int i = 1; i < N_THREADS; i++) begin
                 pc_list_r[i] <= '0;
                 mask_list_r[i] <= '0;
@@ -131,20 +149,28 @@ module thread_scheduler
                 barrier_parked_r[i] <= '0;
             end
         end else begin
-            if (inc_pc_i) begin
-                pc_list_r[path_id_r] <= pc_p1_w;
+            if (instr_completed_i) begin
+                if (replay_any_w) begin
+                    play_mask_r <= play_mask_r & instr_replay_i;
+                end else begin
+                    pc_list_r[path_id_r] <= pc_p1_w;
+                    play_mask_r <= '1;
+                end
 
                 assert (mask_w != 0) else $error("Fetched from an inactive path.");
             end 
             
             unique0 if (yield_i) begin
+                assert (play_mask_r == '1) else $error("yield_i raised while some instructions are being replayed.");
                 path_id_r <= path_id_next_w;
             end else if (binit_i) begin
+                assert (play_mask_r == '1) else $error("binit_i raised while some instructions are being replayed.");
                 assert (barrier_total_r[barr_idx_i] == '0) else $warning("binit_i called on a barrier that is already initialized.");
 
                 barrier_total_r[barr_idx_i] <= mask_w;
                 barrier_parked_r[barr_idx_i] <= 0;
             end else if (bwait_i) begin
+                assert (play_mask_r == '1) else $error("bwait_i raised while some instructions are being replayed.");
                 if (barrier_release_w) begin
                     // Warp Reconvergence: The last arriving path absorbs the entire aggregate mask.
                     mask_list_r[path_id_r] <= barrier_total_r[barr_idx_i];
@@ -170,7 +196,7 @@ module thread_scheduler
                     assert (empty_found_w) else $error("No empty path found during divergence.");
 
                     pc_list_r[path_id_empty_w] <= pc_branch_i;
-                    mask_list_r[path_id_empty_w] <= mask_branch_i;
+                    mask_list_r[path_id_empty_w] <= mask_branch_valid_w;
                     mask_list_r[path_id_r] <= mask_remain_w;
                 end else begin
                     // Uniform Jump: All threads took the branch. Overwrite the current slot to avoid wasting path capacity.
@@ -182,7 +208,7 @@ module thread_scheduler
     end
 
     assign pc_o   = pc_w;
-    assign mask_o = mask_w;
+    assign mask_o = mask_active_and_playing_w;
 
 endmodule
 
