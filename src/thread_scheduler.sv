@@ -156,8 +156,9 @@ module thread_scheduler
                 if (barrier_release_w) begin
                     // Warp Reconvergence: The last arriving path absorbs the entire aggregate mask.
                     mask_list_r[path_id_r] <= barrier_total_r[barr_idx_i];
+                    play_mask_r <= barrier_total_r[barr_idx_i];
 
-                    // NOTE: I'm putting this here for safety, but these values likely don't matter
+                    // FIXME: I'm putting this here for safety, but these values likely don't matter
                     // since they're not used until the next binit_i
                     barrier_total_r[barr_idx_i] <= '0;
                     barrier_parked_r[barr_idx_i] <= '0;

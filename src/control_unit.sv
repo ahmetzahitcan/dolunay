@@ -555,7 +555,7 @@ module control_unit
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_ALWAYS;
+                instr_o.branch_cond = BRANCH_COND_COALESCE;
                 instr_o.wb_active = 1'b1;
                 instr_o.wb_source = WB_SOURCE_PC_P4;
                 instr_o.binit = 1'b0;

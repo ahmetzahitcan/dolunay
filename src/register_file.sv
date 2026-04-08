@@ -34,10 +34,22 @@ module register_file
     logic [N_THREADS-1:0][XLEN-1:0] rs1_data_r;
     logic [N_THREADS-1:0][XLEN-1:0] rs2_data_r;
 
+    `ifndef SYNTHESIS
+        logic [XLEN-1:0] debug__regs_shadow_w [0:N_WARPS-1][0:N_THREADS-1][1:N_REGISTERS-1];
+    `endif
+
     generate
         for (genvar T = 0; T < N_THREADS; T++) begin
             (* ram_style = "block" *)    
             logic [XLEN-1:0] regs_r [0:(N_WARPS * N_REGISTERS) - 1];
+
+            `ifndef SYNTHESIS
+                for (genvar W = 0; W < N_WARPS; W++) begin
+                    for (genvar R = 1; R < N_REGISTERS; R++) begin
+                        assign debug__regs_shadow_w[W][T][R] = regs_r[W * N_REGISTERS + R];
+                    end
+                end
+            `endif
             
             always_ff @(posedge clk) begin
                 if (write_en_mask_i[T]) begin

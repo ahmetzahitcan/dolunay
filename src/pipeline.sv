@@ -102,7 +102,7 @@ module pipeline
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin
             logic en_w;
-            assign en_w = exmem_warp_id_r == I & mem_stage_valid_r;
+            assign en_w = (exmem_warp_id_r == I) & mem_stage_valid_r;
 
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
@@ -365,6 +365,7 @@ module pipeline
             (* DONT_TOUCH = "true" *)
             branch_cond_unit u_bcu(
                 .alu_result_i(exmem_alu_result_r[I]),
+                .coalesced_i(jalr_coalesced_w[I]),
                 .branch_cond_i(exmem_instr_r.branch_cond),
                 .branch_flag_o(mem_branch_flag_w[I])
             );
