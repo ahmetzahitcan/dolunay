@@ -41,25 +41,7 @@ module instr_mem
     logic [31:0] mem_r [0:DEPTH-1];
 
     initial begin
-        `ifdef SYNTHESIS
-            $readmemh("synth_irom.mem", mem_r);
-        `else
-            fd = $fopen("shared_mem_test.mem", "rb");
-            if (fd == 0) begin
-                $error("Failed to open file");
-            end else begin
-                for (int i = 0; i < DEPTH; i++) begin
-                    code = $fread(bytes, fd);
-                    if (code == 4) begin
-                        mem_r[i] = {bytes[3], bytes[2], bytes[1], bytes[0]};
-                    end else begin
-                        assert (code == 0) else $error("IROM file size is not a multiple of 4");
-                        mem_r[i] = NOP;
-                    end
-                end
-                $fclose(fd);
-            end
-        `endif
+        $readmemh("irom.mem", mem_r);
 
 /*
         for (int i = 0; i < DEPTH; i++) begin
