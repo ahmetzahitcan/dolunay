@@ -278,6 +278,40 @@ module control_unit
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
                 instr_o.is_jalr = 1'b0;
             end
+            30'b0000111??????????101?????01100: begin // CZERO_EQZ
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_CZERO_EQZ;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.binit = 1'b0;
+                instr_o.bwait = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+            end
+            30'b0000111??????????111?????01100: begin // CZERO_NEZ
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_CZERO_NEZ;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.binit = 1'b0;
+                instr_o.bwait = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+            end
             30'b1000000??????????????????00010: begin // BINIT
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -666,6 +700,23 @@ module control_unit
                 instr_o.mem_active = 1'b1;
                 instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
                 instr_o.mem_opsize = MEM_OPSIZE_WORD;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+            end
+            30'b?????????????????000?????00011: begin // FENCE
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b0;
+                instr_o.wb_source = WB_SOURCE_UNDEFINED;
+                instr_o.binit = 1'b0;
+                instr_o.bwait = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
                 instr_o.is_jalr = 1'b0;
             end

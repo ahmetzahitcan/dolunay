@@ -48,6 +48,8 @@ module alu
             ALU_FUNCT_HARTID: result_w = (warp_id_i << 16) | THREAD_ID;
             ALU_FUNCT_ZERO: result_w = '0;
             ALU_FUNCT_OP2: result_w = op2_w;
+            ALU_FUNCT_CZERO_EQZ: result_w = (rs2_val_i == '0) ? 1'b0 : rs1_val_i;
+            ALU_FUNCT_CZERO_NEZ: result_w = (rs2_val_i != '0) ? 1'b0 : rs1_val_i;
             default: result_w = 'x;
         endcase
     end
