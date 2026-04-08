@@ -219,7 +219,7 @@ module pipeline
         exmem_warp_id_r <= idex_warp_id_r;
     end
 
-    // Memory -- TODO: shared memory
+    // Memory
 
     enum logic {MSEL_SHARED, MSEL_SPAD} [N_THREADS-1:0] mem_msel_w;
 
@@ -309,7 +309,6 @@ module pipeline
             logic [ADDR_ALIGN-1:0] wen_byte_w;
             assign wen_byte_w = wen_any_w ? mem_store_wen_w[I] : '0;
 
-            (* DONT_TOUCH = "true" *)
             wram #(
                 .DEPTH(SPAD_BANK_DEPTH)
             ) u_spad_bank (
