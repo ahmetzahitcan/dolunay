@@ -11,7 +11,6 @@ start:
     la x3, base
     add x3, x3, x2
     jalr x1, 0(x3)
-    bload x31, 0x0
     bsync x31, 0x0
     j .
 

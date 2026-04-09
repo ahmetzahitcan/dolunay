@@ -21,7 +21,7 @@ module control_unit
         instr_o.rs1_idx = undec_instr32_i[W_REGISTERS+14:15];
         instr_o.rs2_idx = undec_instr32_i[W_REGISTERS+19:20];
         case (undec_instr32_i) inside
-            30'b000000000000000001110000000010: begin // YIELD
+            30'b000000000000000001000000000010: begin // YIELD
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -327,7 +327,7 @@ module control_unit
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
                 instr_o.is_jalr = 1'b0;
             end
-            30'b?????????????????0000000000010: begin // BINIT
+            30'b?????????????????0010000000010: begin // BINIT
                 imm_type_w = IMM_TYPE_I;
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -345,7 +345,7 @@ module control_unit
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
                 instr_o.is_jalr = 1'b0;
             end
-            30'b?????????????????0010000000010: begin // BLOAD
+            30'b?????????????????0100000000010: begin // BSYNC_0
                 imm_type_w = IMM_TYPE_I;
                 instr_o.alu_funct = ALU_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -360,24 +360,6 @@ module control_unit
                 instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
                 instr_o.mem_opsize = MEM_OPSIZE_WORD;
                 instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
-                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
-                instr_o.is_jalr = 1'b0;
-            end
-            30'b?????????????????0100000000010: begin // BSYNC
-                imm_type_w = IMM_TYPE_I;
-                instr_o.alu_funct = ALU_FUNCT_ADD;
-                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
-                instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
-                instr_o.wb_active = 1'b0;
-                instr_o.wb_source = WB_SOURCE_UNDEFINED;
-                instr_o.barr_load = 1'b0;
-                instr_o.barr_sync = 1'b1;
-                instr_o.yield = 1'b0;
-                instr_o.mem_active = 1'b1;
-                instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
-                instr_o.mem_opsize = MEM_OPSIZE_WORD;
-                instr_o.mem_store_source = MEM_STORE_SOURCE_BSYNC;
                 instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
                 instr_o.is_jalr = 1'b0;
             end

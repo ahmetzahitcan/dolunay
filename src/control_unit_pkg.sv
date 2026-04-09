@@ -74,8 +74,8 @@ package control_unit_pkg;
 
 	typedef enum logic [1:0] {
 		MEM_STORE_SOURCE_BINIT,
-		MEM_STORE_SOURCE_BSYNC,
 		MEM_STORE_SOURCE_RS2,
+		MEM_STORE_SOURCE_BSYNC,
 		MEM_STORE_SOURCE_UNDEFINED='x
 	} mem_store_source_e;
 

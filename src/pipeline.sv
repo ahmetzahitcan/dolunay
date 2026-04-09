@@ -100,6 +100,16 @@ module pipeline
     end
 
     // Fetch
+    logic [N_WARPS-1:0] bsync_1_r;
+    logic [N_WARPS-1:0] bsync_1_w;
+    always_ff @( posedge clk ) begin
+        if (~rst_n) begin
+            bsync_1_r <= '0;
+        end else begin
+            bsync_1_r <= bsync_1_w;
+        end
+    end
+
     logic [N_WARPS-1:0][XLEN-1:Z_PC] u_thread_scheduler_pc_w;
     logic [N_WARPS-1:0][N_THREADS-1:0] u_thread_scheduler_mask_w;
 
@@ -118,12 +128,15 @@ module pipeline
             logic wb_en_w;
             assign wb_en_w = (memwb_warp_id_r == I) & wb_stage_valid_r;
 
+            // FIXME: this is a hack
+            assign bsync_1_w[I] = mem_en_w ? (bsync_1_r[I] ^ (exmem_instr_r.barr_load | exmem_instr_r.barr_sync)) : bsync_1_r[I];
+
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
 
-                .instr_completed_i(mem_en_w),
+                .instr_completed_i(~memwb_instr_r.barr_load & mem_en_w), // FIXME: this is a hack
                 .instr_replay_mask_i(mem_instr_replay_mask_w),
 
                 .yield_i(exmem_instr_r.yield & mem_en_w),
@@ -171,8 +184,9 @@ module pipeline
     instr_s id_instr_w;
 
     (* DONT_TOUCH = "true" *)
-    control_unit u_control_unit(
+    control_unit_ext u_control_unit(
         .undec_instr32_i(ifid_undec_instr32_w),
+        .bsync_1_i(bsync_1_r[ifid_warp_id_r]),
         .instr_o(id_instr_w)
     );
 

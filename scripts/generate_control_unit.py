@@ -230,6 +230,14 @@ def emit_sv_module(data, output_file, module_name, package_name):
 
         for row in instructions:
             inst      = row['instruction'].strip()
+
+            # indicates an "impossible" instruction
+            # should still generate the needed enum values
+            # but should not generate the case statement
+            # FIXME: this is a hack
+            if inst.startswith("~"):
+                continue
+
             match_str = row['CleanMatchString']
 
             if len(match_str) != 30:
