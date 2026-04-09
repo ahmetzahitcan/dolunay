@@ -66,7 +66,7 @@ module pipeline
     logic [N_THREADS-1:0] memwb_msel_r;
     logic [Z_ADDR-1:0] memwb_leader_alignment_r;
     logic [XLEN-1:0] memwb_shared_rdata_w;
-    logic [N_THREADS-1:0][XLEN-1:0] memwb_spad_rdata_w;
+    logic [N_THREADS-1:0][XLEN-1:0] memwb_tlocal_rdata_w;
 
     logic [N_THREADS-1:0] wb_write_en_mask_w;
     logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
@@ -186,8 +186,6 @@ module pipeline
 
     // Execute
 
-    logic [XLEN-1:Z_PC] mem_leader_target_w;
-
     // - ALU Lanes
 
     logic [N_THREADS-1:0][XLEN-1:0] ex_alu_result_w;
@@ -221,11 +219,11 @@ module pipeline
 
     // Memory
 
-    enum logic {MSEL_SHARED, MSEL_SPAD} [N_THREADS-1:0] mem_msel_w;
+    enum logic {MSEL_SHARED, MSEL_TLOCAL} [N_THREADS-1:0] mem_msel_w;
 
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            mem_msel_w[i] = exmem_alu_result_r[i][XLEN-1] ? MSEL_SPAD : MSEL_SHARED;
+            mem_msel_w[i] = exmem_alu_result_r[i][XLEN-1] ? MSEL_TLOCAL : MSEL_SHARED;
         end
     end
 
@@ -294,29 +292,29 @@ module pipeline
         .rdata_o(memwb_shared_rdata_w)
     );
 
-    // - Scratchpad
+    // - Thread-local Memory
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin
-            logic [W_SPAD_BANK_ADDR-1:Z_ADDR] bank_addr;
-            assign bank_addr = {exmem_warp_id_r, exmem_alu_result_r[I][W_SPAD_ADDR_PT-1:Z_ADDR]};
+            logic [W_TLOCAL_BANK_ADDR-1:Z_ADDR] bank_addr;
+            assign bank_addr = {exmem_warp_id_r, exmem_alu_result_r[I][W_TLOCAL_ADDR_PT-1:Z_ADDR]};
 
             logic wen_any_w;
             assign wen_any_w = 
                 mem_write_en_w[I] & 
-                (mem_msel_w[I] == MSEL_SPAD);
+                (mem_msel_w[I] == MSEL_TLOCAL);
 
             logic [ADDR_ALIGN-1:0] wen_byte_w;
             assign wen_byte_w = wen_any_w ? mem_store_wen_w[I] : '0;
 
             wram #(
-                .DEPTH(SPAD_BANK_DEPTH)
-            ) u_spad_bank (
+                .DEPTH(TLOCAL_BANK_DEPTH)
+            ) u_tlocal_bank (
                 .clk(clk),
                 .addr_i(bank_addr),
                 .wdata_i(mem_store_data_fmt_w[I]),
                 .wen_i(wen_byte_w),
-                .rdata_o(memwb_spad_rdata_w[I])
+                .rdata_o(memwb_tlocal_rdata_w[I])
             );
         end
     endgenerate    
@@ -341,15 +339,16 @@ module pipeline
         .m_wen_o(mem_store_wen_w)
     );
 
-    // - JALR Coalescing Logic
+    // - Coalescing Logic
 
-    logic [N_THREADS-1:0] jalr_coalesced_w;
+    logic [XLEN-1:0] mem_leader_target_w;
+    assign mem_leader_target_w = exmem_alu_result_r[mem_leader_id_w][XLEN-1:0];
 
-    assign mem_leader_target_w = exmem_alu_result_r[mem_leader_id_w][XLEN-1:Z_PC];
+    logic [N_THREADS-1:0] mem_coalesced_w;
 
     generate
         for(genvar I = 0; I < N_THREADS; I++) begin
-            assign jalr_coalesced_w[I] = exmem_alu_result_r[I][XLEN-1:Z_PC] == mem_leader_target_w;
+            assign mem_coalesced_w[I] = exmem_alu_result_r[I][XLEN-1:0] == mem_leader_target_w;
         end
     endgenerate
 
@@ -365,7 +364,7 @@ module pipeline
             (* DONT_TOUCH = "true" *)
             branch_cond_unit u_bcu(
                 .alu_result_i(exmem_alu_result_r[I]),
-                .coalesced_i(jalr_coalesced_w[I]),
+                .coalesced_i(mem_coalesced_w[I]),
                 .branch_cond_i(exmem_instr_r.branch_cond),
                 .branch_flag_o(mem_branch_flag_w[I])
             );
@@ -377,7 +376,7 @@ module pipeline
     
     always_comb begin
         if (exmem_instr_r.is_jalr) begin
-            mem_branch_target_w = mem_leader_target_w;
+            mem_branch_target_w = mem_leader_target_w[XLEN-1:Z_PC];
         end else begin
             mem_branch_target_w = exmem_pc_r + exmem_instr_r.imm[31:2];
         end
@@ -387,10 +386,10 @@ module pipeline
 
     always_comb begin
         if (exmem_instr_r.is_jalr) begin
-            mem_instr_replay_mask_w = exmem_mask_r & ~jalr_coalesced_w;
+            mem_instr_replay_mask_w = exmem_mask_r & ~mem_coalesced_w;
         end else if (exmem_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
-                mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (mem_leader_id_w != i) & (mem_msel_w[i] == MSEL_SHARED);
+                mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & (mem_msel_w[i] == MSEL_SHARED);
             end
         end else begin
             mem_instr_replay_mask_w = '0;
@@ -412,12 +411,12 @@ module pipeline
     // Writeback
 
     logic [XLEN-1:0] wb_shared_rdata_fmt_w;
-    logic [N_THREADS-1:0][XLEN-1:0] wb_spad_rdata_fmt_w;
+    logic [N_THREADS-1:0][XLEN-1:0] wb_tlocal_rdata_fmt_w;
 
     logic [N_THREADS:0][XLEN-1:0] wb_rfmt_in_w;
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            wb_rfmt_in_w[i] = memwb_spad_rdata_w[i];
+            wb_rfmt_in_w[i] = memwb_tlocal_rdata_w[i];
         end
         wb_rfmt_in_w[N_THREADS] = memwb_shared_rdata_w;
     end
@@ -425,7 +424,7 @@ module pipeline
     logic [N_THREADS:0][XLEN-1:0] wb_rfmt_out_w;
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            wb_spad_rdata_fmt_w[i] = wb_rfmt_out_w[i];
+            wb_tlocal_rdata_fmt_w[i] = wb_rfmt_out_w[i];
         end
         wb_shared_rdata_fmt_w = wb_rfmt_out_w[N_THREADS];
     end
@@ -460,7 +459,7 @@ module pipeline
                 WB_SOURCE_MEM: for (int i = 0; i < N_THREADS; i++) begin
                     unique case (memwb_msel_r[i]) 
                         MSEL_SHARED: wb_write_data_w[i] = wb_shared_rdata_fmt_w;
-                        MSEL_SPAD: wb_write_data_w[i] = wb_spad_rdata_fmt_w[i];
+                        MSEL_TLOCAL: wb_write_data_w[i] = wb_tlocal_rdata_fmt_w[i];
                     endcase
                 end
                 WB_SOURCE_PC_P4: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = wb_pc_p4_w;
