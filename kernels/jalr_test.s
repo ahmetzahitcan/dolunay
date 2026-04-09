@@ -8,7 +8,7 @@ start:
     andi x2, x2, 0xe
     slli x2, x2, 2
     binit x31, 0x0
-    la x3, base
+    lla x3, base
     add x3, x3, x2
     jalr x1, 0(x3)
     bsync x31, 0x0
