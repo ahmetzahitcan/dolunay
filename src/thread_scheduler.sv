@@ -10,9 +10,16 @@ module thread_scheduler
     input wire logic [N_THREADS-1:0] instr_replay_mask_i,
 
     input wire logic yield_i,
-    input wire logic binit_i,
-    input wire logic bwait_i,
-    input wire logic [W_BARRIERS-1:0] barr_idx_i,
+
+    input wire logic barr_load_i,
+    input wire [N_THREADS-1:0] barr_load_total_i,
+    input wire [N_THREADS-1:0] barr_load_parked_i,
+
+    input wire logic barr_sync_i,
+    output logic [N_THREADS-1:0] barr_sync_total_o,
+    output logic [N_THREADS-1:0] barr_sync_parked_next_o,
+    output logic barr_sync_release_o,
+
     input wire logic branch_i,
     input wire logic [XLEN-1:Z_PC] pc_branch_i,
     input wire logic [N_THREADS-1:0] mask_branch_i,
@@ -92,14 +99,14 @@ module thread_scheduler
     logic [N_THREADS-1:0] mask_w;
     assign mask_w = mask_list_r[path_id_r];
 
-    logic [N_BARRIERS-1:0][N_THREADS-1:0] barrier_total_r;
-    logic [N_BARRIERS-1:0][N_THREADS-1:0] barrier_parked_r;
+    logic [N_THREADS-1:0] barr_total_r;
+    logic [N_THREADS-1:0] barr_parked_r;
 
-    logic [N_THREADS-1:0] barrier_parked_next_w;
-    assign barrier_parked_next_w = barrier_parked_r[barr_idx_i] | mask_w;
+    logic [N_THREADS-1:0] barr_parked_next_w;
+    assign barr_parked_next_w = barr_parked_r | mask_w;
 
-    logic barrier_release_w;
-    assign barrier_release_w = (barrier_total_r[barr_idx_i] == barrier_parked_next_w);
+    logic barr_release_w;
+    assign barr_release_w = (barr_total_r == barr_parked_next_w);
 
     logic replay_any_w;
     assign replay_any_w = |instr_replay_mask_i;
@@ -125,10 +132,8 @@ module thread_scheduler
                 pc_list_r[i] <= '0;
                 mask_list_r[i] <= '0;
             end
-            for (int i = 0; i < N_BARRIERS; i++) begin
-                barrier_total_r[i] <= '0;
-                barrier_parked_r[i] <= '0;
-            end
+            barr_total_r <= '0;
+            barr_parked_r <= '0;
         end else begin
             if (instr_completed_i) begin
                 assert ((instr_replay_mask_i & ~mask_w) == '0) else $error("Instruction replay mask is not a subset of the active thread mask.");
@@ -142,38 +147,31 @@ module thread_scheduler
             end 
             
             unique0 if (yield_i) begin
-                assert (mask_w == mask_active_and_playing_w) else $error("yield_i raised during replay.");
+                assert (mask_w == mask_active_and_playing_w) else $error("yield_i raised during partial replay.");
                 path_id_r <= path_id_next_w;
                 play_mask_r <= path_id_next_mask_w;
-            end else if (binit_i) begin
-                assert (mask_w == mask_active_and_playing_w) else $error("binit_i raised during replay.");
-                assert (barrier_total_r[barr_idx_i] == '0) else $warning("binit_i called on a barrier that is already initialized.");
-
-                barrier_total_r[barr_idx_i] <= mask_w;
-                barrier_parked_r[barr_idx_i] <= 0;
-            end else if (bwait_i) begin
-                assert (mask_w == mask_active_and_playing_w) else $error("bwait_i raised during replay.");
-                if (barrier_release_w) begin
+            end else if (barr_load_i) begin
+                assert (mask_w == mask_active_and_playing_w) else $error("barr_load_i raised during partial replay.");
+                barr_total_r <= barr_load_total_i;
+                barr_parked_r <= barr_load_parked_i;
+            end else if (barr_sync_i) begin
+                assert (mask_w == mask_active_and_playing_w) else $error("barr_sync_i raised during partial replay.");
+                if (barr_release_w) begin
                     // Warp Reconvergence: The last arriving path absorbs the entire aggregate mask.
-                    mask_list_r[path_id_r] <= barrier_total_r[barr_idx_i];
-                    play_mask_r <= barrier_total_r[barr_idx_i];
-
-                    // FIXME: I'm putting this here for safety, but these values likely don't matter
-                    // since they're not used until the next binit_i
-                    barrier_total_r[barr_idx_i] <= '0;
-                    barrier_parked_r[barr_idx_i] <= '0;
+                    
+                    mask_list_r[path_id_r] <= barr_total_r;
+                    play_mask_r <= barr_total_r;
                 end else begin
-                    // Warp is yet to reconverge. Disable this path, and mark it as parked within the barrier.
+                    // Warp is yet to reconverge. Disable this path.
                     // The last arriving path will absorb the entire mask.
 
-                    barrier_parked_r[barr_idx_i] <= barrier_parked_next_w;
                     mask_list_r[path_id_r] <= '0;
 
                     // auto-yield
                     path_id_r <= path_id_next_w;
                     play_mask_r <= path_id_next_mask_w;
 
-                    assert (path_id_next_w != path_id_r) else $error("Path ID did not change during barrier wait.");
+                    assert (path_id_next_w != path_id_r) else $error("Path ID did not change during barrier sync park.");
                 end
             end else if (branch_i) begin
                 assert ((mask_branch_i & instr_replay_mask_i) == '0) else $error("Some threads are trying to replay and branch at the same time.");
@@ -199,6 +197,10 @@ module thread_scheduler
 
     assign pc_o   = pc_w;
     assign mask_o = mask_active_and_playing_w;
+    
+    assign barr_sync_total_o = barr_total_r;
+    assign barr_sync_parked_next_o = barr_parked_next_w;
+    assign barr_sync_release_o = barr_release_w;
 
 endmodule
 

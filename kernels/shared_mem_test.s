@@ -1,4 +1,5 @@
 .section .text
+.include "instructions.s"
 
 start: 
     csrr x1, mhartid
@@ -12,14 +13,14 @@ start:
 others:
     li x2, 100
 waste_time:
-    .word 0b00100000000000000000000000001011 # yield
+    yield
     addi x2, x2, -1
     bnez x2, waste_time
 read_value:
     lw x3, 0(x0)
     lw x4, 4(x0)
 halt:
-    .word 0b00100000000000000000000000001011 # yield
+    yield
     j halt
 
 thread0_1:

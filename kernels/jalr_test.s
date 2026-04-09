@@ -1,14 +1,18 @@
 .section .text
+.include "instructions.s"
 
 start:
     csrr x2, mhartid
+    srli x31, x2, 16
+    slli x31, x31, 2
     andi x2, x2, 0xe
     slli x2, x2, 2
-    .word 0b10000000000000000000000000001011 # binit b0
+    binit x31, 0x0
     la x3, base
     add x3, x3, x2
     jalr x1, 0(x3)
-    .word 0b01000000000000000000000000001011 # bwait b0
+    bload x31, 0x0
+    bsync x31, 0x0
     j .
 
 base:

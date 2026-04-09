@@ -60,17 +60,24 @@ package control_unit_pkg;
 	} wb_source_e;
 
 	typedef enum logic {
-		MEM_LOADSTORE_LOAD,
 		MEM_LOADSTORE_STORE,
+		MEM_LOADSTORE_LOAD,
 		MEM_LOADSTORE_UNDEFINED='x
 	} mem_loadstore_e;
 
 	typedef enum logic [1:0] {
+		MEM_OPSIZE_WORD,
 		MEM_OPSIZE_BYTE,
 		MEM_OPSIZE_HALF,
-		MEM_OPSIZE_WORD,
 		MEM_OPSIZE_UNDEFINED='x
 	} mem_opsize_e;
+
+	typedef enum logic [1:0] {
+		MEM_STORE_SOURCE_BINIT,
+		MEM_STORE_SOURCE_BSYNC,
+		MEM_STORE_SOURCE_RS2,
+		MEM_STORE_SOURCE_UNDEFINED='x
+	} mem_store_source_e;
 
 	typedef enum logic {
 		MEM_EXTENDMODE_SIGN,
@@ -83,19 +90,19 @@ package control_unit_pkg;
 		logic [W_REGISTERS-1:0] rd_idx;
 		logic [W_REGISTERS-1:0] rs1_idx;
 		logic [W_REGISTERS-1:0] rs2_idx;
-		logic [W_BARRIERS-1:0] barr_idx;
 		alu_funct_e alu_funct;
 		alu_op1_sel_e alu_op1_sel;
 		alu_op2_sel_e alu_op2_sel;
 		branch_cond_e branch_cond;
 		logic wb_active;
 		wb_source_e wb_source;
-		logic binit;
-		logic bwait;
+		logic barr_load;
+		logic barr_sync;
 		logic yield;
 		logic mem_active;
 		mem_loadstore_e mem_loadstore;
 		mem_opsize_e mem_opsize;
+		mem_store_source_e mem_store_source;
 		mem_extendmode_e mem_extendmode;
 		logic is_jalr;
 	} instr_s;

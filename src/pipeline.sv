@@ -35,13 +35,17 @@ module pipeline
     end
 
     // Cross-stage signals
+
+    // - Fetch stage signals
     logic [W_WARPS-1:0] wsif_warp_id_r;
 
+    // - Decode stage signals
     logic [XLEN-1:Z_PC] ifid_pc_r;
     logic [N_THREADS-1:0] ifid_mask_r;
     logic [31:2] ifid_undec_instr32_w;
     logic [W_WARPS-1:0] ifid_warp_id_r;
 
+    // - Execute stage signals
     logic [N_THREADS-1:0][XLEN-1:0] idex_rs1_data_w;
     logic [N_THREADS-1:0][XLEN-1:0] idex_rs2_data_w;
     instr_s idex_instr_r;
@@ -49,14 +53,21 @@ module pipeline
     logic [XLEN-1:Z_PC] idex_pc_r;
     logic [N_THREADS-1:0] idex_mask_r;
 
+    // - Memory stage signals
     instr_s exmem_instr_r;
     logic [N_THREADS-1:0][XLEN-1:0] exmem_alu_result_r;
-    logic [N_THREADS-1:0][XLEN-1:0] exmem_store_data_r;
+    logic [N_THREADS-1:0][XLEN-1:0] exmem_rs2_data_r;
     logic [XLEN-1:Z_PC] exmem_pc_r;
     logic [N_THREADS-1:0] exmem_mask_r;
     logic [W_WARPS-1:0] exmem_warp_id_r;
 
+    // - Barrier signals
+    logic [N_THREADS-1:0] barr_load_total_w;
+    logic [N_THREADS-1:0] barr_load_parked_w;
+    logic [N_WARPS-1:0][N_THREADS-1:0] barr_sync_total_w;
+    logic [N_WARPS-1:0][N_THREADS-1:0] barr_sync_parked_next_w;
 
+    // - Writeback stage signals
     logic [N_THREADS-1:0] mem_instr_replay_mask_w;
     instr_s memwb_instr_r;
     logic [N_THREADS-1:0][XLEN-1:0] memwb_alu_result_r;
@@ -101,22 +112,32 @@ module pipeline
     // - Thread Schedulers
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin
-            logic en_w;
-            assign en_w = (exmem_warp_id_r == I) & mem_stage_valid_r;
+            logic mem_en_w;
+            assign mem_en_w = (exmem_warp_id_r == I) & mem_stage_valid_r;
+
+            logic wb_en_w;
+            assign wb_en_w = (memwb_warp_id_r == I) & wb_stage_valid_r;
 
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
-                .instr_completed_i(en_w),
+
+                .instr_completed_i(mem_en_w),
                 .instr_replay_mask_i(mem_instr_replay_mask_w),
 
-                .yield_i(exmem_instr_r.yield & en_w),
-                .binit_i(exmem_instr_r.binit & en_w),
-                .bwait_i(exmem_instr_r.bwait & en_w),
-                .barr_idx_i(exmem_instr_r.barr_idx),
+                .yield_i(exmem_instr_r.yield & mem_en_w),
 
-                .branch_i(mem_branching_w & en_w),
+                .barr_sync_i(exmem_instr_r.barr_sync & mem_en_w),
+                .barr_sync_total_o(barr_sync_total_w[I]),
+                .barr_sync_parked_next_o(barr_sync_parked_next_w[I]),
+                .barr_sync_release_o(), // Not needed
+
+                .barr_load_i(memwb_instr_r.barr_load & wb_en_w),
+                .barr_load_total_i(barr_load_total_w),
+                .barr_load_parked_i(barr_load_parked_w),
+
+                .branch_i(mem_branching_w & mem_en_w),
                 .pc_branch_i(mem_branch_target_w),
                 .mask_branch_i(mem_branch_mask_w),
 
@@ -211,7 +232,7 @@ module pipeline
     always_ff @( posedge clk ) begin
         exmem_instr_r <= idex_instr_r;
         exmem_alu_result_r <= ex_alu_result_w;
-        exmem_store_data_r <= idex_rs2_data_w;
+        exmem_rs2_data_r <= idex_rs2_data_w;
         exmem_mask_r <= idex_mask_r;
         exmem_pc_r <= idex_pc_r;
         exmem_warp_id_r <= idex_warp_id_r;
@@ -321,6 +342,21 @@ module pipeline
 
     // - Formatting
 
+    logic [N_THREADS-1:0][XLEN-1:0] mem_store_data_w;
+
+    always_comb begin
+        unique case (exmem_instr_r.mem_store_source)
+            MEM_STORE_SOURCE_RS2: mem_store_data_w = exmem_rs2_data_r;
+            MEM_STORE_SOURCE_BINIT: for(int i = 0; i < N_THREADS; i++) begin
+                mem_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, {N_THREADS{1'b1}}, {N_THREADS{1'b0}}};
+            end
+            MEM_STORE_SOURCE_BSYNC: for(int i = 0; i < N_THREADS; i++) begin
+                mem_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, barr_sync_total_w[exmem_warp_id_r], barr_sync_parked_next_w[exmem_warp_id_r]};
+            end
+            default: mem_store_data_w = 'x;
+        endcase
+    end
+
     logic [N_THREADS-1:0][Z_ADDR-1:0] mem_alignment_w;
 
     always_comb begin
@@ -332,7 +368,7 @@ module pipeline
     mem_write_formatter #(
         .DATA_LEN(N_THREADS)
     ) u_wfmt (
-        .p_data_i(exmem_store_data_r),
+        .p_data_i(mem_store_data_w),
         .opsize_i(exmem_instr_r.mem_opsize),
         .alignment_i(mem_alignment_w),
         .m_data_o(mem_store_data_fmt_w),
@@ -468,6 +504,10 @@ module pipeline
     end
 
     assign wb_write_en_mask_w = memwb_instr_r.wb_active ? memwb_mask_r : '0;
+
+    // - Barrier Load Logic
+    assign barr_load_total_w = wb_shared_rdata_fmt_w[N_THREADS*2-1:N_THREADS];
+    assign barr_load_parked_w = wb_shared_rdata_fmt_w[N_THREADS-1:0];
 
 endmodule
 
