@@ -348,7 +348,7 @@ module pipeline
         unique case (exmem_instr_r.mem_store_source)
             MEM_STORE_SOURCE_RS2: mem_store_data_w = exmem_rs2_data_r;
             MEM_STORE_SOURCE_BINIT: for(int i = 0; i < N_THREADS; i++) begin
-                mem_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, {N_THREADS{1'b1}}, {N_THREADS{1'b0}}};
+                mem_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, exmem_mask_r, {N_THREADS{1'b0}}};
             end
             MEM_STORE_SOURCE_BSYNC: for(int i = 0; i < N_THREADS; i++) begin
                 mem_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, barr_sync_total_w[exmem_warp_id_r], barr_sync_parked_next_w[exmem_warp_id_r]};
