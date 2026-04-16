@@ -5,7 +5,6 @@
 // the change automatically without touching the individual TB files.
 // =============================================================================
 `timescale 1ns/1ps
-`default_nettype none
 
 package tb_config_pkg;
 
@@ -20,5 +19,3 @@ package tb_config_pkg;
     localparam int RST_CYCLES = 16;
 
 endpackage : tb_config_pkg
-
-`default_nettype wire

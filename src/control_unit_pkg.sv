@@ -12,10 +12,12 @@ package control_unit_pkg;
 		IMM_TYPE_UNDEFINED='x
 	} imm_type_e;
 
-	typedef enum logic [3:0] {
+	typedef enum logic [4:0] {
+		ALU_FUNCT_OP1,
 		ALU_FUNCT_HARTID,
-		ALU_FUNCT_ADD,
-		ALU_FUNCT_SUB,
+		ALU_FUNCT_WARPID,
+		ALU_FUNCT_THRID,
+		ALU_FUNCT_ADDY,
 		ALU_FUNCT_SLL,
 		ALU_FUNCT_SLT,
 		ALU_FUNCT_SLTU,
@@ -30,6 +32,15 @@ package control_unit_pkg;
 		ALU_FUNCT_ZERO,
 		ALU_FUNCT_UNDEFINED='x
 	} alu_funct_e;
+
+	typedef enum logic [2:0] {
+		ALU_ADDY_FUNCT_ADD,
+		ALU_ADDY_FUNCT_SH1ADD,
+		ALU_ADDY_FUNCT_SH2ADD,
+		ALU_ADDY_FUNCT_SH3ADD,
+		ALU_ADDY_FUNCT_SUB,
+		ALU_ADDY_FUNCT_UNDEFINED='x
+	} alu_addy_funct_e;
 
 	typedef enum logic {
 		ALU_OP1_SEL_RS1,
@@ -53,15 +64,16 @@ package control_unit_pkg;
 	} branch_cond_e;
 
 	typedef enum logic [1:0] {
-		WB_SOURCE_ALU,
-		WB_SOURCE_PC_P4,
 		WB_SOURCE_MEM,
+		WB_SOURCE_ALU,
+		WB_SOURCE_SC,
+		WB_SOURCE_PC_P4,
 		WB_SOURCE_UNDEFINED='x
 	} wb_source_e;
 
 	typedef enum logic {
-		MEM_LOADSTORE_STORE,
 		MEM_LOADSTORE_LOAD,
+		MEM_LOADSTORE_STORE,
 		MEM_LOADSTORE_UNDEFINED='x
 	} mem_loadstore_e;
 
@@ -73,8 +85,8 @@ package control_unit_pkg;
 	} mem_opsize_e;
 
 	typedef enum logic [1:0] {
-		MEM_STORE_SOURCE_BINIT,
 		MEM_STORE_SOURCE_RS2,
+		MEM_STORE_SOURCE_BINIT,
 		MEM_STORE_SOURCE_BSYNC,
 		MEM_STORE_SOURCE_UNDEFINED='x
 	} mem_store_source_e;
@@ -86,11 +98,15 @@ package control_unit_pkg;
 	} mem_extendmode_e;
 
 	typedef struct packed {
+		`ifndef SYNTHESIS
+		sim__disasm_t sim__disasm;
+		`endif
 		logic [XLEN-1:0] imm;
 		logic [W_REGISTERS-1:0] rd_idx;
 		logic [W_REGISTERS-1:0] rs1_idx;
 		logic [W_REGISTERS-1:0] rs2_idx;
 		alu_funct_e alu_funct;
+		alu_addy_funct_e alu_addy_funct;
 		alu_op1_sel_e alu_op1_sel;
 		alu_op2_sel_e alu_op2_sel;
 		branch_cond_e branch_cond;
@@ -105,6 +121,8 @@ package control_unit_pkg;
 		mem_store_source_e mem_store_source;
 		mem_extendmode_e mem_extendmode;
 		logic is_jalr;
+		logic is_lr;
+		logic is_sc;
 	} instr_s;
 
 endpackage

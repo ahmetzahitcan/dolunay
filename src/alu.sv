@@ -32,11 +32,31 @@ module alu
         endcase
     end
 
+    logic [XLEN-1:0] addy_op1_w;
+    always_comb begin
+        case (instr_i.alu_addy_funct)
+            ALU_ADDY_FUNCT_ADD: addy_op1_w = op1_w;
+            ALU_ADDY_FUNCT_SUB: addy_op1_w = op1_w;
+            ALU_ADDY_FUNCT_SH1ADD: addy_op1_w = op1_w << 1;
+            ALU_ADDY_FUNCT_SH2ADD: addy_op1_w = op1_w << 2;
+            ALU_ADDY_FUNCT_SH3ADD: addy_op1_w = op1_w << 3;
+            default: addy_op1_w = 'x;
+        endcase
+    end
+
+    logic [XLEN-1:0] addy_op2_w;
+    assign addy_op2_w = (instr_i.alu_addy_funct == ALU_ADDY_FUNCT_SUB) ? ~op2_w : op2_w;
+
+    logic addy_cin_w;
+    assign addy_cin_w = (instr_i.alu_addy_funct == ALU_ADDY_FUNCT_SUB) ? 1'b1 : 1'b0;
+
+    logic [XLEN-1:0] addy_result_w;
+    assign addy_result_w = addy_op1_w + addy_op2_w + addy_cin_w;
+
     logic [XLEN-1:0] result_w;
     always_comb begin
         case (instr_i.alu_funct)
-            ALU_FUNCT_ADD: result_w = op1_w + op2_w;
-            ALU_FUNCT_SUB: result_w = op1_w - op2_w;
+            ALU_FUNCT_ADDY: result_w = addy_result_w;
             ALU_FUNCT_SLL: result_w = op1_w << op2_w[4:0];
             ALU_FUNCT_SLT: result_w = $signed(op1_w) < $signed(op2_w);
             ALU_FUNCT_SLTU: result_w = $unsigned(op1_w) < $unsigned(op2_w);
@@ -46,7 +66,10 @@ module alu
             ALU_FUNCT_OR: result_w = op1_w | op2_w;
             ALU_FUNCT_AND: result_w = op1_w & op2_w;
             ALU_FUNCT_HARTID: result_w = (warp_id_i << 16) | THREAD_ID;
+            ALU_FUNCT_WARPID: result_w = warp_id_i;
+            ALU_FUNCT_THRID: result_w = THREAD_ID;
             ALU_FUNCT_ZERO: result_w = '0;
+            ALU_FUNCT_OP1: result_w = op1_w;
             ALU_FUNCT_OP2: result_w = op2_w;
             ALU_FUNCT_CZERO_EQZ: result_w = (rs2_val_i == '0) ? 1'b0 : rs1_val_i;
             ALU_FUNCT_CZERO_NEZ: result_w = (rs2_val_i != '0) ? 1'b0 : rs1_val_i;

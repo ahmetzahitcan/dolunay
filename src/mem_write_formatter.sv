@@ -1,3 +1,5 @@
+`default_nettype none
+
 module mem_write_formatter
     import params_pkg::*;
     import control_unit_pkg::*;
@@ -60,3 +62,5 @@ module mem_write_formatter
     assign m_wen_o = m_wen_w;
 
 endmodule
+
+`default_nettype wire

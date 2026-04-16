@@ -35,7 +35,7 @@ def parse_csv(csv_file):
 
     try:
         with open(csv_file, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
+            reader = csv.DictReader(f, skipinitialspace=True)
             fields = reader.fieldnames
             if not fields:
                 print("Error: Empty CSV file.")
@@ -123,7 +123,7 @@ def parse_csv(csv_file):
     # Parse control-signal columns: handle optional bit-width in header (e.g. "alu_op[2:0]").
     control_signals = []
     for field in fields:
-        if field in ('instruction', 'match_string'):
+        if field in ('instruction', 'match_string', 'sim__disasm_format'):
             continue
         if field.startswith("'"):  # commented-out column
             continue
@@ -214,6 +214,8 @@ def emit_sv_module(data, output_file, module_name, package_name):
         f.write(f"    import {package_name}::*;\n")
         f.write("(\n")
         f.write("    input  wire  [31:2] undec_instr32_i,\n")
+        f.write("    input  wire  [XLEN-1:Z_PC] pc_i,\n")
+        f.write("    input  wire  valid_i,\n")
         f.write("    output instr_s instr_o\n")
         f.write(");\n\n")
         f.write("    imm_type_e imm_type_w;\n\n")
@@ -222,6 +224,18 @@ def emit_sv_module(data, output_file, module_name, package_name):
         f.write("        .imm_type_i(imm_type_w),\n")
         f.write("        .imm_o(instr_o.imm)\n")
         f.write("    );\n\n")
+        f.write("    `ifndef SYNTHESIS\n")
+        f.write("    string sim__disasm_format_w;\n")
+        f.write("    sim__instr_formatter sim__u_instr_formatter(\n")
+        f.write("        .format_i(sim__disasm_format_w),\n")
+        f.write("        .rd_i(instr_o.rd_idx),\n")
+        f.write("        .rs1_i(instr_o.rs1_idx),\n")
+        f.write("        .rs2_i(instr_o.rs2_idx),\n")
+        f.write("        .imm_i(instr_o.imm),\n")
+        f.write("        .pc_i(pc_i),\n")
+        f.write("        .disasm_o(instr_o.sim__disasm)\n")
+        f.write("    );\n")
+        f.write("    `endif\n\n")
         f.write("    always_comb begin\n")
         f.write("        instr_o.rd_idx = undec_instr32_i[W_REGISTERS+6:7];\n")
         f.write("        instr_o.rs1_idx = undec_instr32_i[W_REGISTERS+14:15];\n")
@@ -246,6 +260,12 @@ def emit_sv_module(data, output_file, module_name, package_name):
                 continue
 
             f.write(f"            30'b{match_str}: begin // {inst}\n")
+            f.write("                `ifndef SYNTHESIS\n")
+            _disasm = row['sim__disasm_format'].strip()
+            if not _disasm.startswith('"'):
+                _disasm = f'"{_disasm}"'
+            f.write(f"                sim__disasm_format_w = {_disasm};\n")
+            f.write("                `endif\n")
             for col, sig, rng in control_signals:
                 val = row[col].strip() if row.get(col) else ""
                 if sig == "imm_type":
@@ -256,6 +276,12 @@ def emit_sv_module(data, output_file, module_name, package_name):
 
         # Default (INVALID) case
         f.write("            default: begin // INVALID\n")
+        f.write("                `ifndef SYNTHESIS\n")
+        f.write(f"                sim__disasm_format_w = \"INVALID\";\n")
+        f.write("                if (valid_i) begin\n")
+        f.write("                    $warning(\"Invalid instruction (%h) encountered at %d\", undec_instr32_i, pc_i);\n")
+        f.write("                end\n")
+        f.write("                `endif\n")
         for col, sig, rng in control_signals:
             def_val = default_values.get(col, "")
             if sig == "imm_type":
@@ -295,6 +321,9 @@ def emit_sv_package(data, output_file, package_name):
             f.write(f"\t}} {sig}_e;\n\n")
 
         f.write("\ttypedef struct packed {\n")
+        f.write("\t\t`ifndef SYNTHESIS\n")
+        f.write("\t\tsim__disasm_t sim__disasm;\n")
+        f.write("\t\t`endif\n")
         f.write("\t\tlogic [XLEN-1:0] imm;\n")
         f.write("\t\tlogic [W_REGISTERS-1:0] rd_idx;\n")
         f.write("\t\tlogic [W_REGISTERS-1:0] rs1_idx;\n")
@@ -309,7 +338,7 @@ def emit_sv_package(data, output_file, package_name):
                 if rng == "":
                     f.write(f"\t\tlogic {sig};\n")
                 else:
-                    f.write(f"\t\tlogic {rng} {sig};\n")
+                    f.write(f"\t\tlogic [{rng}] {sig};\n")
         f.write(f"\t}} instr_s;\n\n")
 
 

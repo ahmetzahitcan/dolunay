@@ -2,6 +2,11 @@
 
 package params_pkg;
 
+    `ifndef SYNTHESIS
+        localparam int DISASM_LEN = 32;
+        typedef logic [DISASM_LEN*8-1:0] sim__disasm_t;
+    `endif
+
     localparam int XLEN = 32;
 
     localparam int ADDR_ALIGN = 4;
@@ -26,6 +31,10 @@ package params_pkg;
     localparam int SHARED_MEM_SIZE = 65536; // 64 KB
     localparam int SHARED_MEM_DEPTH = SHARED_MEM_SIZE / ADDR_ALIGN;
     localparam int W_SHARED_MEM_ADDR = $clog2(SHARED_MEM_SIZE);
+
+    localparam int IROM_SIZE = 4096; // 4 KB
+    localparam int IROM_DEPTH = IROM_SIZE / ADDR_ALIGN;
+    localparam int W_IROM_ADDR = $clog2(IROM_SIZE);
 
 endpackage
 

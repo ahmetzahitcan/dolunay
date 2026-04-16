@@ -1,3 +1,5 @@
+`default_nettype none
+
 module wram
     import params_pkg::*;
 #(
@@ -28,3 +30,5 @@ module wram
     assign rdata_o = rdata_r;
 
 endmodule
+
+`default_nettype wire

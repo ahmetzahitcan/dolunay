@@ -1,3 +1,5 @@
+`default_nettype none
+
 module mem_read_formatter 
     import params_pkg::*;
     import control_unit_pkg::*;
@@ -86,3 +88,5 @@ module mem_read_formatter
     assign p_data_o = reg_data_w;
 
 endmodule
+
+`default_nettype wire

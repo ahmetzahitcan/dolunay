@@ -2,14 +2,14 @@
 .include "instructions.s"
 
 start:
-    csrr x2, mhartid
-    srli x31, x2, 16
-    slli x31, x31, 2
+    csrr x2, xthrid
+    csrr x31, xwarpid
+    li x30, 0x40000000
+    sh2add x31, x31, x30
     andi x2, x2, 0xe
-    slli x2, x2, 2
-    binit x31, 0x0
     lla x3, base
-    add x3, x3, x2
+    sh2add x3, x2, x3
+    binit x31, 0x0
     jalr x1, 0(x3)
     bsync x31, 0x0
     j .
