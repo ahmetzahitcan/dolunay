@@ -35,7 +35,11 @@ module pipeline
         end else begin
             ws_stage_valid_r <= 1'b1;
             if_stage_valid_r <= ws_stage_valid_r;
+            `ifdef SINGLE_WARP_MODE
+            id_stage_valid_r <= if_stage_valid_r & wsif_warp_id_r == 0;
+            `else
             id_stage_valid_r <= if_stage_valid_r;
+            `endif
             ex_stage_valid_r <= id_stage_valid_r;
             mem_stage_valid_r <= ex_stage_valid_r;
             wb_stage_valid_r <= mem_stage_valid_r;
@@ -69,6 +73,7 @@ module pipeline
     logic [N_THREADS-1:0] exmem_mask_r;
     logic [W_WARPS-1:0] exmem_warp_id_r;
     logic [N_THREADS-1:0] mem_instr_replay_mask_w;
+    logic mem_branching_w;
 
     // - Barrier signals
     logic [N_THREADS-1:0] barr_load_total_w;
@@ -469,7 +474,6 @@ module pipeline
 
     logic [N_THREADS-1:0] mem_branch_flag_w;
     logic [N_THREADS-1:0] mem_branch_mask_w;
-    logic mem_branching_w;
     logic [XLEN-1:Z_PC] mem_branch_target_w;
 
     generate
