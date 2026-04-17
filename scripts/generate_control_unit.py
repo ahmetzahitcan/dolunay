@@ -358,11 +358,17 @@ if __name__ == "__main__":
         description='Generate SystemVerilog control unit from a CSV sheet.'
     )
     parser.add_argument('input_csv', help='Input CSV file containing instructions and control signals')
-    parser.add_argument('output_module',  help='Output SystemVerilog module filename')
+    parser.add_argument('output_module',  nargs='?', default=None, 
+                        help='Output SystemVerilog module filename'
+                             '(default <input_csv_no_ext>.sv)')
     parser.add_argument('output_package', nargs='?', default=None,
                         help='Output SystemVerilog package filename '
                              '(default: <output_module_no_ext>_pkg.sv)')
     args = parser.parse_args()
+
+    if args.output_module is None:
+        extless = args.input_csv.rsplit('.', 1)[0]
+        args.output_module = f"{extless}.sv"
 
     if args.output_package is None:
         extless = args.output_module.rsplit('.', 1)[0]

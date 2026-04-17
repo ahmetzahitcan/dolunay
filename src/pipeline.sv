@@ -16,6 +16,24 @@ module pipeline
     } msel_e;
 
 
+    // Performance counters
+    logic [N_WARPS-1:0] winst_retired_w;
+    logic [N_WARPS-1:0][N_THREADS-1:0] inst_retired_w;
+    logic [63:0] csr_cycletime_w;
+    logic [N_WARPS-1:0][N_THREADS-1:0][63:0] csr_instret_w;
+    logic [N_WARPS-1:0][63:0] csr_wtinstret_w;
+    logic [N_WARPS-1:0][63:0] csr_wuinstret_w;
+    hpms u_hpms(
+        .clk(clk),
+        .rst_n(rst_n),
+        .winst_retired_i(winst_retired_w),
+        .inst_retired_i(inst_retired_w),
+        .cycletime_o(csr_cycletime_w),
+        .instret_o(csr_instret_w),
+        .wtinstret_o(csr_wtinstret_w),
+        .wuinstret_o(csr_wuinstret_w)
+    );
+
     // Stage valid registers -- indicating whether other pipeline registers are valid
     logic ws_stage_valid_r;
     logic if_stage_valid_r;
@@ -145,12 +163,17 @@ module pipeline
             // FIXME: this is a hack
             assign bsync_1_w[I] = mem_en_w ? (bsync_1_r[I] ^ (exmem_instr_r.barr_load | exmem_instr_r.barr_sync)) : bsync_1_r[I];
 
+            // FIXME: this is a hack
+            assign winst_retired_w[I] = ~exmem_instr_r.barr_load & mem_en_w;
+
+            assign inst_retired_w[I] = winst_retired_w[I] ? (exmem_mask_r & ~mem_instr_replay_mask_w) : '0;
+
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
 
-                .instr_completed_i(~exmem_instr_r.barr_load & mem_en_w), // FIXME: this is a hack
+                .instr_completed_i(winst_retired_w[I]),
                 .instr_replay_mask_i(mem_instr_replay_mask_w),
 
                 .yield_i(exmem_instr_r.yield & mem_en_w),
@@ -258,6 +281,10 @@ module pipeline
                 .instr_i(idex_instr_r),
                 .warp_id_i(idex_warp_id_r),
                 .pc_i(idex_pc_r),
+                .csr_cycletime_i(csr_cycletime_w),
+                .csr_instret_i(csr_instret_w[idex_warp_id_r][I]),
+                .csr_wtinstret_i(csr_wtinstret_w[idex_warp_id_r]),
+                .csr_wuinstret_i(csr_wuinstret_w[idex_warp_id_r]),
                 .result_o(ex_alu_result_w[I])
             );
         end
