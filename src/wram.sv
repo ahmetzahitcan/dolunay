@@ -3,7 +3,7 @@
 module wram
     import params_pkg::*;
 #(
-    parameter int DEPTH,
+    parameter int DEPTH = SHARED_MEM_DEPTH,
     localparam int W_ADDR = $clog2(DEPTH) + Z_ADDR
 )(
     input wire logic clk,

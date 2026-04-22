@@ -2,8 +2,6 @@
 
 package params_pkg;
 
-    //`define SINGLE_WARP_MODE
-
     `ifndef SYNTHESIS
         localparam int DISASM_LEN = 32;
         typedef logic [DISASM_LEN*8-1:0] sim__disasm_t;

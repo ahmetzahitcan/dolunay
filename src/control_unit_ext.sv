@@ -21,8 +21,6 @@ module control_unit_ext
     );
 
     always_comb begin
-        instr_o = instr_w;
-        
         if (bsync_1_i) begin // ~BSYNC_1,, I, ADD, RS1, IMM, NEVER, 0, x, 0,1,0,1,STORE,WORD,BSYNC,x,0
             //instr_o.imm_type = IMM_TYPE_I; -- Right, this doesn't exist. Fortunately, this only means imm_type cannot change between runs; which is fine.
             instr_o.alu_funct = ALU_FUNCT_ADDY;
@@ -41,6 +39,8 @@ module control_unit_ext
             instr_o.mem_store_source = MEM_STORE_SOURCE_BSYNC;
             instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
             instr_o.is_jalr = 1'b0;
+        end else begin
+            instr_o = instr_w;
         end
     end
 

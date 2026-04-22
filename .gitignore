@@ -1,4 +1,2 @@
-*.pdf
-*.docx
-diğer makaleler
+__pycache__
 tez-vivado
