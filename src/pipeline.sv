@@ -29,6 +29,23 @@ module pipeline
         MSEL_UNDEFINED='x
     } msel_e;
 
+    // HPMs
+    logic [N_WARPS-1:0] winst_retired_w;
+    logic [N_WARPS-1:0][N_THREADS-1:0] inst_retired_w;
+    logic [63:0] cycletime_w;
+    logic [N_WARPS-1:0][N_THREADS-1:0][63:0] instret_w;
+    logic [N_WARPS-1:0][63:0] wtinstret_w;
+    logic [N_WARPS-1:0][63:0] wuinstret_w;
+    hpms u_hpms(
+        .clk(clk),
+        .rst_n(rst_n),
+        .winst_retired_i(winst_retired_w),
+        .inst_retired_i(inst_retired_w),
+        .cycletime_o(cycletime_w),
+        .instret_o(instret_w),
+        .wtinstret_o(wtinstret_w),
+        .wuinstret_o(wuinstret_w)
+    );
 
     // Stage valid registers -- indicating whether other pipeline registers are valid
     logic ws_stage_valid_r;
@@ -154,12 +171,19 @@ module pipeline
             // FIXME: this is a hack
             assign bsync_1_w[I] = mem_en_w ? (bsync_1_r[I] ^ (exmem_instr_r.barr_load | exmem_instr_r.barr_sync)) : bsync_1_r[I];
 
+            // FIXME: this is a hack
+            logic instruction_retire_w;
+            assign instruction_retire_w = ~exmem_instr_r.barr_load & mem_en_w;
+
+            assign winst_retired_w[I] = instruction_retire_w;
+            assign inst_retired_w[I] = instruction_retire_w ? exmem_mask_r : '0;
+
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
 
-                .instr_completed_i(~exmem_instr_r.barr_load & mem_en_w), // FIXME: this is a hack
+                .instr_completed_i(winst_retired_w[I]), 
                 .instr_replay_mask_i(mem_instr_replay_mask_w),
 
                 .yield_i(exmem_instr_r.yield & mem_en_w),
@@ -264,7 +288,11 @@ module pipeline
                 .instr_i(idex_instr_r),
                 .warp_id_i(idex_warp_id_r),
                 .pc_i(idex_pc_r),
-                .result_o(ex_alu_result_w[I])
+                .result_o(ex_alu_result_w[I]),
+                .cycle_time_i(cycletime_w),
+                .instret_i(instret_w[idex_warp_id_r][I]),
+                .wuinstret_i(wuinstret_w[idex_warp_id_r]),
+                .wtinstret_i(wtinstret_w[idex_warp_id_r])
             );
         end
     endgenerate
