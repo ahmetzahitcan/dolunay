@@ -28,6 +28,22 @@ module tb_pipeline;
         .rst_n(rst_n)
     );
 
+    wram u_wram (
+        .clk(clk),
+        .addr_i(dut.wram_addr_o),
+        .wdata_i(dut.wram_wdata_o),
+        .wen_i(dut.wram_wen_o),
+        .rdata_o(dut.wram_rdata_i)
+    );
+
+    irom u_irom (
+        .clk(clk),
+        .port_a_addr_i(dut.irom_addr_a_o),
+        .port_a_data_o(dut.irom_data_a_i),
+        .port_b_addr_i(dut.irom_addr_b_o),
+        .port_b_data_o(dut.irom_data_b_i)
+    );
+
     initial begin
         // Hold reset low for at least RST_CYCLES clock cycles
         rst_n = 0;

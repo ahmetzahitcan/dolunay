@@ -5,7 +5,21 @@ module pipeline
     import control_unit_pkg::*;
 (
     input wire logic clk,
-    input wire logic rst_n
+    input wire logic rst_n,
+    
+    // WRAM Interface
+    output logic [W_SHARED_MEM_ADDR-1:Z_ADDR] wram_addr_o,
+    output logic [XLEN-1:0] wram_wdata_o,
+    output logic [ADDR_ALIGN-1:0] wram_wen_o,
+    input wire logic [XLEN-1:0] wram_rdata_i,
+
+    // IROM Interface A
+    output logic [W_IROM_ADDR-1:Z_PC] irom_addr_a_o,
+    input wire logic [XLEN-1:0] irom_data_a_i,
+
+    // IROM Interface B
+    output logic [W_IROM_ADDR-1:Z_PC] irom_addr_b_o,
+    input wire logic [XLEN-1:0] irom_data_b_i
 );
     // Typedefs
     typedef enum logic [1:0] {
@@ -15,24 +29,6 @@ module pipeline
         MSEL_UNDEFINED='x
     } msel_e;
 
-
-    // Performance counters
-    logic [N_WARPS-1:0] winst_retired_w;
-    logic [N_WARPS-1:0][N_THREADS-1:0] inst_retired_w;
-    logic [63:0] csr_cycletime_w;
-    logic [N_WARPS-1:0][N_THREADS-1:0][63:0] csr_instret_w;
-    logic [N_WARPS-1:0][63:0] csr_wtinstret_w;
-    logic [N_WARPS-1:0][63:0] csr_wuinstret_w;
-    hpms u_hpms(
-        .clk(clk),
-        .rst_n(rst_n),
-        .winst_retired_i(winst_retired_w),
-        .inst_retired_i(inst_retired_w),
-        .cycletime_o(csr_cycletime_w),
-        .instret_o(csr_instret_w),
-        .wtinstret_o(csr_wtinstret_w),
-        .wuinstret_o(csr_wuinstret_w)
-    );
 
     // Stage valid registers -- indicating whether other pipeline registers are valid
     logic ws_stage_valid_r;
@@ -53,11 +49,7 @@ module pipeline
         end else begin
             ws_stage_valid_r <= 1'b1;
             if_stage_valid_r <= ws_stage_valid_r;
-            `ifdef SINGLE_WARP_MODE
-            id_stage_valid_r <= if_stage_valid_r & wsif_warp_id_r == 0;
-            `else
             id_stage_valid_r <= if_stage_valid_r;
-            `endif
             ex_stage_valid_r <= id_stage_valid_r;
             mem_stage_valid_r <= ex_stage_valid_r;
             wb_stage_valid_r <= mem_stage_valid_r;
@@ -91,7 +83,6 @@ module pipeline
     logic [N_THREADS-1:0] exmem_mask_r;
     logic [W_WARPS-1:0] exmem_warp_id_r;
     logic [N_THREADS-1:0] mem_instr_replay_mask_w;
-    logic mem_branching_w;
 
     // - Barrier signals
     logic [N_THREADS-1:0] barr_load_total_w;
@@ -163,17 +154,12 @@ module pipeline
             // FIXME: this is a hack
             assign bsync_1_w[I] = mem_en_w ? (bsync_1_r[I] ^ (exmem_instr_r.barr_load | exmem_instr_r.barr_sync)) : bsync_1_r[I];
 
-            // FIXME: this is a hack
-            assign winst_retired_w[I] = ~exmem_instr_r.barr_load & mem_en_w;
-
-            assign inst_retired_w[I] = winst_retired_w[I] ? (exmem_mask_r & ~mem_instr_replay_mask_w) : '0;
-
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n),
 
-                .instr_completed_i(winst_retired_w[I]),
+                .instr_completed_i(~exmem_instr_r.barr_load & mem_en_w), // FIXME: this is a hack
                 .instr_replay_mask_i(mem_instr_replay_mask_w),
 
                 .yield_i(exmem_instr_r.yield & mem_en_w),
@@ -201,14 +187,11 @@ module pipeline
 
     logic [XLEN-1:0] if_irom_data_w;
 
-    (* DONT_TOUCH = "true" *)
-    irom u_irom(
-        .clk(clk),
-        .port_a_addr_i(if_pc_w[W_IROM_ADDR-1:Z_PC]),
-        .port_a_data_o(if_irom_data_w),
-        .port_b_addr_i(exmem_alu_result_r[mem_leader_id_w][W_IROM_ADDR-1:Z_ADDR]),
-        .port_b_data_o(wb_irom_data_w)
-    );
+    assign irom_addr_a_o = if_pc_w[W_IROM_ADDR-1:Z_PC];
+    assign if_irom_data_w = irom_data_a_i;
+
+    assign irom_addr_b_o = exmem_alu_result_r[mem_leader_id_w][W_IROM_ADDR-1:Z_PC];
+    assign wb_irom_data_w = irom_data_b_i;
 
     assign ifid_undec_instr32_w = if_irom_data_w[31:2];
 
@@ -281,10 +264,6 @@ module pipeline
                 .instr_i(idex_instr_r),
                 .warp_id_i(idex_warp_id_r),
                 .pc_i(idex_pc_r),
-                .csr_cycletime_i(csr_cycletime_w),
-                .csr_instret_i(csr_instret_w[idex_warp_id_r][I]),
-                .csr_wtinstret_i(csr_wtinstret_w[idex_warp_id_r]),
-                .csr_wuinstret_i(csr_wuinstret_w[idex_warp_id_r]),
                 .result_o(ex_alu_result_w[I])
             );
         end
@@ -394,6 +373,11 @@ module pipeline
 
     // - Shared Memory
 
+    assign wram_addr_o = exmem_alu_result_r[mem_leader_id_w][W_SHARED_MEM_ADDR-1:Z_ADDR];
+    assign wram_wdata_o = mem_store_data_fmt_w[mem_leader_id_w];
+    assign wram_wen_o = (mem_leader_valid_w & mem_write_en_w[mem_leader_id_w]) ? mem_store_wen_w[mem_leader_id_w] : '0;
+    assign memwb_shared_rdata_w = wram_rdata_i;
+
     `ifndef SYNTHESIS
         always_ff @(negedge clk) begin
             if (mem_stage_valid_r & exmem_instr_r.mem_active & mem_leader_valid_w) begin
@@ -408,18 +392,6 @@ module pipeline
 
     logic [Z_ADDR-1:0] mem_leader_alignment_w;
     assign mem_leader_alignment_w = exmem_alu_result_r[mem_leader_id_w][Z_ADDR-1:0];
-
-    wram #(
-        .DEPTH(SHARED_MEM_DEPTH)
-    ) u_shared_mem (
-        .clk(clk),
-        .addr_i(exmem_alu_result_r[mem_leader_id_w][W_SHARED_MEM_ADDR-1:Z_ADDR]),
-        .wdata_i(mem_store_data_fmt_w[mem_leader_id_w]),
-        // Note: If Leader has MSEL_IROM, it cannot be a store operation.
-        //       And leader cannot have MSEL_TLOCAL, so we don't need to check for it here.
-        .wen_i((mem_leader_valid_w & mem_write_en_w[mem_leader_id_w]) ? mem_store_wen_w[mem_leader_id_w] : '0),
-        .rdata_o(memwb_shared_rdata_w)
-    );
 
     // - Thread-local Memory
 
@@ -501,6 +473,7 @@ module pipeline
 
     logic [N_THREADS-1:0] mem_branch_flag_w;
     logic [N_THREADS-1:0] mem_branch_mask_w;
+    logic mem_branching_w;
     logic [XLEN-1:Z_PC] mem_branch_target_w;
 
     generate
