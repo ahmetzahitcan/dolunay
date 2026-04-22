@@ -11,7 +11,11 @@ module alu
     input wire instr_s instr_i,
     input wire logic [W_WARPS-1:0] warp_id_i,
     input wire logic [XLEN-1:Z_PC] pc_i,
-    output logic [XLEN-1:0] result_o
+    output logic [XLEN-1:0] result_o,
+    input wire logic [63:0] cycle_time_i,
+    input wire logic [63:0] instret_i,
+    input wire logic [63:0] wuinstret_i,
+    input wire logic [63:0] wtinstret_i
 );
 
     logic [XLEN-1:0] op1_w;
@@ -68,6 +72,14 @@ module alu
             ALU_FUNCT_HARTID: result_w = (warp_id_i << 16) | THREAD_ID;
             ALU_FUNCT_WARPID: result_w = warp_id_i;
             ALU_FUNCT_THRID: result_w = THREAD_ID;
+            ALU_FUNCT_CYCLETIME: result_w = cycle_time_i[31:0];
+            ALU_FUNCT_CYCLETIMEH: result_w = cycle_time_i[63:32];
+            ALU_FUNCT_INSTRET: result_w = instret_i[31:0];
+            ALU_FUNCT_INSTRETH: result_w = instret_i[63:32];
+            ALU_FUNCT_WUINSTRET: result_w = wuinstret_i[31:0];
+            ALU_FUNCT_WUINSTRETH: result_w = wuinstret_i[63:32];
+            ALU_FUNCT_WTINSTRET: result_w = wtinstret_i[31:0];
+            ALU_FUNCT_WTINSTRETH: result_w = wtinstret_i[63:32];
             ALU_FUNCT_ZERO: result_w = '0;
             ALU_FUNCT_OP1: result_w = op1_w;
             ALU_FUNCT_OP2: result_w = op2_w;

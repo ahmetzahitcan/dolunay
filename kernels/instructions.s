@@ -12,3 +12,19 @@
 .macro yield
     .insn i 0x0b, 0x4, x0, x0, 0x0
 .endm
+
+.macro rdwtinstret rd
+    csrr \rd, hpmcounter4
+.endm
+
+.macro rdwtinstreth rd
+    csrr \rd, hpmcounter4h
+.endm
+
+.macro rdwuinstret rd
+    csrr \rd, hpmcounter3
+.endm
+
+.macro rdwuinstreth rd
+    csrr \rd, hpmcounter3h
+.endm

@@ -156,6 +156,198 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
             end
+            30'b110000000010?????????????11100: begin // CSR_INSTRET
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, instret";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_INSTRET;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+            end
+            30'b110010000010?????????????11100: begin // CSR_INSTRETH
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, instreth";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_INSTRETH;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+            end
+            30'b110000000011?????????????11100: begin // CSR_WUINSTRET
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, wuinstret";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_WUINSTRET;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+            end
+            30'b110010000011?????????????11100: begin // CSR_WUINSTRETH
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, wuinstreth";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_WUINSTRETH;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+            end
+            30'b110000000100?????????????11100: begin // CSR_WTINSTRET
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, wtinstret";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_WTINSTRET;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+            end
+            30'b110010000100?????????????11100: begin // CSR_WTINSTRETH
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, wtinstreth";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_WTINSTRETH;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+            end
+            30'b11000000000??????????????11100: begin // CSR_CYCLETIME
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, cycle|time";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_CYCLETIME;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+            end
+            30'b11001000000??????????????11100: begin // CSR_CYCLETIMEH
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, cycleh|timeh";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_CYCLETIMEH;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+            end
             30'b0000000??????????000?????01100: begin // ADD
                 `ifndef SYNTHESIS
                 sim__disasm_format_w = "add $d, $1, $2";
