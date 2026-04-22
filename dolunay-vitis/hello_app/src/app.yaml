@@ -1,0 +1,4 @@
+domain_path: /home/azc/Belgeler/dolunay/dolunay-vitis/cmod_a7_35t/export/cmod_a7_35t/sw/standalone_microblaze_0
+app_src_dir: /home/azc/Xilinx/2025.2/Vitis/data/embeddedsw/lib/sw_apps/empty_application
+template: empty_application
+lang: c

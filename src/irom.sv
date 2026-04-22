@@ -3,18 +3,21 @@
 module irom 
     import params_pkg::*;
     import control_unit_pkg::*;
-(
+#(
+    parameter int DEPTH,
+    localparam int W_ADDR = $clog2(DEPTH)
+)(
     input wire  logic clk,
-    input wire  logic [W_IROM_ADDR-1:Z_PC]   port_a_addr_i,
-    output logic [XLEN-1:0]   port_a_data_o,
-    input wire  logic [W_IROM_ADDR-1:Z_PC]   port_b_addr_i,
-    output logic [XLEN-1:0]   port_b_data_o
+    input wire  logic [W_ADDR-1:2]   port_a_addr_i,
+    output logic [31:0]   port_a_data_o,
+    input wire  logic [W_ADDR-1:2]   port_b_addr_i,
+    output logic [31:0]   port_b_data_o
 );
 
     // -------------------------------------------------------------------------
     // Instruction ROM
     // -------------------------------------------------------------------------
-    logic [XLEN-1:0] mem_r [0:IROM_DEPTH-1];
+    logic [31:0] mem_r [0:DEPTH-1];
 
     initial begin
         $readmemh("irom.mem", mem_r);
@@ -24,11 +27,11 @@ module irom
     // Instruction Disassembly
     // -------------------------------------------------------------------------
     `ifndef SYNTHESIS
-    sim__disasm_t sim__disasm_w [IROM_DEPTH];
+    sim__disasm_t sim__disasm_w [DEPTH];
 
     instr_s sim__instr_w;
     logic [31:2] sim__undec_instr32_w;
-    logic [XLEN-1:Z_PC] sim__pc_w;
+    logic [31:2] sim__pc_w;
     control_unit sim__u_cu(
         .undec_instr32_i(sim__undec_instr32_w),
         .pc_i(sim__pc_w),
@@ -51,7 +54,7 @@ module irom
             sim__disasm_w[i] = sim__instr_w.sim__disasm;
         end
 
-        for (int i = instr_count; i < IROM_DEPTH; i++) begin
+        for (int i = instr_count; i < DEPTH; i++) begin
             sim__disasm_w[i] = "INVALID";
         end
     end
