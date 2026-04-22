@@ -13,9 +13,12 @@ _ENUM_VALUE_RE = re.compile(r'^[A-Z][A-Z0-9_]*$')
 # Values that mean "don't-care" rather than a real signal value.
 _DONT_CARE = {'x', '-', 'd', '?'}
 
-def extract_base_name(filename):
-    """Extracts the base name of a file, removing the path and extension."""
-    return re.split(r'[/\\]', filename)[-1].split('.')[0]
+def extract_base_name(filename, remove_path=True):
+    """Extracts the base name of a file, removing the extension and optionally the path (default: True)."""
+    if remove_path:
+        return re.split(r'[/\\]', filename)[-1].split('.')[0]
+    else:
+        return filename.split('.')[0]
 
 
 def parse_csv(csv_file):
@@ -357,15 +360,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Generate SystemVerilog control unit from a CSV sheet.'
     )
-    parser.add_argument('input_csv', help='Input CSV file containing instructions and control signals')
-    parser.add_argument('output_module',  help='Output SystemVerilog module filename')
+    parser.add_argument('input_csv', nargs='?', default=f"{sys.path[0]}/control_unit.csv", help='Input CSV file containing instructions and control signals')
+    parser.add_argument('output_module',   nargs='?', default=f"{sys.path[0]}/../src/control_unit.sv", help='Output SystemVerilog module filename')
     parser.add_argument('output_package', nargs='?', default=None,
                         help='Output SystemVerilog package filename '
                              '(default: <output_module_no_ext>_pkg.sv)')
     args = parser.parse_args()
 
     if args.output_package is None:
-        extless = args.output_module.rsplit('.', 1)[0]
+        extless = extract_base_name(args.output_module, remove_path=False)
         args.output_package = f"{extless}_pkg.sv"
 
     package_name = extract_base_name(args.output_package)
