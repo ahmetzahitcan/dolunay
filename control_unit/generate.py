@@ -1,5 +1,6 @@
 import csv
 import sys
+import os
 import argparse
 import re
 import math
@@ -15,10 +16,10 @@ _DONT_CARE = {'x', '-', 'd', '?'}
 
 def extract_base_name(filename, remove_path=True):
     """Extracts the base name of a file, removing the extension and optionally the path (default: True)."""
+    name = os.path.splitext(filename)[0]
     if remove_path:
-        return re.split(r'[/\\]', filename)[-1].split('.')[0]
-    else:
-        return filename.split('.')[0]
+        name = os.path.basename(name)
+    return name
 
 
 def parse_csv(csv_file):
