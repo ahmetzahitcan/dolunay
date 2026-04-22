@@ -28,14 +28,6 @@ package params_pkg;
     localparam int W_TLOCAL_ADDR_PT = $clog2(TLOCAL_SIZE_PT);
     localparam int W_TLOCAL_BANK_ADDR = $clog2(TLOCAL_BANK_SIZE);
 
-    localparam int SHARED_MEM_SIZE = 65536; // 64 KB
-    localparam int SHARED_MEM_DEPTH = SHARED_MEM_SIZE / ADDR_ALIGN;
-    localparam int W_SHARED_MEM_ADDR = $clog2(SHARED_MEM_SIZE);
-
-    localparam int IROM_SIZE = 4096; // 4 KB
-    localparam int IROM_DEPTH = IROM_SIZE / ADDR_ALIGN;
-    localparam int W_IROM_ADDR = $clog2(IROM_SIZE);
-
 endpackage
 
 `default_nettype wire

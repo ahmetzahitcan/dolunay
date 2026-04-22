@@ -1,0 +1,16 @@
+{
+   "ActiveEmotionalView":"Default View",
+   "Default View_ScaleFactor":"1.0",
+   "Default View_TopLeft":"-3,-5",
+   "ExpandedHierarchyInLayout":"",
+   "guistr":"# # String gsaved with Nlview 7.8.0 2024-04-26 e1825d835c VDI=44 GEI=38 GUI=JA:21.0 TLS
+#  -string -flagsOSRD
+preplace inst core_top_0 -pg 1 -lvl 1 -x 320 -y 150 -defaultsOSRD
+preplace inst blk_mem_gen_0 -pg 1 -lvl 2 -x 540 -y 160 -defaultsOSRD
+preplace netloc core_top_0_IROM_A 1 1 1 N 150
+preplace netloc core_top_0_IROM_B 1 1 1 N 170
+levelinfo -pg 1 -40 320 540 720
+pagesize -pg 1 -db -bbox -sgen -40 -140 720 310
+"
+}
+

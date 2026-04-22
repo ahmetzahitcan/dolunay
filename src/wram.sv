@@ -1,9 +1,9 @@
 `default_nettype none
 
-module wram
+module ram
     import params_pkg::*;
 #(
-    parameter int DEPTH = SHARED_MEM_DEPTH,
+    parameter int DEPTH,
     localparam int W_ADDR = $clog2(DEPTH) + Z_ADDR
 )(
     input wire logic clk,

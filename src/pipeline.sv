@@ -3,12 +3,20 @@
 module pipeline
     import params_pkg::*;
     import control_unit_pkg::*;
-(
+# (
+    parameter int WRAM_SIZE,
+    localparam int WRAM_DEPTH = WRAM_SIZE / ADDR_ALIGN,
+    localparam int W_WRAM_ADDR = $clog2(WRAM_SIZE),
+
+    parameter int IROM_SIZE,
+    localparam int IROM_DEPTH = IROM_SIZE / ADDR_ALIGN,
+    localparam int W_IROM_ADDR = $clog2(IROM_SIZE)
+) (
     input wire logic clk,
     input wire logic rst_n,
     
     // WRAM Interface
-    output logic [W_SHARED_MEM_ADDR-1:Z_ADDR] wram_addr_o,
+    output logic [W_WRAM_ADDR-1:Z_ADDR] wram_addr_o,
     output logic [XLEN-1:0] wram_wdata_o,
     output logic [ADDR_ALIGN-1:0] wram_wen_o,
     input wire logic [XLEN-1:0] wram_rdata_i,
@@ -24,7 +32,7 @@ module pipeline
     // Typedefs
     typedef enum logic [1:0] {
         MSEL_IROM,
-        MSEL_SHARED,
+        MSEL_WRAM,
         MSEL_TLOCAL,
         MSEL_UNDEFINED='x
     } msel_e;
@@ -98,7 +106,7 @@ module pipeline
     logic [W_WARPS-1:0] memwb_warp_id_r;
     msel_e [N_THREADS-1:0] memwb_msel_r;
     logic [Z_ADDR-1:0] memwb_leader_alignment_r;
-    logic [XLEN-1:0] memwb_shared_rdata_w;
+    logic [XLEN-1:0] memwb_wram_rdata_w;
     logic [N_THREADS-1:0][XLEN-1:0] memwb_tlocal_rdata_w;
     logic [N_THREADS-1:0] memwb_sc_output_r;
 
@@ -308,7 +316,7 @@ module pipeline
         for (int i = 0; i < N_THREADS; i++) begin
             case (exmem_alu_result_r[i][XLEN-1:XLEN-2]) inside // FIXME: unique
                 2'b00: mem_msel_w[i] = MSEL_IROM;
-                2'b01: mem_msel_w[i] = MSEL_SHARED;
+                2'b01: mem_msel_w[i] = MSEL_WRAM;
                 2'b1?: mem_msel_w[i] = MSEL_TLOCAL;
                 default: mem_msel_w[i] = MSEL_UNDEFINED;
             endcase
@@ -329,7 +337,7 @@ module pipeline
             for (int i = 0; i < N_THREADS; i++) begin
                 case (mem_msel_w[i]) // FIXME: unique
                     MSEL_IROM: mem_leader_candidates_w[i] = exmem_mask_r[i] & (exmem_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD); // FIXME: can this be just exmem_mask_r[i]?
-                    MSEL_SHARED: begin
+                    MSEL_WRAM: begin
                         if (exmem_instr_r.is_sc) begin
                             mem_leader_candidates_w[i] = mem_reservation_r[exmem_warp_id_r][i] & exmem_mask_r[i];
                         end else begin
@@ -371,12 +379,12 @@ module pipeline
         end
     end
 
-    // - Shared Memory
+    // - Work RAM
 
-    assign wram_addr_o = exmem_alu_result_r[mem_leader_id_w][W_SHARED_MEM_ADDR-1:Z_ADDR];
+    assign wram_addr_o = exmem_alu_result_r[mem_leader_id_w][W_WRAM_ADDR-1:Z_ADDR];
     assign wram_wdata_o = mem_store_data_fmt_w[mem_leader_id_w];
     assign wram_wen_o = (mem_leader_valid_w & mem_write_en_w[mem_leader_id_w]) ? mem_store_wen_w[mem_leader_id_w] : '0;
-    assign memwb_shared_rdata_w = wram_rdata_i;
+    assign memwb_wram_rdata_w = wram_rdata_i;
 
     `ifndef SYNTHESIS
         always_ff @(negedge clk) begin
@@ -409,7 +417,7 @@ module pipeline
             logic [ADDR_ALIGN-1:0] wen_byte_w;
             assign wen_byte_w = wen_any_w ? mem_store_wen_w[I] : '0;
 
-            wram #(
+            ram #(
                 .DEPTH(TLOCAL_BANK_DEPTH)
             ) u_tlocal_bank (
                 .clk(clk),
@@ -508,7 +516,7 @@ module pipeline
             for (int i = 0; i < N_THREADS; i++) begin
                 case (mem_msel_w[i]) // FIXME: unique
                     MSEL_IROM: mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & memwb_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD;
-                    MSEL_SHARED: mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & ~exmem_instr_r.is_sc;
+                    MSEL_WRAM: mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & ~exmem_instr_r.is_sc;
                     MSEL_TLOCAL: mem_instr_replay_mask_w[i] = '0;
                 endcase
             end
@@ -537,7 +545,7 @@ module pipeline
 
     // Writeback
 
-    logic [XLEN-1:0] wb_shared_rdata_fmt_w;
+    logic [XLEN-1:0] wb_wram_rdata_fmt_w;
     logic [XLEN-1:0] wb_irom_rdata_fmt_w;
     logic [N_THREADS-1:0][XLEN-1:0] wb_tlocal_rdata_fmt_w;
 
@@ -546,7 +554,7 @@ module pipeline
         for (int i = 0; i < N_THREADS; i++) begin
             wb_rfmt_in_w[i] = memwb_tlocal_rdata_w[i];
         end
-        wb_rfmt_in_w[N_THREADS] = memwb_shared_rdata_w;
+        wb_rfmt_in_w[N_THREADS] = memwb_wram_rdata_w;
         wb_rfmt_in_w[N_THREADS+1] = wb_irom_data_w;
     end
 
@@ -555,7 +563,7 @@ module pipeline
         for (int i = 0; i < N_THREADS; i++) begin
             wb_tlocal_rdata_fmt_w[i] = wb_rfmt_out_w[i];
         end
-        wb_shared_rdata_fmt_w = wb_rfmt_out_w[N_THREADS];
+        wb_wram_rdata_fmt_w = wb_rfmt_out_w[N_THREADS];
         wb_irom_rdata_fmt_w = wb_rfmt_out_w[N_THREADS+1];
     end
 
@@ -590,7 +598,7 @@ module pipeline
                 WB_SOURCE_MEM: for (int i = 0; i < N_THREADS; i++) begin
                     case (memwb_msel_r[i]) // FIXME: unique
                         MSEL_IROM: wb_write_data_w[i] = wb_irom_rdata_fmt_w;
-                        MSEL_SHARED: wb_write_data_w[i] = wb_shared_rdata_fmt_w;
+                        MSEL_WRAM: wb_write_data_w[i] = wb_wram_rdata_fmt_w;
                         MSEL_TLOCAL: wb_write_data_w[i] = wb_tlocal_rdata_fmt_w[i];
                     endcase
                 end
@@ -603,8 +611,8 @@ module pipeline
     assign wb_write_en_mask_w = memwb_instr_r.wb_active ? memwb_mask_r : '0;
 
     // - Barrier Load Logic
-    assign barr_load_total_w = wb_shared_rdata_fmt_w[N_THREADS*2-1:N_THREADS];
-    assign barr_load_parked_w = wb_shared_rdata_fmt_w[N_THREADS-1:0];
+    assign barr_load_total_w = wb_wram_rdata_fmt_w[N_THREADS*2-1:N_THREADS];
+    assign barr_load_parked_w = wb_wram_rdata_fmt_w[N_THREADS-1:0];
 
 endmodule
 
