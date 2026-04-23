@@ -1053,7 +1053,7 @@ module control_unit
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
-                instr_o.branch_cond = BRANCH_COND_NONZERO;
+                instr_o.branch_cond = BRANCH_COND_ZERO;
                 instr_o.wb_active = 1'b0;
                 instr_o.wb_source = WB_SOURCE_UNDEFINED;
                 instr_o.barr_load = 1'b0;
@@ -1077,7 +1077,7 @@ module control_unit
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
-                instr_o.branch_cond = BRANCH_COND_ZERO;
+                instr_o.branch_cond = BRANCH_COND_NONZERO;
                 instr_o.wb_active = 1'b0;
                 instr_o.wb_source = WB_SOURCE_UNDEFINED;
                 instr_o.barr_load = 1'b0;
@@ -1101,7 +1101,7 @@ module control_unit
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
-                instr_o.branch_cond = BRANCH_COND_NONZERO;
+                instr_o.branch_cond = BRANCH_COND_ZERO;
                 instr_o.wb_active = 1'b0;
                 instr_o.wb_source = WB_SOURCE_UNDEFINED;
                 instr_o.barr_load = 1'b0;
@@ -1125,7 +1125,7 @@ module control_unit
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
-                instr_o.branch_cond = BRANCH_COND_ZERO;
+                instr_o.branch_cond = BRANCH_COND_NONZERO;
                 instr_o.wb_active = 1'b0;
                 instr_o.wb_source = WB_SOURCE_UNDEFINED;
                 instr_o.barr_load = 1'b0;

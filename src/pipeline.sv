@@ -130,7 +130,7 @@ module pipeline
     logic [N_THREADS-1:0] wb_write_en_mask_w;
     logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
 
-    logic [XLEN-1:0] wb_irom_data_w;
+    logic [31:2] wb_irom_data_w;
 
     // Warp Select
     logic [W_WARPS-1:0] ws_warp_id_w;
