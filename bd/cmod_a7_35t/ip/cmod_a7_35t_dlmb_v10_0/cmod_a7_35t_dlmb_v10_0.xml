@@ -3069,7 +3069,7 @@
           <spirit:name>FREQ_HZ</spirit:name>
           <spirit:displayName>LMB_Clk frequency</spirit:displayName>
           <spirit:description>LMB_Clk frequency</spirit:description>
-          <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="BUSIFPARAM_VALUE.CLK.LMB_CLK.FREQ_HZ">12000000</spirit:value>
+          <spirit:value spirit:format="long" spirit:resolve="user" spirit:id="BUSIFPARAM_VALUE.CLK.LMB_CLK.FREQ_HZ">6000000</spirit:value>
         </spirit:parameter>
         <spirit:parameter>
           <spirit:name>FREQ_TOLERANCE_HZ</spirit:name>
@@ -3187,7 +3187,7 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:9af27a58</spirit:value>
+            <spirit:value>9:2c14fa4d</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -3201,11 +3201,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Wed Apr 22 14:59:02 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 11:05:40 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:9af27a58</spirit:value>
+            <spirit:value>9:2c14fa4d</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -3219,11 +3219,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Wed Apr 22 14:58:10 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 11:04:56 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:9af27a58</spirit:value>
+            <spirit:value>9:2c14fa4d</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -3243,7 +3243,7 @@
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:fd6accf3</spirit:value>
+            <spirit:value>9:2816ad61</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -3259,11 +3259,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Wed Apr 22 14:58:10 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 11:04:56 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:fd6accf3</spirit:value>
+            <spirit:value>9:2816ad61</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -3283,7 +3283,7 @@
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:9af27a58</spirit:value>
+            <spirit:value>9:2c14fa4d</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>
@@ -3299,11 +3299,11 @@
         <spirit:parameters>
           <spirit:parameter>
             <spirit:name>GENtimestamp</spirit:name>
-            <spirit:value>Wed Apr 22 14:58:10 UTC 2026</spirit:value>
+            <spirit:value>Thu Apr 23 11:04:56 UTC 2026</spirit:value>
           </spirit:parameter>
           <spirit:parameter>
             <spirit:name>outputProductCRC</spirit:name>
-            <spirit:value>9:9af27a58</spirit:value>
+            <spirit:value>9:2c14fa4d</spirit:value>
           </spirit:parameter>
         </spirit:parameters>
       </spirit:view>

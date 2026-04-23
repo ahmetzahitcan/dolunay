@@ -54,6 +54,9 @@
 COMPONENT cmod_a7_35t
   PORT (
     sys_clk : IN STD_LOGIC;
+    btn : IN STD_LOGIC;
+    led : OUT STD_LOGIC;
+    led2 : OUT STD_LOGIC;
     uart_rxd : IN STD_LOGIC;
     uart_txd : OUT STD_LOGIC
   );
@@ -67,6 +70,9 @@ END COMPONENT;
 your_instance_name : cmod_a7_35t
   PORT MAP (
     sys_clk => sys_clk,
+    btn => btn,
+    led => led,
+    led2 => led2,
     uart_rxd => uart_rxd,
     uart_txd => uart_txd
   );

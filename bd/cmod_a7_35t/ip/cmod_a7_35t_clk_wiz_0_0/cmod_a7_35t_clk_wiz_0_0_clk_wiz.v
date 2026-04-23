@@ -53,12 +53,12 @@
 //  Output     Output      Phase    Duty Cycle   Pk-to-Pk     Phase
 //   Clock     Freq (MHz)  (degrees)    (%)     Jitter (ps)  Error (ps)
 //----------------------------------------------------------------------------
-// clk_out1__12.00000______0.000______50.0______684.720____668.310
+// clk_out1___6.00000______0.000______50.0______765.157____668.310
 //
 //----------------------------------------------------------------------------
 // Input Clock   Freq (MHz)    Input Jitter (UI)
 //----------------------------------------------------------------------------
-// __primary__________12.000____________0.010
+// __primary______________12____________0.010
 
 `timescale 1ps/1ps
 
@@ -129,7 +129,7 @@ wire clk_in2_cmod_a7_35t_clk_wiz_0_0;
     .CLKFBOUT_MULT_F      (62.500),
     .CLKFBOUT_PHASE       (0.000),
     .CLKFBOUT_USE_FINE_PS ("FALSE"),
-    .CLKOUT0_DIVIDE_F     (62.500),
+    .CLKOUT0_DIVIDE_F     (125.000),
     .CLKOUT0_PHASE        (0.000),
     .CLKOUT0_DUTY_CYCLE   (0.500),
     .CLKOUT0_USE_FINE_PS  ("FALSE"),

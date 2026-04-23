@@ -55,6 +55,9 @@
 // INST_TAG     ------ Begin cut for INSTANTIATION Template ------
 cmod_a7_35t your_instance_name (
   .sys_clk(sys_clk), // input wire sys_clk
+  .btn(btn), // input wire btn
+  .led(led), // output wire led
+  .led2(led2), // output wire led2
   .uart_rxd(uart_rxd), // input wire uart_rxd
   .uart_txd(uart_txd) // output wire uart_txd
 );

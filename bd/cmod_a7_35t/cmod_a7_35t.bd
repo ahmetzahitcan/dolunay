@@ -1,7 +1,7 @@
 {
   "design": {
     "design_info": {
-      "boundary_crc": "0x9D8883D7E8E67C43",
+      "boundary_crc": "0x20357E8882C0CB4E",
       "device": "xc7a35tcpg236-1",
       "name": "cmod_a7_35t",
       "rev_ctrl_bd_flag": "RevCtrlBdOff",
@@ -28,29 +28,6 @@
       "axi_bram_ctrl_0": "",
       "axi_uartlite_0": ""
     },
-    "interface_ports": {
-      "uart": {
-        "mode": "Master",
-        "vlnv_bus_definition": "xilinx.com:interface:uart:1.0",
-        "vlnv": "xilinx.com:interface:uart_rtl:1.0",
-        "hdl_attributes": {
-          "LOCKED": {
-            "value": "FALSE",
-            "value_src": "default"
-          }
-        },
-        "port_maps": {
-          "RxD": {
-            "physical_name": "uart_rxd",
-            "direction": "I"
-          },
-          "TxD": {
-            "physical_name": "uart_txd",
-            "direction": "O"
-          }
-        }
-      }
-    },
     "ports": {
       "sys_clk": {
         "type": "clk",
@@ -76,6 +53,21 @@
             "value_src": "default"
           }
         }
+      },
+      "btn": {
+        "direction": "I"
+      },
+      "led": {
+        "direction": "O"
+      },
+      "led2": {
+        "direction": "O"
+      },
+      "uart_rxd": {
+        "direction": "I"
+      },
+      "uart_txd": {
+        "direction": "O"
       }
     },
     "components": {
@@ -185,7 +177,7 @@
             "direction": "I",
             "parameters": {
               "FREQ_HZ": {
-                "value": "12000000",
+                "value": "6000000",
                 "value_src": "ip_prop"
               },
               "PHASE": {
@@ -674,13 +666,13 @@
             "value": "833.33"
           },
           "CLKOUT1_JITTER": {
-            "value": "684.720"
+            "value": "765.157"
           },
           "CLKOUT1_PHASE_ERROR": {
             "value": "668.310"
           },
           "CLKOUT1_REQUESTED_OUT_FREQ": {
-            "value": "12.000"
+            "value": "6"
           },
           "MMCM_CLKFBOUT_MULT_F": {
             "value": "62.500"
@@ -692,13 +684,13 @@
             "value": "10.0"
           },
           "MMCM_CLKOUT0_DIVIDE_F": {
-            "value": "62.500"
+            "value": "125.000"
           },
           "MMCM_DIVCLK_DIVIDE": {
             "value": "1"
           },
           "PRIM_IN_FREQ": {
-            "value": "12.000"
+            "value": "12"
           }
         }
       },
@@ -884,12 +876,6 @@
           "axi_uartlite_0/S_AXI"
         ]
       },
-      "axi_uartlite_0_UART": {
-        "interface_ports": [
-          "uart",
-          "axi_uartlite_0/UART"
-        ]
-      },
       "core_top_0_IROM_A": {
         "interface_ports": [
           "dolunay/IROM_A",
@@ -970,6 +956,18 @@
           "wram/dinb"
         ]
       },
+      "axi_uartlite_0_tx": {
+        "ports": [
+          "axi_uartlite_0/tx",
+          "led2"
+        ]
+      },
+      "btn_1": {
+        "ports": [
+          "btn",
+          "led"
+        ]
+      },
       "clk_100MHz_1": {
         "ports": [
           "sys_clk",
@@ -1017,6 +1015,12 @@
           "axi_uartlite_0/s_axi_aresetn"
         ]
       },
+      "uart_rxd_1": {
+        "ports": [
+          "uart_rxd",
+          "uart_txd"
+        ]
+      },
       "wram_doutb": {
         "ports": [
           "wram/doutb",
@@ -1058,6 +1062,34 @@
             }
           }
         }
+      }
+    },
+    "elf_association": {
+      "file": {
+        "name": "../../dolunay-vitis/hello_app/build/hello_app.elf",
+        "type": "ELF",
+        "checksum": "272829844",
+        "IsVisible": "1",
+        "ScopedToRef": "cmod_a7_35t",
+        "ScopedToCell": [
+          "microblaze_0"
+        ],
+        "UsedIn": [
+          "implementation"
+        ]
+      },
+      "file": {
+        "name": "../../dolunay-vitis/hello_app/build/hello_app.elf",
+        "type": "ELF",
+        "checksum": "272829844",
+        "IsVisible": "1",
+        "ScopedToRef": "cmod_a7_35t",
+        "ScopedToCell": [
+          "microblaze_0"
+        ],
+        "UsedIn": [
+          "simulation"
+        ]
       }
     }
   }

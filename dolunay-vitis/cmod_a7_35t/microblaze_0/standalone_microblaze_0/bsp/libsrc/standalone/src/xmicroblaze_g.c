@@ -12,7 +12,7 @@ XMicroblaze_Config XMicroblaze_ConfigTable[] __attribute__ ((section (".drvcfg_s
 		0x0,  /* xlnx,use-stack-protection */
 		0x1,  /* xlnx,exceptions-in-delay-slots */
 		 0,  /* xlnx,predecode-fpu-exception */
-		0xb71b00,  /* xlnx,freq */
+		0x5b8d80,  /* xlnx,freq */
 		0x0,  /* xlnx,use-msr-instr */
 		0x10,  /* d-cache-line-size */
 		0x1,  /* xlnx,dcache-always-used */
@@ -38,7 +38,7 @@ XMicroblaze_Config XMicroblaze_ConfigTable[] __attribute__ ((section (".drvcfg_s
 		0x1,  /* xlnx,debug-enabled */
 		0x0,  /* xlnx,dynamic-bus-sizing */
 		0x1,  /* xlnx,edge-is-positive */
-		0xb71b00,  /* timebase-frequency */
+		0x5b8d80,  /* timebase-frequency */
 		0x1,  /* xlnx,endianness */
 		 0,  /* xlnx,fsl-data-size */
 		0x0,  /* xlnx,fsl-links */

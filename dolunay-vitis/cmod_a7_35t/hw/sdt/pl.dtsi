@@ -55,7 +55,7 @@
 			xlnx,sco = <0>;
 			xlnx,reset-msr-eip = <0>;
 			xlnx,debug-interface = <0>;
-			clock-frequency = <12000000>;
+			clock-frequency = <6000000>;
 			xlnx,use-ext-brk = <0>;
 			xlnx,daddr-size = <32>;
 			xlnx,debug-enabled = <1>;
@@ -135,7 +135,7 @@
 			xlnx,enable-conversion = <0>;
 			xlnx,num-sync-ff-clk-irq = <1>;
 			xlnx,fsl-links = <0>;
-			timebase-frequency = <12000000>;
+			timebase-frequency = <6000000>;
 			xlnx,icache-force-tag-lutram = <0>;
 			xlnx,dcache-data-width = <0>;
 			xlnx,dcache-victims = <0>;
@@ -143,7 +143,7 @@
 			xlnx,debug-profile-size = <0>;
 			xlnx,unaligned-exceptions = <0>;
 			xlnx,lockstep-master = <0>;
-			xlnx,freq = <12000000>;
+			xlnx,freq = <6000000>;
 			xlnx,number-of-pc-brk = <1>;
 			xlnx,mmu-itlb-size = <2>;
 			xlnx,imprecise-exceptions = <0>;
@@ -158,14 +158,14 @@
 		clk_cpu_0: clk_cpu@0 {
 			compatible = "fixed-clock";
 			reg = <0>;
-			clock-frequency = <12000000>;
+			clock-frequency = <6000000>;
 			clock-output-names = "clk_cpu";
 			#clock-cells = <0>;
 		};
 		clk_bus_0: clk_bus_0@1 {
 			compatible = "fixed-clock";
 			reg = <1>;
-			clock-frequency = <12000000>;
+			clock-frequency = <6000000>;
 			clock-output-names = "clk_bus_0";
 			#clock-cells = <0>;
 		};
@@ -207,9 +207,9 @@
 		};
 		axi_uartlite_0: serial@40600000 {
 			compatible = "xlnx,axi-uartlite-2.0" , "xlnx,xps-uartlite-1.00.a";
-			clock-frequency = <12000000>;
+			clock-frequency = <6000000>;
 			xlnx,uartlite-board-interface = "Custom";
-			xlnx,s-axi-aclk-freq-hz-d = <12>;
+			xlnx,s-axi-aclk-freq-hz-d = <6>;
 			xlnx,ip-name = "axi_uartlite";
 			reg = <0x40600000 0x10000>;
 			xlnx,baudrate = <9600>;

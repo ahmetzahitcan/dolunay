@@ -2,7 +2,7 @@
 -- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
--- Date        : Wed Apr 22 17:58:56 2026
+-- Date        : Thu Apr 23 14:05:42 2026
 -- Host        : fedora running 64-bit unknown
 -- Command     : write_vhdl -force -mode synth_stub
 --               /home/azc/Belgeler/dolunay/bd/cmod_a7_35t/ip/cmod_a7_35t_rst_clk_wiz_0_12M_0/cmod_a7_35t_rst_clk_wiz_0_12M_0_stub.vhdl
@@ -45,7 +45,7 @@ architecture stub of cmod_a7_35t_rst_clk_wiz_0_12M_0 is
   attribute x_interface_mode : string;
   attribute x_interface_mode of slowest_sync_clk : signal is "slave clock";
   attribute x_interface_parameter : string;
-  attribute x_interface_parameter of slowest_sync_clk : signal is "XIL_INTERFACENAME clock, ASSOCIATED_RESET mb_reset:bus_struct_reset:interconnect_aresetn:peripheral_aresetn:peripheral_reset, FREQ_HZ 12000000, FREQ_TOLERANCE_HZ 0, PHASE 0.0, CLK_DOMAIN /clk_wiz_0_clk_out1, INSERT_VIP 0";
+  attribute x_interface_parameter of slowest_sync_clk : signal is "XIL_INTERFACENAME clock, ASSOCIATED_RESET mb_reset:bus_struct_reset:interconnect_aresetn:peripheral_aresetn:peripheral_reset, FREQ_HZ 6000000, FREQ_TOLERANCE_HZ 0, PHASE 0.0, CLK_DOMAIN /clk_wiz_0_clk_out1, INSERT_VIP 0";
   attribute x_interface_info of ext_reset_in : signal is "xilinx.com:signal:reset:1.0 ext_reset RST";
   attribute x_interface_mode of ext_reset_in : signal is "slave ext_reset";
   attribute x_interface_parameter of ext_reset_in : signal is "XIL_INTERFACENAME ext_reset, BOARD.ASSOCIATED_PARAM RESET_BOARD_INTERFACE, POLARITY ACTIVE_HIGH, INSERT_VIP 0";

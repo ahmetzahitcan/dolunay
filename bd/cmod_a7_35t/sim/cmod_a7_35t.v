@@ -2,7 +2,7 @@
 //Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
-//Date        : Wed Apr 22 18:10:22 2026
+//Date        : Thu Apr 23 14:49:17 2026
 //Host        : fedora running 64-bit unknown
 //Command     : generate_target cmod_a7_35t.bd
 //Design      : cmod_a7_35t
@@ -10,14 +10,20 @@
 //--------------------------------------------------------------------------------
 `timescale 1 ps / 1 ps
 
-(* CORE_GENERATION_INFO = "cmod_a7_35t,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=cmod_a7_35t,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=16,numReposBlks=15,numNonXlnxBlks=0,numHierBlks=1,maxHierDepth=1,numSysgenBlks=0,numHlsBlks=0,numHdlrefBlks=1,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=2,da_board_cnt=9,da_clkrst_cnt=1,da_mb_cnt=2,synth_mode=Hierarchical}" *) (* HW_HANDOFF = "cmod_a7_35t.hwdef" *) 
+(* CORE_GENERATION_INFO = "cmod_a7_35t,IP_Integrator,{x_ipVendor=xilinx.com,x_ipLibrary=BlockDiagram,x_ipName=cmod_a7_35t,x_ipVersion=1.00.a,x_ipLanguage=VERILOG,numBlks=16,numReposBlks=15,numNonXlnxBlks=0,numHierBlks=1,maxHierDepth=1,numSysgenBlks=0,numHlsBlks=0,numHdlrefBlks=1,numPkgbdBlks=0,bdsource=USER,da_axi4_cnt=2,da_board_cnt=11,da_clkrst_cnt=1,da_mb_cnt=2,synth_mode=Hierarchical}" *) (* HW_HANDOFF = "cmod_a7_35t.hwdef" *) 
 module cmod_a7_35t
-   (sys_clk,
+   (btn,
+    led,
+    led2,
+    sys_clk,
     uart_rxd,
     uart_txd);
+  input btn;
+  output led;
+  output led2;
   (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 CLK.SYS_CLK CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME CLK.SYS_CLK, CLK_DOMAIN cmod_a7_35t_clk_100MHz, FREQ_HZ 12000000, FREQ_TOLERANCE_HZ 0, INSERT_VIP 0, PHASE 0.0" *) input sys_clk;
-  (* X_INTERFACE_INFO = "xilinx.com:interface:uart:1.0 uart RxD" *) (* X_INTERFACE_MODE = "Master" *) input uart_rxd;
-  (* X_INTERFACE_INFO = "xilinx.com:interface:uart:1.0 uart TxD" *) output uart_txd;
+  input uart_rxd;
+  output uart_txd;
 
   wire [12:0]axi_bram_ctrl_0_bram_addr_a;
   wire axi_bram_ctrl_0_bram_clk_a;
@@ -85,6 +91,8 @@ module cmod_a7_35t
   wire [31:0]dolunay_WRAM_DIN;
   wire [31:0]dolunay_WRAM_DOUT;
   wire [3:0]dolunay_WRAM_WE;
+  wire led;
+  wire led2;
   wire mdm_1_Debug_SYS_Rst;
   wire microblaze_0_Clk;
   wire [31:0]microblaze_0_M_AXI_DP_ARADDR;
@@ -137,10 +145,11 @@ module cmod_a7_35t
   wire rst_clk_wiz_0_12M_mb_reset;
   wire [0:0]rst_clk_wiz_0_12M_peripheral_aresetn;
   wire sys_clk;
-  wire uart_rxd;
   wire uart_txd;
   wire [31:0]wram_doutb;
 
+  assign led = btn;
+  assign uart_txd = uart_rxd;
   (* BMM_INFO_ADDRESS_SPACE = "byte  0xC0000000 32 > cmod_a7_35t wram" *) 
   (* KEEP_HIERARCHY = "YES" *) 
   cmod_a7_35t_axi_bram_ctrl_0_0 axi_bram_ctrl_0
@@ -255,7 +264,7 @@ module cmod_a7_35t
         .aclk(microblaze_0_Clk),
         .aresetn(rst_clk_wiz_0_12M_peripheral_aresetn));
   cmod_a7_35t_axi_uartlite_0_0 axi_uartlite_0
-       (.rx(uart_rxd),
+       (.rx(1'b0),
         .s_axi_aclk(microblaze_0_Clk),
         .s_axi_araddr(axi_smc_M01_AXI_ARADDR),
         .s_axi_aresetn(rst_clk_wiz_0_12M_peripheral_aresetn),
@@ -275,7 +284,7 @@ module cmod_a7_35t
         .s_axi_wready(axi_smc_M01_AXI_WREADY),
         .s_axi_wstrb(axi_smc_M01_AXI_WSTRB),
         .s_axi_wvalid(axi_smc_M01_AXI_WVALID),
-        .tx(uart_txd));
+        .tx(led2));
   cmod_a7_35t_clk_wiz_0_0 clk_wiz_0
        (.clk_in1(sys_clk),
         .clk_out1(microblaze_0_Clk),

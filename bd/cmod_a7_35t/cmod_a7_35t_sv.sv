@@ -56,6 +56,12 @@ module cmod_a7_35t_sv (
   (* X_INTERFACE_IGNORE = "true" *)
   input wire sys_clk,
   (* X_INTERFACE_IGNORE = "true" *)
+  input wire btn,
+  (* X_INTERFACE_IGNORE = "true" *)
+  output wire led,
+  (* X_INTERFACE_IGNORE = "true" *)
+  output wire led2,
+  (* X_INTERFACE_IGNORE = "true" *)
   input wire uart_rxd,
   (* X_INTERFACE_IGNORE = "true" *)
   output wire uart_txd
@@ -63,6 +69,9 @@ module cmod_a7_35t_sv (
 
   cmod_a7_35t inst (
     .sys_clk(sys_clk),
+    .btn(btn),
+    .led(led),
+    .led2(led2),
     .uart_rxd(uart_rxd),
     .uart_txd(uart_txd)
   );

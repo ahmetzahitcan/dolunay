@@ -9,7 +9,7 @@
     "parameters": {
       "component_parameters": {
         "C_SCO": [ { "value": "0", "resolve_type": "user", "format": "long", "usage": "all" } ],
-        "C_FREQ": [ { "value": "12000000", "value_src": "propagated", "resolve_type": "user", "format": "long", "usage": "all" } ],
+        "C_FREQ": [ { "value": "6000000", "value_src": "propagated", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "C_DATA_SIZE": [ { "value": "32", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "C_LMB_DATA_SIZE": [ { "value": "32", "resolve_type": "user", "format": "long", "usage": "all" } ],
         "C_ADDR_SIZE": [ { "value": "32", "resolve_type": "user", "format": "long", "usage": "all" } ],
@@ -227,7 +227,7 @@
       },
       "model_parameters": {
         "C_SCO": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
-        "C_FREQ": [ { "value": "12000000", "resolve_type": "generated", "format": "long", "usage": "all" } ],
+        "C_FREQ": [ { "value": "6000000", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_USE_CONFIG_RESET": [ { "value": "0", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_NUM_SYNC_FF_CLK": [ { "value": "2", "resolve_type": "generated", "format": "long", "usage": "all" } ],
         "C_NUM_SYNC_FF_CLK_IRQ": [ { "value": "1", "resolve_type": "generated", "format": "long", "usage": "all" } ],
@@ -486,7 +486,7 @@
           "parameters": {
             "ASSOCIATED_BUSIF": [ { "value": "M0_AXIS:S0_AXIS:M1_AXIS:S1_AXIS:M2_AXIS:S2_AXIS:M3_AXIS:S3_AXIS:M4_AXIS:S4_AXIS:M5_AXIS:S5_AXIS:M6_AXIS:S6_AXIS:M7_AXIS:S7_AXIS:M8_AXIS:S8_AXIS:M9_AXIS:S9_AXIS:M10_AXIS:S10_AXIS:M11_AXIS:S11_AXIS:M12_AXIS:S12_AXIS:M13_AXIS:S13_AXIS:M14_AXIS:S14_AXIS:M15_AXIS:S15_AXIS:DLMB:ILMB:M_AXI_DP:M_AXI_IP:M_AXI_DC:M_AXI_IC:M_ACE_DC:M_ACE_IC:MON_DLMB:MON_ILMB:MON_AXI_DP:MON_AXI_IP:MON_AXI_DC:MON_AXI_IC:MON_ACE_DC:MON_ACE_IC", "value_src": "constant", "value_permission": "bd", "usage": "all" } ],
             "ASSOCIATED_RESET": [ { "value": "Reset", "value_src": "constant", "value_permission": "bd", "usage": "all" } ],
-            "FREQ_HZ": [ { "value": "12000000", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "user", "format": "long", "usage": "all" } ],
+            "FREQ_HZ": [ { "value": "6000000", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "user", "format": "long", "usage": "all" } ],
             "FREQ_TOLERANCE_HZ": [ { "value": "0", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
             "PHASE": [ { "value": "0.0", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "format": "float", "is_ips_inferred": true, "is_static_object": false } ],
             "CLK_DOMAIN": [ { "value": "/clk_wiz_0_clk_out1", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
@@ -592,7 +592,7 @@
             "NUM_WRITE_THREADS": [ { "value": "1", "value_src": "constant", "value_permission": "bd", "format": "long", "usage": "all" } ],
             "MAX_BURST_LENGTH": [ { "value": "1", "value_src": "constant", "value_permission": "bd", "format": "long", "usage": "all" } ],
             "PROTOCOL": [ { "value": "AXI4LITE", "value_src": "auto", "value_permission": "bd", "resolve_type": "generated", "usage": "all" } ],
-            "FREQ_HZ": [ { "value": "12000000", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
+            "FREQ_HZ": [ { "value": "6000000", "value_src": "ip_propagated", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
             "AWUSER_WIDTH": [ { "value": "0", "value_src": "constant", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
             "ARUSER_WIDTH": [ { "value": "0", "value_src": "constant", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
             "WUSER_WIDTH": [ { "value": "0", "value_src": "constant", "value_permission": "bd", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
@@ -692,5 +692,5 @@
       }
     }
   },
-  "checksum": "0e3aceeb"
+  "checksum": "d06ed03b"
 }

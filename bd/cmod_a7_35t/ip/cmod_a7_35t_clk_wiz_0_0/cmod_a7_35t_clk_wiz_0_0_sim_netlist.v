@@ -2,7 +2,7 @@
 // Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
-// Date        : Wed Apr 22 17:59:03 2026
+// Date        : Thu Apr 23 14:05:40 2026
 // Host        : fedora running 64-bit unknown
 // Command     : write_verilog -force -mode funcsim
 //               /home/azc/Belgeler/dolunay/bd/cmod_a7_35t/ip/cmod_a7_35t_clk_wiz_0_0/cmod_a7_35t_clk_wiz_0_0_sim_netlist.v
@@ -96,7 +96,7 @@ module cmod_a7_35t_clk_wiz_0_0_clk_wiz
     .CLKFBOUT_USE_FINE_PS("FALSE"),
     .CLKIN1_PERIOD(83.333000),
     .CLKIN2_PERIOD(0.000000),
-    .CLKOUT0_DIVIDE_F(62.500000),
+    .CLKOUT0_DIVIDE_F(125.000000),
     .CLKOUT0_DUTY_CYCLE(0.500000),
     .CLKOUT0_PHASE(0.000000),
     .CLKOUT0_USE_FINE_PS("FALSE"),
