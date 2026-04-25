@@ -12,6 +12,7 @@ start:
     binit x31, 0x0
     jalr x1, 0(x3)
     bsync x31, 0x0
+    wdone
     j .
 
 base:

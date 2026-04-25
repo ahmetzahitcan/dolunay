@@ -61,7 +61,7 @@ module pipeline
     // Stage valid registers -- indicating whether other pipeline registers are valid
     logic [N_WARPS-1:0] wdone_r;
     logic running_w;
-    assign running_w = ~|wdone_r;
+    assign running_w = ~&wdone_r;
     assign ready_o = ~running_w & ~wb_stage_valid_r & rst_n;
 
     logic ws_stage_valid_r;

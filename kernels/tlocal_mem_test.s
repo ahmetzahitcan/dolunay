@@ -16,4 +16,5 @@ lh x5, 0(x15)
 lhu x6, 2(x15)
 sh x5, 8(x15)
 sh x6, 10(x15)
+wdone
 j .

@@ -42,4 +42,5 @@ sub x9, x29, x19
 sub x5, x25, x15
 sub x10, x30, x20
 
+wdone
 j .
