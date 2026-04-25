@@ -14,6 +14,9 @@ module pipeline
 ) (
     input wire logic clk,
     input wire logic rst_n,
+
+    input wire logic start_i,
+    output logic ready_o,
     
     // WRAM Interface
     output logic [W_WRAM_ADDR-1:Z_ADDR] wram_addr_o,
@@ -56,6 +59,11 @@ module pipeline
     );
 
     // Stage valid registers -- indicating whether other pipeline registers are valid
+    logic [N_WARPS-1:0] wdone_r;
+    logic running_w;
+    assign running_w = ~|wdone_r;
+    assign ready_o = ~running_w & ~wb_stage_valid_r & rst_n;
+
     logic ws_stage_valid_r;
     logic if_stage_valid_r;
     logic id_stage_valid_r;
@@ -65,14 +73,22 @@ module pipeline
 
     always_ff @( posedge clk ) begin
         if (!rst_n) begin
+            wdone_r <= '1;
             ws_stage_valid_r <= '0;
             if_stage_valid_r <= '0;
             id_stage_valid_r <= '0;
             ex_stage_valid_r <= '0;
             mem_stage_valid_r <= '0;
             wb_stage_valid_r <= '0;
-        end else begin
-            ws_stage_valid_r <= 1'b1;
+        end else begin           
+            unique0 if (start_i & ready_o) begin
+                wdone_r <= '0;
+            end else if (running_w) begin
+                if (memwb_instr_r.is_wdone & wb_stage_valid_r) begin
+                    wdone_r[memwb_warp_id_r] <= 1'b1;
+                end
+            end
+            ws_stage_valid_r <= running_w;
             if_stage_valid_r <= ws_stage_valid_r;
             id_stage_valid_r <= if_stage_valid_r;
             ex_stage_valid_r <= id_stage_valid_r;
@@ -189,7 +205,7 @@ module pipeline
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
-                .rst_n(rst_n),
+                .rst_n(rst_n & ~start_i),
 
                 .instr_completed_i(winst_retired_w[I]), 
                 .instr_replay_mask_i(mem_instr_replay_mask_w),

@@ -17,6 +17,7 @@ add x1, x1, x12
 li x10, 0x0badc0de
 czero.eqz x13, x10, x3
 add x1, x1, x13
+wdone
 j .
 
 # xwarpid=0 and xthrid=0 -> x1 = 0x0

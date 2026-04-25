@@ -8,6 +8,9 @@ module core_top
     input wire clk,
     input wire rst_n,
 
+    input wire start_i,
+    output wire ready_o,
+
     // WRAM Interface
     (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 WRAM CLK" *) output wire wram_clk_o,
     (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 WRAM ADDR" *) output wire [W_WRAM_ADDR-1:2] wram_addr_o,
@@ -35,6 +38,9 @@ module core_top
     ) u_pipeline (
         .clk(clk),
         .rst_n(rst_n),
+
+        .start_i(start_i),
+        .ready_o(ready_o),
         
         // WRAM Interface
         .wram_addr_o(wram_addr_o),

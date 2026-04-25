@@ -13,6 +13,7 @@ package control_unit_pkg;
 	} imm_type_e;
 
 	typedef enum logic [4:0] {
+		ALU_FUNCT_SLT,
 		ALU_FUNCT_OP1,
 		ALU_FUNCT_HARTID,
 		ALU_FUNCT_WARPID,
@@ -27,7 +28,6 @@ package control_unit_pkg;
 		ALU_FUNCT_CYCLETIMEH,
 		ALU_FUNCT_ADDY,
 		ALU_FUNCT_SLL,
-		ALU_FUNCT_SLT,
 		ALU_FUNCT_SLTU,
 		ALU_FUNCT_XOR,
 		ALU_FUNCT_SRL,
@@ -57,8 +57,8 @@ package control_unit_pkg;
 	} alu_op1_sel_e;
 
 	typedef enum logic {
-		ALU_OP2_SEL_RS2,
 		ALU_OP2_SEL_IMM,
+		ALU_OP2_SEL_RS2,
 		ALU_OP2_SEL_UNDEFINED='x
 	} alu_op2_sel_e;
 
@@ -72,8 +72,8 @@ package control_unit_pkg;
 	} branch_cond_e;
 
 	typedef enum logic [1:0] {
-		WB_SOURCE_MEM,
 		WB_SOURCE_ALU,
+		WB_SOURCE_MEM,
 		WB_SOURCE_SC,
 		WB_SOURCE_PC_P4,
 		WB_SOURCE_UNDEFINED='x
@@ -131,6 +131,7 @@ package control_unit_pkg;
 		logic is_jalr;
 		logic is_lr;
 		logic is_sc;
+		logic is_wdone;
 	} instr_s;
 
 endpackage

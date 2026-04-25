@@ -28,3 +28,7 @@
 .macro rdwuinstreth rd
     csrr \rd, hpmcounter3h
 .endm
+
+.macro wdone
+    slti x0, x0, 0
+.endm

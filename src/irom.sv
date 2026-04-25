@@ -3,14 +3,18 @@
 module irom 
     import params_pkg::*;
     import control_unit_pkg::*;
-(
+
+#(
+    parameter int IROM_SIZE,
+    localparam int W_IROM_ADDR = $clog2(IROM_SIZE),
+    localparam int IROM_DEPTH = IROM_SIZE / ADDR_ALIGN
+) (
     input wire  logic clk,
     input wire  logic [W_IROM_ADDR-1:Z_PC]   port_a_addr_i,
     output logic [XLEN-1:0]   port_a_data_o,
     input wire  logic [W_IROM_ADDR-1:Z_PC]   port_b_addr_i,
     output logic [XLEN-1:0]   port_b_data_o
 );
-
     // -------------------------------------------------------------------------
     // Instruction ROM
     // -------------------------------------------------------------------------

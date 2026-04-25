@@ -39,6 +39,9 @@ module control_unit_ext
             instr_o.mem_store_source = MEM_STORE_SOURCE_BSYNC;
             instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
             instr_o.is_jalr = 1'b0;
+            instr_o.is_lr = 1'b0;
+            instr_o.is_sc = 1'b0;
+            instr_o.is_wdone = 1'b0;
         end else begin
             instr_o = instr_w;
         end
