@@ -23,12 +23,16 @@ module tb_pipeline;
     // -----------------------------------------------------------------------
     // DUT
     // -----------------------------------------------------------------------
-    pipeline dut(
+
+    localparam int IROM_SIZE = 4096;
+    localparam int WRAM_SIZE = 65536;
+
+    pipeline #(.IROM_SIZE(IROM_SIZE), .WRAM_SIZE(WRAM_SIZE)) dut(
         .clk(clk),
         .rst_n(rst_n)
     );
 
-    wram u_wram (
+    ram #(.DEPTH(WRAM_SIZE / 4)) u_wram (
         .clk(clk),
         .addr_i(dut.wram_addr_o),
         .wdata_i(dut.wram_wdata_o),
@@ -36,7 +40,7 @@ module tb_pipeline;
         .rdata_o(dut.wram_rdata_i)
     );
 
-    irom u_irom (
+    irom #(.IROM_SIZE(IROM_SIZE)) u_irom (
         .clk(clk),
         .port_a_addr_i(dut.irom_addr_a_o),
         .port_a_data_o(dut.irom_data_a_i),
