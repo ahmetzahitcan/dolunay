@@ -375,9 +375,7 @@ module pipeline
     logic [N_THREADS-1:0] mem_leader_candidates_w;
 
     always_comb begin
-        if (exmem_instr_r.is_jalr) begin // FIXME: unique
-            mem_leader_candidates_w = exmem_mask_r;
-        end else if (exmem_instr_r.mem_active) begin
+        if (exmem_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
                 case (mem_msel_w[i]) // FIXME: unique
                     MSEL_IROM: mem_leader_candidates_w[i] = exmem_mask_r[i] & (exmem_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD); // FIXME: can this be just exmem_mask_r[i]?
@@ -392,7 +390,7 @@ module pipeline
                 endcase
             end
         end else begin
-            mem_leader_candidates_w = 'x;
+            mem_leader_candidates_w = exmem_mask_r;
         end
     end
 

@@ -186,6 +186,31 @@ module control_unit
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
             end
+            30'b110011000010?????????????11100: begin // CSR_XROLE
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrr $d, xrole";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_SC;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+            end
             30'b110000000010?????????????11100: begin // CSR_INSTRET
                 `ifndef SYNTHESIS
                 sim__disasm_format_w = "csrr $d, instret";

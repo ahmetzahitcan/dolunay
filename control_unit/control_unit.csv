@@ -65,6 +65,7 @@ YIELD,0000000_00000_00000_100_00000_00010, "yield", x, x, x, x, x, NEVER, 0, x, 
 CSR_MHARTID,1111000_10100_?????_???_?????_11100, "csrr $d, mhartid", x, HARTID, x, x, x, NEVER, 1, ALU, 0,0,0,0,x,x,x,x,0,0,0,0
 CSR_XWARPID,1100110_00000_?????_???_?????_11100, "csrr $d, xwarpid", x, WARPID, x, x, x, NEVER, 1, ALU, 0,0,0,0,x,x,x,x,0,0,0,0
 CSR_XTHRID,1100110_00001_?????_???_?????_11100, "csrr $d, xthrid", x, THRID, x, x, x, NEVER, 1, ALU, 0,0,0,0,x,x,x,x,0,0,0,0
+CSR_XROLE,1100110_00010_?????_???_?????_11100, "csrr $d, xrole", x, x, x, x, x, NEVER, 1, SC,0,0,0,0,x,x,x,x,0,0,0,0
 
 CSR_CYCLETIME,1100000_0000?_?????_???_?????_11100, "csrr $d, cycle|time", x, CYCLETIME, x, x, x, NEVER, 1, ALU, 0,0,0,0,x,x,x,x,0,0,0,0
 CSR_CYCLETIMEH,1100100_0000?_?????_???_?????_11100, "csrr $d, cycleh|timeh", x, CYCLETIMEH, x, x, x, NEVER, 1, ALU, 0,0,0,0,x,x,x,x,0,0,0,0
