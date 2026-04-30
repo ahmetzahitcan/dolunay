@@ -47,7 +47,7 @@ static inline uint32_t simt_thread_id(void) {
 
 static inline bool simt_thread_is_follower(void) {
     bool x;
-    asm ("csrr %0, %1"
+    asm volatile ("csrr %0, %1"
         : "=r" (x)
         : "i" (CSR_XROLE));
     return x;
