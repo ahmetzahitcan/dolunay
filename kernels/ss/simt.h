@@ -4,6 +4,7 @@
 
 #define CSR_XWARPID 0xcc0
 #define CSR_XTHRID 0xcc1
+#define CSR_XROLE 0xcc2
 
 #define WARP_COUNT 4
 #define WARP_SIZE 8
@@ -42,6 +43,18 @@ static inline uint32_t simt_thread_id(void) {
         : "=r" (x)
         : "i" (CSR_XTHRID));
     return x;
+}
+
+static inline bool simt_thread_is_follower(void) {
+    bool x;
+    asm ("csrr %0, %1"
+        : "=r" (x)
+        : "i" (CSR_XROLE));
+    return x;
+}
+
+static inline bool simt_thread_is_leader(void) {
+    return !simt_thread_is_leader();
 }
 
 
