@@ -9,8 +9,8 @@
 #define TLS_HEAP_BASE (0x80000000)
 #define TLS_HEAP_SIZE (64 * 1024)
 
-__thread char *tls_heap_ptr = (char *)TLS_HEAP_BASE;
-__thread size_t tls_heap_size = TLS_HEAP_SIZE;
+static __thread char *tls_heap_ptr = (char *)TLS_HEAP_BASE;
+static __thread size_t tls_heap_size = TLS_HEAP_SIZE;
 
 static void *tls_heap_alloc(size_t size) {
     if(size > tls_heap_size) {
