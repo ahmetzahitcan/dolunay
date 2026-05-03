@@ -1,5 +1,6 @@
 #pragma once
 
+#include "simt.h"
 #include "stdint.h"
 #include "stddef.h"
 
@@ -13,12 +14,16 @@ static __thread char *tls_heap_ptr = (char *)TLS_HEAP_BASE;
 static __thread size_t tls_heap_size = TLS_HEAP_SIZE;
 
 static void *tls_heap_alloc(size_t size) {
+    void *ret;
+    simt_binit(&leaf_barr[simt_warp_id()]);
     if(size > tls_heap_size) {
-        return NULL;
+        ret = NULL;
+    } else {
+        ret = (void *)tls_heap_ptr;
+        tls_heap_ptr += size;
+        tls_heap_size -= size;
     }
-    void *ret = (void *)tls_heap_ptr;
-    tls_heap_ptr += size;
-    tls_heap_size -= size;
+    simt_bsync(&leaf_barr[simt_warp_id()]);
     return ret;
 }
 
