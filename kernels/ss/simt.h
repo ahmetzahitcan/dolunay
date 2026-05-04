@@ -10,6 +10,7 @@
 #define WARP_SIZE 8
 
 typedef uint32_t simt_barr_t __attribute__((aligned(4)));
+static simt_barr_t leaf_barr[WARP_COUNT];
 
 static inline void simt_binit(simt_barr_t *barr) {
     asm volatile (".insn i 0x0b, 0x1, x0, %1, 0"
