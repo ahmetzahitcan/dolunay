@@ -5,13 +5,13 @@
 .global _start
 
 _start:
-    // Get warp id
+    # Get warp id
     csrr s1, xwarpid
 
-    // Initialize stack
+    # Initialize stack
     la sp, _stack_top
 
-    // Copy globals into WRAM
+    # Copy globals into WRAM
     la t0, _sidata
     sh2add t0, s1, t0
     la t1, _sdata
@@ -26,7 +26,7 @@ _start:
         j 1b
     2:
 
-    // Clear BSS
+    # Clear BSS
     la t0, _sbss
     sh2add t0, s1, t0
     la t1, _ebss
@@ -37,7 +37,7 @@ _start:
         j 1b
     2:
 
-    // Copy thread-local globals into TLS
+    # Copy thread-local globals into TLS
     la t0, _sitdata
     la t1, _stdata
     la t2, _etdata
@@ -50,7 +50,7 @@ _start:
         j 1b
     2:
 
-    // Clear TBSS
+    # Clear TBSS
     la t0, _stbss
     la t1, _etbss
     1:
@@ -60,14 +60,14 @@ _start:
         j 1b
     2:
 
-    // Call main
+    # Call main
     la s0, barrs
     sh2add s0, s1, s0
     binit s0, 0
     call main
     bsync s0, 0
 
-    // Halt
+    # Halt
     wdone
     j .
 
