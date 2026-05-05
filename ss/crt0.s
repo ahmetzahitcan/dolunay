@@ -1,4 +1,4 @@
-.include "../instructions.s"
+.include "../asm-kernels/instructions.s"
 .equ WARP_COUNT, 4
 
 .section .text.init

@@ -1,8 +1,6 @@
-#pragma once
+#include "hpm.h"
 
-#include <stdint.h>
-
-static inline uint64_t hpm_cycle(void) {
+uint64_t hpm_cycle(void) {
     uint32_t h, l;
     asm volatile(
         "csrr %0, cycleh\n"
@@ -11,7 +9,7 @@ static inline uint64_t hpm_cycle(void) {
     return ((uint64_t)h << 32) | l;
 }
 
-static inline uint64_t hpm_instret(void) {
+uint64_t hpm_instret(void) {
     uint32_t h, l;
     asm volatile(
         "csrr %0, instreth\n"
@@ -20,7 +18,7 @@ static inline uint64_t hpm_instret(void) {
     return ((uint64_t)h << 32) | l;
 }
 
-static inline uint64_t hpm_wuinstret(void) {
+uint64_t hpm_wuinstret(void) {
     uint32_t h, l;
     asm volatile(
         "csrr %0, hpmcounter3h\n"
@@ -29,7 +27,7 @@ static inline uint64_t hpm_wuinstret(void) {
     return ((uint64_t)h << 32) | l;
 }
 
-static inline uint64_t hpm_wtinstret(void) {
+uint64_t hpm_wtinstret(void) {
     uint32_t h, l;
     asm volatile(
         "csrr %0, hpmcounter4h\n"

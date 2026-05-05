@@ -1,15 +1,7 @@
-#pragma once
-
+#include "shared_heap.h"
 #include "simt.h"
-#include "stdint.h"
-#include "stddef.h"
 #include "mutex.h"
-
-// TODO: Separate implementation and declaration.
-
-// FIXME: Get these from the linker script.
-#define SHARED_HEAP_BASE (0x40000000)
-#define SHARED_HEAP_SIZE (64 * 1024)
+#include <stddef.h>
 
 static char *shared_heap_ptr = (char *)SHARED_HEAP_BASE;
 static size_t shared_heap_size = SHARED_HEAP_SIZE;
@@ -17,7 +9,7 @@ static size_t shared_heap_size = SHARED_HEAP_SIZE;
 static mutex_t shared_heap_lock = 0;
 static void *return_value[WARP_COUNT];
 
-static void *shared_heap_alloc(size_t size) {
+void *shared_heap_alloc(size_t size) {
     simt_binit(&leaf_barr[simt_warp_id()]);
     
     if(simt_thread_is_leader()) {
@@ -35,7 +27,7 @@ static void *shared_heap_alloc(size_t size) {
     return return_value[simt_warp_id()];
 }
 
-static void shared_heap_free(void *ptr) {
+void shared_heap_free(void *ptr) {
     // TODO: Create a way to free memory.
     (void)ptr;
 }
