@@ -5,6 +5,15 @@
 .global _start
 
 _start:
+    # Initialize GP
+    .option push
+    .option norelax
+    la gp, __global_pointer$
+    .option pop
+
+    # Initialize TP
+    la tp, _stdata
+
     # Get warp id
     csrr s1, xwarpid
 

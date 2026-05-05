@@ -13,9 +13,9 @@ simt_barr_t barr;
 
 int main(void) {
     simt_binit(&barr);
-    uint64_t *tls_arr = (uint64_t*)tls_heap_alloc(TLS_ARRAY_SIZE * sizeof(uint64_t));
+    volatile uint64_t *tls_arr = (volatile uint64_t*)0x80000020;
     for(int i = 0; i < TLS_ARRAY_SIZE; i++) {
-        tls_arr[i] = hpm_cycle();
+        tls_arr[i] = 0xdeadbeef0badbabe;
     }
     simt_bsync(&barr);
 

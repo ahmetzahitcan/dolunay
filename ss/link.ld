@@ -38,6 +38,7 @@ SECTIONS
     .data : ALIGN(4)
     {
         _sdata = .;
+        PROVIDE(__global_pointer$ = . + 0x800);
         *(.data*)
         . = ALIGN(4);
         _edata = .;
