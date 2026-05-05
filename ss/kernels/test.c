@@ -4,6 +4,11 @@
 
 #define TLS_ARRAY_SIZE 32
 
+__attribute__((section(".hostcom"))) volatile struct {
+    uint64_t wtinstret;
+    uint64_t wuinstret;
+} hostcom;
+
 simt_barr_t barr;
 
 int main(void) {
@@ -16,8 +21,8 @@ int main(void) {
 
     simt_binit(&barr);
     if(simt_thread_is_follower()) {
-        *((uint64_t*)0x40004000) = hpm_wtinstret();
-        *((uint64_t*)0x40004008) = hpm_wuinstret();
+        hostcom.wtinstret = hpm_wtinstret();
+        hostcom.wuinstret = hpm_wuinstret();
     }
     simt_bsync(&barr);
     return 0;

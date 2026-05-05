@@ -1,8 +1,9 @@
 MEMORY
 {
-    IROM (rx)  : ORIGIN = 0x00000000, LENGTH = 4K
-    WRAM (rw) : ORIGIN = 0x40000000, LENGTH = 16K
-    TLS  (rw)  : ORIGIN = 0x80000000, LENGTH = 1K
+    IROM (rx) : ORIGIN = 0x00000000, LENGTH = 4K
+    HCOM (rw) : ORIGIN = 0x40000000, LENGTH = 256
+    WRAM (rw) : ORIGIN = 0x40000100, LENGTH = 16K - 256
+    TLS  (rw) : ORIGIN = 0x80000000, LENGTH = 1K
 }
 
 ENTRY(_start)
@@ -26,6 +27,12 @@ SECTIONS
         *(.rodata*)
         . = ALIGN(4);
     } > IROM
+
+    .hostcom (NOLOAD) : ALIGN(4)
+    {
+        *(.hostcom*)
+        . = ALIGN(4);
+    } > HCOM
 
     /* The 'AT' ensures the data is physically in ROM so we can copy it */
     .data : ALIGN(4)
@@ -70,7 +77,8 @@ SECTIONS
         _stack_top = .;
     } > TLS
 
-    ASSERT(_start == ORIGIN(IROM), "_start is not at the entry point")
-    ASSERT((_stack_top - _stack_bottom >= 64), "Stack too small after TLS data")
-    ASSERT((LOADADDR(.tdata) + SIZEOF(.tdata) <= ORIGIN(IROM) + LENGTH(IROM)), "IROM overflow")
+    ASSERT(SIZEOF(.hostcom) <= LENGTH(HCOM), "Host communication structure too large.")
+    ASSERT(_start == ORIGIN(IROM), "_start is not at the entry point.")
+    ASSERT((_stack_top - _stack_bottom >= 64), "Stack too small after TLS data.")
+    ASSERT((LOADADDR(.tdata) + SIZEOF(.tdata) <= ORIGIN(IROM) + LENGTH(IROM)), "IROM overflow.")
 }
