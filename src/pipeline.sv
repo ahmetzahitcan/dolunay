@@ -557,7 +557,7 @@ module pipeline
         end else if (exmem_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
                 case (mem_msel_w[i]) // FIXME: unique
-                    MSEL_IROM: mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & memwb_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD;
+                    MSEL_IROM: mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & exmem_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD;
                     MSEL_WRAM: mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & ~exmem_instr_r.is_sc;
                     MSEL_TLOCAL: mem_instr_replay_mask_w[i] = '0;
                 endcase
