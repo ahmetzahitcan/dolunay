@@ -2,7 +2,7 @@
 //Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
-//Date        : Mon Apr 27 11:54:33 2026
+//Date        : Sat May  9 15:58:12 2026
 //Host        : fedora running 64-bit unknown
 //Command     : generate_target total_design.bd
 //Design      : total_design
@@ -23,7 +23,7 @@ module total_design
   output led;
   output led2;
   (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 RST.RESET RST" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME RST.RESET, INSERT_VIP 0, POLARITY ACTIVE_HIGH" *) input reset;
-  (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 CLK.SYS_CLK CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME CLK.SYS_CLK, CLK_DOMAIN total_design_clk_100MHz, FREQ_HZ 12000000, FREQ_TOLERANCE_HZ 0, INSERT_VIP 0, PHASE 0.0" *) input sys_clk;
+  (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 CLK.SYS_CLK CLK" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME CLK.SYS_CLK, CLK_DOMAIN total_design_sys_clk, FREQ_HZ 12000000, FREQ_TOLERANCE_HZ 0, INSERT_VIP 0, PHASE 0.0" *) input sys_clk;
   (* X_INTERFACE_INFO = "xilinx.com:interface:uart:1.0 usb_uart RxD" *) (* X_INTERFACE_MODE = "Master" *) input usb_uart_rxd;
   (* X_INTERFACE_INFO = "xilinx.com:interface:uart:1.0 usb_uart TxD" *) output usb_uart_txd;
 
@@ -35,13 +35,13 @@ module total_design
   wire [11:2]core_top_0_IROM_B_ADDR;
   wire core_top_0_IROM_B_CLK;
   wire [31:0]core_top_0_IROM_B_DOUT;
-  wire [15:2]core_top_0_WRAM_ADDR;
+  wire [11:2]core_top_0_WRAM_ADDR;
   wire core_top_0_WRAM_CLK;
   wire [31:0]core_top_0_WRAM_DIN;
   wire [31:0]core_top_0_WRAM_DOUT;
   wire [3:0]core_top_0_WRAM_WE;
   wire core_top_0_ready_o;
-  wire [13:0]host_top_wrapper_0_MEM_ADDR;
+  wire [9:0]host_top_wrapper_0_MEM_ADDR;
   wire host_top_wrapper_0_MEM_CLK;
   wire [31:0]host_top_wrapper_0_MEM_DOUT;
   wire [6:0]host_top_wrapper_0_M_AXI_ARADDR;
@@ -93,24 +93,6 @@ module total_design
         .s_axi_wstrb(host_top_wrapper_0_M_AXI_WSTRB),
         .s_axi_wvalid(host_top_wrapper_0_M_AXI_WVALID),
         .tx(usb_uart_txd));
-  total_design_blk_mem_gen_0_0 blk_mem_gen_0
-       (.addra(core_top_0_IROM_A_ADDR),
-        .addrb(core_top_0_IROM_B_ADDR),
-        .clka(core_top_0_IROM_A_CLK),
-        .clkb(core_top_0_IROM_B_CLK),
-        .douta(core_top_0_IROM_A_DOUT),
-        .doutb(core_top_0_IROM_B_DOUT));
-  total_design_blk_mem_gen_1_0 blk_mem_gen_1
-       (.addra(core_top_0_WRAM_ADDR),
-        .addrb(host_top_wrapper_0_MEM_ADDR),
-        .clka(core_top_0_WRAM_CLK),
-        .clkb(host_top_wrapper_0_MEM_CLK),
-        .dina(core_top_0_WRAM_DIN),
-        .dinb({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b1,1'b0,1'b0,1'b0}),
-        .douta(core_top_0_WRAM_DOUT),
-        .doutb(host_top_wrapper_0_MEM_DOUT),
-        .wea(core_top_0_WRAM_WE),
-        .web({1'b0,1'b0,1'b0,1'b0}));
   total_design_clk_wiz_0 clk_wiz
        (.clk_in1(sys_clk),
         .clk_out1(clk_wiz_clk_out1),
@@ -159,11 +141,29 @@ module total_design
         .simt_ready_i(core_top_0_ready_o),
         .simt_start_o(host_top_wrapper_0_simt_start_o),
         .start_i(led2));
-  total_design_rst_clk_wiz_100M_0 rst_clk_wiz_100M
+  total_design_blk_mem_gen_0_0 irom
+       (.addra(core_top_0_IROM_A_ADDR),
+        .addrb(core_top_0_IROM_B_ADDR),
+        .clka(core_top_0_IROM_A_CLK),
+        .clkb(core_top_0_IROM_B_CLK),
+        .douta(core_top_0_IROM_A_DOUT),
+        .doutb(core_top_0_IROM_B_DOUT));
+  total_design_rst_clk_wiz_100M_0 rst_clk_wiz
        (.aux_reset_in(1'b1),
         .dcm_locked(clk_wiz_locked),
         .ext_reset_in(reset),
         .mb_debug_sys_rst(1'b0),
         .peripheral_aresetn(rst_clk_wiz_100M_peripheral_aresetn),
         .slowest_sync_clk(clk_wiz_clk_out1));
+  total_design_blk_mem_gen_1_0 wram
+       (.addra(core_top_0_WRAM_ADDR),
+        .addrb(host_top_wrapper_0_MEM_ADDR),
+        .clka(core_top_0_WRAM_CLK),
+        .clkb(host_top_wrapper_0_MEM_CLK),
+        .dina(core_top_0_WRAM_DIN),
+        .dinb({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b1,1'b0,1'b0,1'b0}),
+        .douta(core_top_0_WRAM_DOUT),
+        .doutb(host_top_wrapper_0_MEM_DOUT),
+        .wea(core_top_0_WRAM_WE),
+        .web({1'b0,1'b0,1'b0,1'b0}));
 endmodule

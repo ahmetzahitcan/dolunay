@@ -1,29 +1,33 @@
 #include "simt.h"
 #include "hpm.h"
-#include "tls_heap.h"
 
-#define TLS_ARRAY_SIZE 32
+#define N 64
 
 __attribute__((section(".hostcom"))) volatile struct {
+    uint32_t vec_out[N];
+    uint32_t vec_x[N];
+    uint32_t vec_y[N];
+} hostcom;
+
+__attribute__((section(".hpmdata"))) volatile struct {
     uint64_t wtinstret;
     uint64_t wuinstret;
-} hostcom;
+} hpmdata;
 
 simt_barr_t barriers[WARP_COUNT];
 
 int main(void) {
     simt_barr_t *barr = &barriers[simt_warp_id()];
     simt_binit(barr);
-    volatile uint64_t *tls_arr = (volatile uint64_t*)0x80000020;
-    for(int i = 0; i < TLS_ARRAY_SIZE; i++) {
-        tls_arr[i] = 0xdeadbeef0badbabe;
+    for(int i = simt_global_id(); i < N; i += GLOBAL_SIZE) {
+        hostcom.vec_out[i] = hostcom.vec_x[i] + hostcom.vec_y[i];
     }
     simt_bsync(barr);
 
     simt_binit(barr);
     if(simt_thread_is_follower()) {
-        hostcom.wtinstret = hpm_wtinstret();
-        hostcom.wuinstret = hpm_wuinstret();
+        hpmdata.wtinstret = hpm_wtinstret();
+        hpmdata.wuinstret = hpm_wuinstret();
     }
     simt_bsync(barr);
     return 0;

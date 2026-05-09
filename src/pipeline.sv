@@ -49,7 +49,7 @@ module pipeline
     logic [N_WARPS-1:0][63:0] wuinstret_w;
     hpms u_hpms(
         .clk(clk),
-        .rst_n(rst_n),
+        .rst_n(rst_n & ~start_i),
         .winst_retired_i(winst_retired_w),
         .inst_retired_i(inst_retired_w),
         .cycletime_o(cycletime_w),

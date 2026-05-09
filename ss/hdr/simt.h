@@ -9,6 +9,7 @@
 
 #define WARP_COUNT 4
 #define WARP_SIZE 8
+#define GLOBAL_SIZE (WARP_COUNT * WARP_SIZE)
 
 typedef uint32_t simt_barr_t __attribute__((aligned(4)));
 extern simt_barr_t leaf_barr[WARP_COUNT];
@@ -18,5 +19,6 @@ void simt_bsync(simt_barr_t *barr);
 void simt_yield(void);
 uint32_t simt_warp_id(void);
 uint32_t simt_thread_id(void);
+uint32_t simt_global_id(void);
 bool simt_thread_is_follower(void);
 bool simt_thread_is_leader(void);

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Mon Apr 27 11:54:33 2026" VIVADOVERSION="2025.2">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Sat May  9 15:58:13 2026" VIVADOVERSION="2025.2">
 
   <SYSTEMINFO ARCH="artix7" DEVICE="7a35t" NAME="total_design" PACKAGE="cpg236" SPEEDGRADE="-1"/>
 
@@ -23,7 +23,7 @@
     <PORT DIR="I" NAME="reset" POLARITY="ACTIVE_HIGH" SIGIS="rst" SIGNAME="External_Ports_reset">
       <CONNECTIONS>
         <CONNECTION INSTANCE="clk_wiz" PORT="reset"/>
-        <CONNECTION INSTANCE="rst_clk_wiz_100M" PORT="ext_reset_in"/>
+        <CONNECTION INSTANCE="rst_clk_wiz" PORT="ext_reset_in"/>
       </CONNECTIONS>
     </PORT>
     <PORT CLKFREQUENCY="12000000" DIR="I" NAME="sys_clk" SIGIS="clk" SIGNAME="External_Ports_sys_clk">
@@ -238,11 +238,11 @@
         <PARAMETER NAME="C_DATA_BITS" VALUE="8"/>
         <PARAMETER NAME="C_FAMILY" VALUE="artix7"/>
         <PARAMETER NAME="C_ODD_PARITY" VALUE="0"/>
-        <PARAMETER NAME="C_S_AXI_ACLK_FREQ_HZ" VALUE="100000000"/>
+        <PARAMETER NAME="C_S_AXI_ACLK_FREQ_HZ" VALUE="50000000"/>
         <PARAMETER NAME="C_S_AXI_ADDR_WIDTH" VALUE="4"/>
         <PARAMETER NAME="C_S_AXI_DATA_WIDTH" VALUE="32"/>
         <PARAMETER NAME="C_USE_PARITY" VALUE="0"/>
-        <PARAMETER NAME="C_S_AXI_ACLK_FREQ_HZ_d" VALUE="100.0"/>
+        <PARAMETER NAME="C_S_AXI_ACLK_FREQ_HZ_d" VALUE="50.0"/>
         <PARAMETER NAME="Component_Name" VALUE="total_design_axi_uartlite_0_0"/>
         <PARAMETER NAME="PARITY" VALUE="No_Parity"/>
         <PARAMETER NAME="UARTLITE_BOARD_INTERFACE" VALUE="Custom"/>
@@ -258,7 +258,7 @@
             <CONNECTION INSTANCE="total_design_imp" PORT="usb_uart_rxd"/>
           </CONNECTIONS>
         </PORT>
-        <PORT CLKFREQUENCY="100000000" DIR="I" NAME="s_axi_aclk" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
+        <PORT CLKFREQUENCY="50000000" DIR="I" NAME="s_axi_aclk" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
           <CONNECTIONS>
             <CONNECTION INSTANCE="clk_wiz" PORT="clk_out1"/>
           </CONNECTIONS>
@@ -268,9 +268,9 @@
             <CONNECTION INSTANCE="host_top_wrapper_0" PORT="m_axi_araddr"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" NAME="s_axi_aresetn" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="rst_clk_wiz_100M_peripheral_aresetn">
+        <PORT DIR="I" NAME="s_axi_aresetn" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="rst_clk_wiz_peripheral_aresetn">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="rst_clk_wiz_100M" PORT="peripheral_aresetn"/>
+            <CONNECTION INSTANCE="rst_clk_wiz" PORT="peripheral_aresetn"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="s_axi_arready" SIGIS="undef" SIGNAME="axi_uartlite_0_s_axi_arready">
@@ -367,7 +367,7 @@
           <PARAMETER NAME="BUSER_WIDTH" VALUE="0"/>
           <PARAMETER NAME="CLK_DOMAIN" VALUE="/clk_wiz_clk_out1"/>
           <PARAMETER NAME="DATA_WIDTH" VALUE="32"/>
-          <PARAMETER NAME="FREQ_HZ" VALUE="100000000"/>
+          <PARAMETER NAME="FREQ_HZ" VALUE="50000000"/>
           <PARAMETER NAME="HAS_BRESP" VALUE="1"/>
           <PARAMETER NAME="HAS_BURST" VALUE="0"/>
           <PARAMETER NAME="HAS_CACHE" VALUE="0"/>
@@ -420,452 +420,6 @@
         </BUSINTERFACE>
       </BUSINTERFACES>
     </MODULE>
-    <MODULE COREREVISION="12" FULLNAME="/blk_mem_gen_0" HWVERSION="8.4" INSTANCE="blk_mem_gen_0" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="MEMORY" MODTYPE="blk_mem_gen" VLNV="xilinx.com:ip:blk_mem_gen:8.4">
-      <DOCUMENTS>
-        <DOCUMENT SOURCE="http://www.xilinx.com/cgi-bin/docs/ipdoc?c=blk_mem_gen;v=v8_4;d=pg058-blk-mem-gen.pdf"/>
-      </DOCUMENTS>
-      <PARAMETERS>
-        <PARAMETER NAME="C_ADDRA_WIDTH" VALUE="10"/>
-        <PARAMETER NAME="C_ADDRB_WIDTH" VALUE="10"/>
-        <PARAMETER NAME="C_ALGORITHM" VALUE="1"/>
-        <PARAMETER NAME="C_AXI_ID_WIDTH" VALUE="4"/>
-        <PARAMETER NAME="C_AXI_SLAVE_TYPE" VALUE="0"/>
-        <PARAMETER NAME="C_AXI_TYPE" VALUE="1"/>
-        <PARAMETER NAME="C_BYTE_SIZE" VALUE="9"/>
-        <PARAMETER NAME="C_COMMON_CLK" VALUE="1"/>
-        <PARAMETER NAME="C_COUNT_18K_BRAM" VALUE="0"/>
-        <PARAMETER NAME="C_COUNT_36K_BRAM" VALUE="1"/>
-        <PARAMETER NAME="C_CTRL_ECC_ALGO" VALUE="NONE"/>
-        <PARAMETER NAME="C_DEFAULT_DATA" VALUE="0"/>
-        <PARAMETER NAME="C_DISABLE_WARN_BHV_COLL" VALUE="0"/>
-        <PARAMETER NAME="C_DISABLE_WARN_BHV_RANGE" VALUE="0"/>
-        <PARAMETER NAME="C_ELABORATION_DIR" VALUE="./"/>
-        <PARAMETER NAME="C_ENABLE_32BIT_ADDRESS" VALUE="0"/>
-        <PARAMETER NAME="C_EN_DEEPSLEEP_PIN" VALUE="0"/>
-        <PARAMETER NAME="C_EN_ECC_PIPE" VALUE="0"/>
-        <PARAMETER NAME="C_EN_RDADDRA_CHG" VALUE="0"/>
-        <PARAMETER NAME="C_EN_RDADDRB_CHG" VALUE="0"/>
-        <PARAMETER NAME="C_EN_SAFETY_CKT" VALUE="0"/>
-        <PARAMETER NAME="C_EN_SHUTDOWN_PIN" VALUE="0"/>
-        <PARAMETER NAME="C_EN_SLEEP_PIN" VALUE="0"/>
-        <PARAMETER NAME="C_EST_POWER_SUMMARY" VALUE="Estimated Power for IP     :     5.244 mW"/>
-        <PARAMETER NAME="C_FAMILY" VALUE="artix7"/>
-        <PARAMETER NAME="C_HAS_AXI_ID" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_ENA" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_ENB" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_INJECTERR" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_MEM_OUTPUT_REGS_A" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_MEM_OUTPUT_REGS_B" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_MUX_OUTPUT_REGS_A" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_MUX_OUTPUT_REGS_B" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_REGCEA" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_REGCEB" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_RSTA" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_RSTB" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_SOFTECC_INPUT_REGS_A" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_SOFTECC_OUTPUT_REGS_B" VALUE="0"/>
-        <PARAMETER NAME="C_INITA_VAL" VALUE="0"/>
-        <PARAMETER NAME="C_INITB_VAL" VALUE="0"/>
-        <PARAMETER NAME="C_INIT_FILE" VALUE="NONE"/>
-        <PARAMETER NAME="C_INIT_FILE_NAME" VALUE="total_design_blk_mem_gen_0_0.mif"/>
-        <PARAMETER NAME="C_INTERFACE_TYPE" VALUE="0"/>
-        <PARAMETER NAME="C_LOAD_INIT_FILE" VALUE="1"/>
-        <PARAMETER NAME="C_MEM_TYPE" VALUE="4"/>
-        <PARAMETER NAME="C_MUX_PIPELINE_STAGES" VALUE="0"/>
-        <PARAMETER NAME="C_PRIM_TYPE" VALUE="1"/>
-        <PARAMETER NAME="C_READ_DEPTH_A" VALUE="1024"/>
-        <PARAMETER NAME="C_READ_DEPTH_B" VALUE="1024"/>
-        <PARAMETER NAME="C_READ_LATENCY_A" VALUE="1"/>
-        <PARAMETER NAME="C_READ_LATENCY_B" VALUE="1"/>
-        <PARAMETER NAME="C_READ_WIDTH_A" VALUE="32"/>
-        <PARAMETER NAME="C_READ_WIDTH_B" VALUE="32"/>
-        <PARAMETER NAME="C_RSTRAM_A" VALUE="0"/>
-        <PARAMETER NAME="C_RSTRAM_B" VALUE="0"/>
-        <PARAMETER NAME="C_RST_PRIORITY_A" VALUE="CE"/>
-        <PARAMETER NAME="C_RST_PRIORITY_B" VALUE="CE"/>
-        <PARAMETER NAME="C_SIM_COLLISION_CHECK" VALUE="ALL"/>
-        <PARAMETER NAME="C_USE_BRAM_BLOCK" VALUE="0"/>
-        <PARAMETER NAME="C_USE_BYTE_WEA" VALUE="0"/>
-        <PARAMETER NAME="C_USE_BYTE_WEB" VALUE="0"/>
-        <PARAMETER NAME="C_USE_DEFAULT_DATA" VALUE="0"/>
-        <PARAMETER NAME="C_USE_ECC" VALUE="0"/>
-        <PARAMETER NAME="C_USE_SOFTECC" VALUE="0"/>
-        <PARAMETER NAME="C_USE_URAM" VALUE="0"/>
-        <PARAMETER NAME="C_WEA_WIDTH" VALUE="1"/>
-        <PARAMETER NAME="C_WEB_WIDTH" VALUE="1"/>
-        <PARAMETER NAME="C_WRITE_DEPTH_A" VALUE="1024"/>
-        <PARAMETER NAME="C_WRITE_DEPTH_B" VALUE="1024"/>
-        <PARAMETER NAME="C_WRITE_MODE_A" VALUE="WRITE_FIRST"/>
-        <PARAMETER NAME="C_WRITE_MODE_B" VALUE="WRITE_FIRST"/>
-        <PARAMETER NAME="C_WRITE_WIDTH_A" VALUE="32"/>
-        <PARAMETER NAME="C_WRITE_WIDTH_B" VALUE="32"/>
-        <PARAMETER NAME="C_XDEVICEFAMILY" VALUE="artix7"/>
-        <PARAMETER NAME="AXI_ID_Width" VALUE="4"/>
-        <PARAMETER NAME="AXI_Slave_Type" VALUE="Memory_Slave"/>
-        <PARAMETER NAME="AXI_Type" VALUE="AXI4_Full"/>
-        <PARAMETER NAME="Additional_Inputs_for_Power_Estimation" VALUE="false"/>
-        <PARAMETER NAME="Algorithm" VALUE="Minimum_Area"/>
-        <PARAMETER NAME="Assume_Synchronous_Clk" VALUE="true"/>
-        <PARAMETER NAME="Byte_Size" VALUE="9"/>
-        <PARAMETER NAME="CTRL_ECC_ALGO" VALUE="NONE"/>
-        <PARAMETER NAME="Coe_File" VALUE="../../../../kernels/irom.coe"/>
-        <PARAMETER NAME="Collision_Warnings" VALUE="ALL"/>
-        <PARAMETER NAME="Component_Name" VALUE="total_design_blk_mem_gen_0_0"/>
-        <PARAMETER NAME="Disable_Collision_Warnings" VALUE="false"/>
-        <PARAMETER NAME="Disable_Out_of_Range_Warnings" VALUE="false"/>
-        <PARAMETER NAME="ECC" VALUE="false"/>
-        <PARAMETER NAME="EN_DEEPSLEEP_PIN" VALUE="false"/>
-        <PARAMETER NAME="EN_ECC_PIPE" VALUE="false"/>
-        <PARAMETER NAME="EN_SAFETY_CKT" VALUE="false"/>
-        <PARAMETER NAME="EN_SHUTDOWN_PIN" VALUE="false"/>
-        <PARAMETER NAME="EN_SLEEP_PIN" VALUE="false"/>
-        <PARAMETER NAME="Enable_32bit_Address" VALUE="false"/>
-        <PARAMETER NAME="Enable_A" VALUE="Always_Enabled"/>
-        <PARAMETER NAME="Enable_B" VALUE="Always_Enabled"/>
-        <PARAMETER NAME="Error_Injection_Type" VALUE="Single_Bit_Error_Injection"/>
-        <PARAMETER NAME="Fill_Remaining_Memory_Locations" VALUE="false"/>
-        <PARAMETER NAME="Interface_Type" VALUE="Native"/>
-        <PARAMETER NAME="Load_Init_File" VALUE="true"/>
-        <PARAMETER NAME="MEM_FILE" VALUE="NONE"/>
-        <PARAMETER NAME="Memory_Type" VALUE="Dual_Port_ROM"/>
-        <PARAMETER NAME="Operating_Mode_A" VALUE="WRITE_FIRST"/>
-        <PARAMETER NAME="Operating_Mode_B" VALUE="WRITE_FIRST"/>
-        <PARAMETER NAME="Output_Reset_Value_A" VALUE="0"/>
-        <PARAMETER NAME="Output_Reset_Value_B" VALUE="0"/>
-        <PARAMETER NAME="PRIM_type_to_Implement" VALUE="BRAM"/>
-        <PARAMETER NAME="Pipeline_Stages" VALUE="0"/>
-        <PARAMETER NAME="Port_A_Clock" VALUE="100"/>
-        <PARAMETER NAME="Port_A_Enable_Rate" VALUE="100"/>
-        <PARAMETER NAME="Port_A_Write_Rate" VALUE="0"/>
-        <PARAMETER NAME="Port_B_Clock" VALUE="100"/>
-        <PARAMETER NAME="Port_B_Enable_Rate" VALUE="100"/>
-        <PARAMETER NAME="Port_B_Write_Rate" VALUE="0"/>
-        <PARAMETER NAME="Primitive" VALUE="8kx2"/>
-        <PARAMETER NAME="RD_ADDR_CHNG_A" VALUE="false"/>
-        <PARAMETER NAME="RD_ADDR_CHNG_B" VALUE="false"/>
-        <PARAMETER NAME="READ_LATENCY_A" VALUE="1"/>
-        <PARAMETER NAME="READ_LATENCY_B" VALUE="1"/>
-        <PARAMETER NAME="Read_Width_A" VALUE="32"/>
-        <PARAMETER NAME="Read_Width_B" VALUE="32"/>
-        <PARAMETER NAME="Register_PortA_Output_of_Memory_Core" VALUE="false"/>
-        <PARAMETER NAME="Register_PortA_Output_of_Memory_Primitives" VALUE="false"/>
-        <PARAMETER NAME="Register_PortB_Output_of_Memory_Core" VALUE="false"/>
-        <PARAMETER NAME="Register_PortB_Output_of_Memory_Primitives" VALUE="false"/>
-        <PARAMETER NAME="Remaining_Memory_Locations" VALUE="0"/>
-        <PARAMETER NAME="Reset_Memory_Latch_A" VALUE="false"/>
-        <PARAMETER NAME="Reset_Memory_Latch_B" VALUE="false"/>
-        <PARAMETER NAME="Reset_Priority_A" VALUE="CE"/>
-        <PARAMETER NAME="Reset_Priority_B" VALUE="CE"/>
-        <PARAMETER NAME="Reset_Type" VALUE="SYNC"/>
-        <PARAMETER NAME="Use_AXI_ID" VALUE="false"/>
-        <PARAMETER NAME="Use_Byte_Write_Enable" VALUE="false"/>
-        <PARAMETER NAME="Use_Error_Injection_Pins" VALUE="false"/>
-        <PARAMETER NAME="Use_REGCEA_Pin" VALUE="false"/>
-        <PARAMETER NAME="Use_REGCEB_Pin" VALUE="false"/>
-        <PARAMETER NAME="Use_RSTA_Pin" VALUE="false"/>
-        <PARAMETER NAME="Use_RSTB_Pin" VALUE="false"/>
-        <PARAMETER NAME="Write_Depth_A" VALUE="1024"/>
-        <PARAMETER NAME="Write_Width_A" VALUE="32"/>
-        <PARAMETER NAME="Write_Width_B" VALUE="32"/>
-        <PARAMETER NAME="ecctype" VALUE="No_ECC"/>
-        <PARAMETER NAME="register_porta_input_of_softecc" VALUE="false"/>
-        <PARAMETER NAME="register_portb_output_of_softecc" VALUE="false"/>
-        <PARAMETER NAME="softecc" VALUE="false"/>
-        <PARAMETER NAME="use_bram_block" VALUE="Stand_Alone"/>
-        <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
-      </PARAMETERS>
-      <PORTS>
-        <PORT DIR="I" LEFT="9" NAME="addra" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_0_addra">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="irom_addr_a_o"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="9" NAME="addrb" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_0_addrb">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="irom_addr_b_o"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="clka" SIGIS="clk" SIGNAME="blk_mem_gen_0_clka">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="irom_clk_a_o"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="clkb" SIGIS="clk" SIGNAME="blk_mem_gen_0_clkb">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="irom_clk_b_o"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="31" NAME="douta" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_0_douta">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="irom_data_a_i"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="31" NAME="doutb" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_0_doutb">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="irom_data_b_i"/>
-          </CONNECTIONS>
-        </PORT>
-      </PORTS>
-      <BUSINTERFACES>
-        <BUSINTERFACE BUSNAME="core_top_0_IROM_A" NAME="BRAM_PORTA" TYPE="TARGET" VLNV="xilinx.com:interface:bram:1.0">
-          <PARAMETER NAME="MASTER_TYPE" VALUE="OTHER"/>
-          <PARAMETER NAME="MEM_ADDRESS_MODE" VALUE="BYTE_ADDRESS"/>
-          <PARAMETER NAME="MEM_ECC" VALUE="NONE"/>
-          <PARAMETER NAME="MEM_SIZE" VALUE="8192"/>
-          <PARAMETER NAME="MEM_WIDTH" VALUE="32"/>
-          <PARAMETER NAME="READ_LATENCY" VALUE="1"/>
-          <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_ONLY"/>
-          <PORTMAPS>
-            <PORTMAP LOGICAL="ADDR" PHYSICAL="addra"/>
-            <PORTMAP LOGICAL="CLK" PHYSICAL="clka"/>
-            <PORTMAP LOGICAL="DOUT" PHYSICAL="douta"/>
-          </PORTMAPS>
-        </BUSINTERFACE>
-        <BUSINTERFACE BUSNAME="core_top_0_IROM_B" NAME="BRAM_PORTB" TYPE="TARGET" VLNV="xilinx.com:interface:bram:1.0">
-          <PARAMETER NAME="MASTER_TYPE" VALUE="OTHER"/>
-          <PARAMETER NAME="MEM_ADDRESS_MODE" VALUE="BYTE_ADDRESS"/>
-          <PARAMETER NAME="MEM_ECC" VALUE="NONE"/>
-          <PARAMETER NAME="MEM_SIZE" VALUE="8192"/>
-          <PARAMETER NAME="MEM_WIDTH" VALUE="32"/>
-          <PARAMETER NAME="READ_LATENCY" VALUE="1"/>
-          <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_ONLY"/>
-          <PORTMAPS>
-            <PORTMAP LOGICAL="ADDR" PHYSICAL="addrb"/>
-            <PORTMAP LOGICAL="CLK" PHYSICAL="clkb"/>
-            <PORTMAP LOGICAL="DOUT" PHYSICAL="doutb"/>
-          </PORTMAPS>
-        </BUSINTERFACE>
-      </BUSINTERFACES>
-    </MODULE>
-    <MODULE COREREVISION="12" FULLNAME="/blk_mem_gen_1" HWVERSION="8.4" INSTANCE="blk_mem_gen_1" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="MEMORY" MODTYPE="blk_mem_gen" VLNV="xilinx.com:ip:blk_mem_gen:8.4">
-      <DOCUMENTS>
-        <DOCUMENT SOURCE="http://www.xilinx.com/cgi-bin/docs/ipdoc?c=blk_mem_gen;v=v8_4;d=pg058-blk-mem-gen.pdf"/>
-      </DOCUMENTS>
-      <PARAMETERS>
-        <PARAMETER NAME="C_ADDRA_WIDTH" VALUE="14"/>
-        <PARAMETER NAME="C_ADDRB_WIDTH" VALUE="14"/>
-        <PARAMETER NAME="C_ALGORITHM" VALUE="1"/>
-        <PARAMETER NAME="C_AXI_ID_WIDTH" VALUE="4"/>
-        <PARAMETER NAME="C_AXI_SLAVE_TYPE" VALUE="0"/>
-        <PARAMETER NAME="C_AXI_TYPE" VALUE="1"/>
-        <PARAMETER NAME="C_BYTE_SIZE" VALUE="8"/>
-        <PARAMETER NAME="C_COMMON_CLK" VALUE="1"/>
-        <PARAMETER NAME="C_COUNT_18K_BRAM" VALUE="0"/>
-        <PARAMETER NAME="C_COUNT_36K_BRAM" VALUE="16"/>
-        <PARAMETER NAME="C_CTRL_ECC_ALGO" VALUE="NONE"/>
-        <PARAMETER NAME="C_DEFAULT_DATA" VALUE="0"/>
-        <PARAMETER NAME="C_DISABLE_WARN_BHV_COLL" VALUE="0"/>
-        <PARAMETER NAME="C_DISABLE_WARN_BHV_RANGE" VALUE="0"/>
-        <PARAMETER NAME="C_ELABORATION_DIR" VALUE="./"/>
-        <PARAMETER NAME="C_ENABLE_32BIT_ADDRESS" VALUE="0"/>
-        <PARAMETER NAME="C_EN_DEEPSLEEP_PIN" VALUE="0"/>
-        <PARAMETER NAME="C_EN_ECC_PIPE" VALUE="0"/>
-        <PARAMETER NAME="C_EN_RDADDRA_CHG" VALUE="0"/>
-        <PARAMETER NAME="C_EN_RDADDRB_CHG" VALUE="0"/>
-        <PARAMETER NAME="C_EN_SAFETY_CKT" VALUE="0"/>
-        <PARAMETER NAME="C_EN_SHUTDOWN_PIN" VALUE="0"/>
-        <PARAMETER NAME="C_EN_SLEEP_PIN" VALUE="0"/>
-        <PARAMETER NAME="C_EST_POWER_SUMMARY" VALUE="Estimated Power for IP     :     20.388 mW"/>
-        <PARAMETER NAME="C_FAMILY" VALUE="artix7"/>
-        <PARAMETER NAME="C_HAS_AXI_ID" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_ENA" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_ENB" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_INJECTERR" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_MEM_OUTPUT_REGS_A" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_MEM_OUTPUT_REGS_B" VALUE="1"/>
-        <PARAMETER NAME="C_HAS_MUX_OUTPUT_REGS_A" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_MUX_OUTPUT_REGS_B" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_REGCEA" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_REGCEB" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_RSTA" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_RSTB" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_SOFTECC_INPUT_REGS_A" VALUE="0"/>
-        <PARAMETER NAME="C_HAS_SOFTECC_OUTPUT_REGS_B" VALUE="0"/>
-        <PARAMETER NAME="C_INITA_VAL" VALUE="0"/>
-        <PARAMETER NAME="C_INITB_VAL" VALUE="0"/>
-        <PARAMETER NAME="C_INIT_FILE" VALUE="NONE"/>
-        <PARAMETER NAME="C_INIT_FILE_NAME" VALUE="no_coe_file_loaded"/>
-        <PARAMETER NAME="C_INTERFACE_TYPE" VALUE="0"/>
-        <PARAMETER NAME="C_LOAD_INIT_FILE" VALUE="0"/>
-        <PARAMETER NAME="C_MEM_TYPE" VALUE="2"/>
-        <PARAMETER NAME="C_MUX_PIPELINE_STAGES" VALUE="0"/>
-        <PARAMETER NAME="C_PRIM_TYPE" VALUE="1"/>
-        <PARAMETER NAME="C_READ_DEPTH_A" VALUE="16384"/>
-        <PARAMETER NAME="C_READ_DEPTH_B" VALUE="16384"/>
-        <PARAMETER NAME="C_READ_LATENCY_A" VALUE="1"/>
-        <PARAMETER NAME="C_READ_LATENCY_B" VALUE="1"/>
-        <PARAMETER NAME="C_READ_WIDTH_A" VALUE="32"/>
-        <PARAMETER NAME="C_READ_WIDTH_B" VALUE="32"/>
-        <PARAMETER NAME="C_RSTRAM_A" VALUE="0"/>
-        <PARAMETER NAME="C_RSTRAM_B" VALUE="0"/>
-        <PARAMETER NAME="C_RST_PRIORITY_A" VALUE="CE"/>
-        <PARAMETER NAME="C_RST_PRIORITY_B" VALUE="CE"/>
-        <PARAMETER NAME="C_SIM_COLLISION_CHECK" VALUE="ALL"/>
-        <PARAMETER NAME="C_USE_BRAM_BLOCK" VALUE="0"/>
-        <PARAMETER NAME="C_USE_BYTE_WEA" VALUE="1"/>
-        <PARAMETER NAME="C_USE_BYTE_WEB" VALUE="1"/>
-        <PARAMETER NAME="C_USE_DEFAULT_DATA" VALUE="0"/>
-        <PARAMETER NAME="C_USE_ECC" VALUE="0"/>
-        <PARAMETER NAME="C_USE_SOFTECC" VALUE="0"/>
-        <PARAMETER NAME="C_USE_URAM" VALUE="0"/>
-        <PARAMETER NAME="C_WEA_WIDTH" VALUE="4"/>
-        <PARAMETER NAME="C_WEB_WIDTH" VALUE="4"/>
-        <PARAMETER NAME="C_WRITE_DEPTH_A" VALUE="16384"/>
-        <PARAMETER NAME="C_WRITE_DEPTH_B" VALUE="16384"/>
-        <PARAMETER NAME="C_WRITE_MODE_A" VALUE="WRITE_FIRST"/>
-        <PARAMETER NAME="C_WRITE_MODE_B" VALUE="WRITE_FIRST"/>
-        <PARAMETER NAME="C_WRITE_WIDTH_A" VALUE="32"/>
-        <PARAMETER NAME="C_WRITE_WIDTH_B" VALUE="32"/>
-        <PARAMETER NAME="C_XDEVICEFAMILY" VALUE="artix7"/>
-        <PARAMETER NAME="AXI_ID_Width" VALUE="4"/>
-        <PARAMETER NAME="AXI_Slave_Type" VALUE="Memory_Slave"/>
-        <PARAMETER NAME="AXI_Type" VALUE="AXI4_Full"/>
-        <PARAMETER NAME="Additional_Inputs_for_Power_Estimation" VALUE="false"/>
-        <PARAMETER NAME="Algorithm" VALUE="Minimum_Area"/>
-        <PARAMETER NAME="Assume_Synchronous_Clk" VALUE="true"/>
-        <PARAMETER NAME="Byte_Size" VALUE="8"/>
-        <PARAMETER NAME="CTRL_ECC_ALGO" VALUE="NONE"/>
-        <PARAMETER NAME="Coe_File" VALUE="no_coe_file_loaded"/>
-        <PARAMETER NAME="Collision_Warnings" VALUE="ALL"/>
-        <PARAMETER NAME="Component_Name" VALUE="total_design_blk_mem_gen_1_0"/>
-        <PARAMETER NAME="Disable_Collision_Warnings" VALUE="false"/>
-        <PARAMETER NAME="Disable_Out_of_Range_Warnings" VALUE="false"/>
-        <PARAMETER NAME="ECC" VALUE="false"/>
-        <PARAMETER NAME="EN_DEEPSLEEP_PIN" VALUE="false"/>
-        <PARAMETER NAME="EN_ECC_PIPE" VALUE="false"/>
-        <PARAMETER NAME="EN_SAFETY_CKT" VALUE="false"/>
-        <PARAMETER NAME="EN_SHUTDOWN_PIN" VALUE="false"/>
-        <PARAMETER NAME="EN_SLEEP_PIN" VALUE="false"/>
-        <PARAMETER NAME="Enable_32bit_Address" VALUE="false"/>
-        <PARAMETER NAME="Enable_A" VALUE="Always_Enabled"/>
-        <PARAMETER NAME="Enable_B" VALUE="Always_Enabled"/>
-        <PARAMETER NAME="Error_Injection_Type" VALUE="Single_Bit_Error_Injection"/>
-        <PARAMETER NAME="Fill_Remaining_Memory_Locations" VALUE="false"/>
-        <PARAMETER NAME="Interface_Type" VALUE="Native"/>
-        <PARAMETER NAME="Load_Init_File" VALUE="false"/>
-        <PARAMETER NAME="MEM_FILE" VALUE="NONE"/>
-        <PARAMETER NAME="Memory_Type" VALUE="True_Dual_Port_RAM"/>
-        <PARAMETER NAME="Operating_Mode_A" VALUE="WRITE_FIRST"/>
-        <PARAMETER NAME="Operating_Mode_B" VALUE="WRITE_FIRST"/>
-        <PARAMETER NAME="Output_Reset_Value_A" VALUE="0"/>
-        <PARAMETER NAME="Output_Reset_Value_B" VALUE="0"/>
-        <PARAMETER NAME="PRIM_type_to_Implement" VALUE="BRAM"/>
-        <PARAMETER NAME="Pipeline_Stages" VALUE="0"/>
-        <PARAMETER NAME="Port_A_Clock" VALUE="100"/>
-        <PARAMETER NAME="Port_A_Enable_Rate" VALUE="100"/>
-        <PARAMETER NAME="Port_A_Write_Rate" VALUE="50"/>
-        <PARAMETER NAME="Port_B_Clock" VALUE="100"/>
-        <PARAMETER NAME="Port_B_Enable_Rate" VALUE="100"/>
-        <PARAMETER NAME="Port_B_Write_Rate" VALUE="50"/>
-        <PARAMETER NAME="Primitive" VALUE="8kx2"/>
-        <PARAMETER NAME="RD_ADDR_CHNG_A" VALUE="false"/>
-        <PARAMETER NAME="RD_ADDR_CHNG_B" VALUE="false"/>
-        <PARAMETER NAME="READ_LATENCY_A" VALUE="1"/>
-        <PARAMETER NAME="READ_LATENCY_B" VALUE="1"/>
-        <PARAMETER NAME="Read_Width_A" VALUE="32"/>
-        <PARAMETER NAME="Read_Width_B" VALUE="32"/>
-        <PARAMETER NAME="Register_PortA_Output_of_Memory_Core" VALUE="false"/>
-        <PARAMETER NAME="Register_PortA_Output_of_Memory_Primitives" VALUE="false"/>
-        <PARAMETER NAME="Register_PortB_Output_of_Memory_Core" VALUE="false"/>
-        <PARAMETER NAME="Register_PortB_Output_of_Memory_Primitives" VALUE="true"/>
-        <PARAMETER NAME="Remaining_Memory_Locations" VALUE="0"/>
-        <PARAMETER NAME="Reset_Memory_Latch_A" VALUE="false"/>
-        <PARAMETER NAME="Reset_Memory_Latch_B" VALUE="false"/>
-        <PARAMETER NAME="Reset_Priority_A" VALUE="CE"/>
-        <PARAMETER NAME="Reset_Priority_B" VALUE="CE"/>
-        <PARAMETER NAME="Reset_Type" VALUE="SYNC"/>
-        <PARAMETER NAME="Use_AXI_ID" VALUE="false"/>
-        <PARAMETER NAME="Use_Byte_Write_Enable" VALUE="true"/>
-        <PARAMETER NAME="Use_Error_Injection_Pins" VALUE="false"/>
-        <PARAMETER NAME="Use_REGCEA_Pin" VALUE="false"/>
-        <PARAMETER NAME="Use_REGCEB_Pin" VALUE="false"/>
-        <PARAMETER NAME="Use_RSTA_Pin" VALUE="false"/>
-        <PARAMETER NAME="Use_RSTB_Pin" VALUE="false"/>
-        <PARAMETER NAME="Write_Depth_A" VALUE="16384"/>
-        <PARAMETER NAME="Write_Width_A" VALUE="32"/>
-        <PARAMETER NAME="Write_Width_B" VALUE="32"/>
-        <PARAMETER NAME="ecctype" VALUE="No_ECC"/>
-        <PARAMETER NAME="register_porta_input_of_softecc" VALUE="false"/>
-        <PARAMETER NAME="register_portb_output_of_softecc" VALUE="false"/>
-        <PARAMETER NAME="softecc" VALUE="false"/>
-        <PARAMETER NAME="use_bram_block" VALUE="Stand_Alone"/>
-        <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
-      </PARAMETERS>
-      <PORTS>
-        <PORT DIR="I" LEFT="13" NAME="addra" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_addra">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="wram_addr_o"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="13" NAME="addrb" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_addrb">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="host_top_wrapper_0" PORT="mem_addr_o"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="clka" SIGIS="clk" SIGNAME="blk_mem_gen_1_clka">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="wram_clk_o"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" NAME="clkb" SIGIS="clk" SIGNAME="blk_mem_gen_1_clkb">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="host_top_wrapper_0" PORT="mem_clk"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="31" NAME="dina" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_dina">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="wram_wdata_o"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="31" NAME="douta" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_douta">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="wram_rdata_i"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="O" LEFT="31" NAME="doutb" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_doutb">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="host_top_wrapper_0" PORT="mem_dout_i"/>
-          </CONNECTIONS>
-        </PORT>
-        <PORT DIR="I" LEFT="3" NAME="wea" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_wea">
-          <CONNECTIONS>
-            <CONNECTION INSTANCE="core_top_0" PORT="wram_wen_o"/>
-          </CONNECTIONS>
-        </PORT>
-      </PORTS>
-      <BUSINTERFACES>
-        <BUSINTERFACE BUSNAME="core_top_0_WRAM" NAME="BRAM_PORTA" TYPE="TARGET" VLNV="xilinx.com:interface:bram:1.0">
-          <PARAMETER NAME="MASTER_TYPE" VALUE="OTHER"/>
-          <PARAMETER NAME="MEM_ADDRESS_MODE" VALUE="BYTE_ADDRESS"/>
-          <PARAMETER NAME="MEM_ECC" VALUE="NONE"/>
-          <PARAMETER NAME="MEM_SIZE" VALUE="8192"/>
-          <PARAMETER NAME="MEM_WIDTH" VALUE="32"/>
-          <PARAMETER NAME="READ_LATENCY" VALUE="1"/>
-          <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_WRITE"/>
-          <PORTMAPS>
-            <PORTMAP LOGICAL="ADDR" PHYSICAL="addra"/>
-            <PORTMAP LOGICAL="CLK" PHYSICAL="clka"/>
-            <PORTMAP LOGICAL="DIN" PHYSICAL="dina"/>
-            <PORTMAP LOGICAL="DOUT" PHYSICAL="douta"/>
-            <PORTMAP LOGICAL="WE" PHYSICAL="wea"/>
-          </PORTMAPS>
-        </BUSINTERFACE>
-        <BUSINTERFACE BUSNAME="host_top_wrapper_0_MEM" NAME="BRAM_PORTB" TYPE="TARGET" VLNV="xilinx.com:interface:bram:1.0">
-          <PARAMETER NAME="MASTER_TYPE" VALUE="OTHER"/>
-          <PARAMETER NAME="MEM_ADDRESS_MODE" VALUE="BYTE_ADDRESS"/>
-          <PARAMETER NAME="MEM_ECC" VALUE="NONE"/>
-          <PARAMETER NAME="MEM_SIZE" VALUE="8192"/>
-          <PARAMETER NAME="MEM_WIDTH" VALUE="32"/>
-          <PARAMETER NAME="READ_LATENCY" VALUE="1"/>
-          <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_WRITE"/>
-          <PORTMAPS>
-            <PORTMAP LOGICAL="ADDR" PHYSICAL="addrb"/>
-            <PORTMAP LOGICAL="CLK" PHYSICAL="clkb"/>
-            <PORTMAP LOGICAL="DOUT" PHYSICAL="doutb"/>
-          </PORTMAPS>
-        </BUSINTERFACE>
-      </BUSINTERFACES>
-    </MODULE>
     <MODULE COREREVISION="17" FULLNAME="/clk_wiz" HWVERSION="6.0" INSTANCE="clk_wiz" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="clk_wiz" VLNV="xilinx.com:ip:clk_wiz:6.0">
       <DOCUMENTS>
         <DOCUMENT SOURCE="http://www.xilinx.com/cgi-bin/docs/ipdoc?c=clk_wiz;v=v6_0;d=pg065-clk-wiz.pdf"/>
@@ -888,17 +442,17 @@
         <PARAMETER NAME="C_CLKIN2_JITTER_PS" VALUE="100.0"/>
         <PARAMETER NAME="C_CLKOUT0_1" VALUE="0000"/>
         <PARAMETER NAME="C_CLKOUT0_2" VALUE="0000"/>
-        <PARAMETER NAME="C_CLKOUT0_ACTUAL_FREQ" VALUE="100.00000"/>
+        <PARAMETER NAME="C_CLKOUT0_ACTUAL_FREQ" VALUE="50.00000"/>
         <PARAMETER NAME="C_CLKOUT1_1" VALUE="0000"/>
         <PARAMETER NAME="C_CLKOUT1_2" VALUE="0000"/>
         <PARAMETER NAME="C_CLKOUT1_ACTUAL_FREQ" VALUE="100.000"/>
         <PARAMETER NAME="C_CLKOUT1_DRIVES" VALUE="BUFG"/>
         <PARAMETER NAME="C_CLKOUT1_DUTY_CYCLE" VALUE="50.0"/>
         <PARAMETER NAME="C_CLKOUT1_MATCHED_ROUTING" VALUE="false"/>
-        <PARAMETER NAME="C_CLKOUT1_OUT_FREQ" VALUE="100.00000"/>
+        <PARAMETER NAME="C_CLKOUT1_OUT_FREQ" VALUE="50.00000"/>
         <PARAMETER NAME="C_CLKOUT1_PHASE" VALUE="0.000"/>
         <PARAMETER NAME="C_CLKOUT1_REQUESTED_DUTY_CYCLE" VALUE="50.000"/>
-        <PARAMETER NAME="C_CLKOUT1_REQUESTED_OUT_FREQ" VALUE="100.0"/>
+        <PARAMETER NAME="C_CLKOUT1_REQUESTED_OUT_FREQ" VALUE="50.0"/>
         <PARAMETER NAME="C_CLKOUT1_REQUESTED_PHASE" VALUE="0.000"/>
         <PARAMETER NAME="C_CLKOUT1_SEQUENCE_NUMBER" VALUE="1"/>
         <PARAMETER NAME="C_CLKOUT2_1" VALUE="0000"/>
@@ -993,12 +547,12 @@
         <PARAMETER NAME="C_DIN_PORT" VALUE="din"/>
         <PARAMETER NAME="C_DIVCLK" VALUE="0000"/>
         <PARAMETER NAME="C_DIVIDE1_AUTO" VALUE="1"/>
-        <PARAMETER NAME="C_DIVIDE2_AUTO" VALUE="0.13333333333333333"/>
-        <PARAMETER NAME="C_DIVIDE3_AUTO" VALUE="0.13333333333333333"/>
-        <PARAMETER NAME="C_DIVIDE4_AUTO" VALUE="0.13333333333333333"/>
-        <PARAMETER NAME="C_DIVIDE5_AUTO" VALUE="0.13333333333333333"/>
-        <PARAMETER NAME="C_DIVIDE6_AUTO" VALUE="0.13333333333333333"/>
-        <PARAMETER NAME="C_DIVIDE7_AUTO" VALUE="0.13333333333333333"/>
+        <PARAMETER NAME="C_DIVIDE2_AUTO" VALUE="0.06666666666666667"/>
+        <PARAMETER NAME="C_DIVIDE3_AUTO" VALUE="0.06666666666666667"/>
+        <PARAMETER NAME="C_DIVIDE4_AUTO" VALUE="0.06666666666666667"/>
+        <PARAMETER NAME="C_DIVIDE5_AUTO" VALUE="0.06666666666666667"/>
+        <PARAMETER NAME="C_DIVIDE6_AUTO" VALUE="0.06666666666666667"/>
+        <PARAMETER NAME="C_DIVIDE7_AUTO" VALUE="0.06666666666666667"/>
         <PARAMETER NAME="C_DOUT_PORT" VALUE="dout"/>
         <PARAMETER NAME="C_DRDY_PORT" VALUE="drdy"/>
         <PARAMETER NAME="C_DWE_PORT" VALUE="dwe"/>
@@ -1041,7 +595,7 @@
         <PARAMETER NAME="C_MMCM_CLKFBOUT_USE_FINE_PS" VALUE="FALSE"/>
         <PARAMETER NAME="C_MMCM_CLKIN1_PERIOD" VALUE="83.333"/>
         <PARAMETER NAME="C_MMCM_CLKIN2_PERIOD" VALUE="10.0"/>
-        <PARAMETER NAME="C_MMCM_CLKOUT0_DIVIDE_F" VALUE="7.500"/>
+        <PARAMETER NAME="C_MMCM_CLKOUT0_DIVIDE_F" VALUE="15.000"/>
         <PARAMETER NAME="C_MMCM_CLKOUT0_DUTY_CYCLE" VALUE="0.500"/>
         <PARAMETER NAME="C_MMCM_CLKOUT0_PHASE" VALUE="0.000"/>
         <PARAMETER NAME="C_MMCM_CLKOUT0_USE_FINE_PS" VALUE="FALSE"/>
@@ -1083,7 +637,7 @@
         <PARAMETER NAME="C_OPTIMIZE_CLOCKING_STRUCTURE_EN" VALUE="0"/>
         <PARAMETER NAME="C_OUTCLK_SUM_ROW0A" VALUE="Output     Output      Phase    Duty Cycle   Pk-to-Pk     Phase"/>
         <PARAMETER NAME="C_OUTCLK_SUM_ROW0B" VALUE="Clock     Freq (MHz)  (degrees)    (%)     Jitter (ps)  Error (ps)"/>
-        <PARAMETER NAME="C_OUTCLK_SUM_ROW1" VALUE="clk_out1__100.00000______0.000______50.0______479.872____668.310"/>
+        <PARAMETER NAME="C_OUTCLK_SUM_ROW1" VALUE="clk_out1__50.00000______0.000______50.0______522.315____668.310"/>
         <PARAMETER NAME="C_OUTCLK_SUM_ROW2" VALUE="no_CLK_OUT2_output"/>
         <PARAMETER NAME="C_OUTCLK_SUM_ROW3" VALUE="no_CLK_OUT3_output"/>
         <PARAMETER NAME="C_OUTCLK_SUM_ROW4" VALUE="no_CLK_OUT4_output"/>
@@ -1205,11 +759,11 @@
         <PARAMETER NAME="CLKIN2_JITTER_PS" VALUE="100.0"/>
         <PARAMETER NAME="CLKIN2_UI_JITTER" VALUE="0.010"/>
         <PARAMETER NAME="CLKOUT1_DRIVES" VALUE="BUFG"/>
-        <PARAMETER NAME="CLKOUT1_JITTER" VALUE="479.872"/>
+        <PARAMETER NAME="CLKOUT1_JITTER" VALUE="522.315"/>
         <PARAMETER NAME="CLKOUT1_MATCHED_ROUTING" VALUE="false"/>
         <PARAMETER NAME="CLKOUT1_PHASE_ERROR" VALUE="668.310"/>
         <PARAMETER NAME="CLKOUT1_REQUESTED_DUTY_CYCLE" VALUE="50.000"/>
-        <PARAMETER NAME="CLKOUT1_REQUESTED_OUT_FREQ" VALUE="100.0"/>
+        <PARAMETER NAME="CLKOUT1_REQUESTED_OUT_FREQ" VALUE="50.0"/>
         <PARAMETER NAME="CLKOUT1_REQUESTED_PHASE" VALUE="0.000"/>
         <PARAMETER NAME="CLKOUT1_SEQUENCE_NUMBER" VALUE="1"/>
         <PARAMETER NAME="CLKOUT1_USED" VALUE="true"/>
@@ -1321,7 +875,7 @@
         <PARAMETER NAME="MMCM_CLKFBOUT_USE_FINE_PS" VALUE="false"/>
         <PARAMETER NAME="MMCM_CLKIN1_PERIOD" VALUE="83.333"/>
         <PARAMETER NAME="MMCM_CLKIN2_PERIOD" VALUE="10.0"/>
-        <PARAMETER NAME="MMCM_CLKOUT0_DIVIDE_F" VALUE="7.500"/>
+        <PARAMETER NAME="MMCM_CLKOUT0_DIVIDE_F" VALUE="15.000"/>
         <PARAMETER NAME="MMCM_CLKOUT0_DUTY_CYCLE" VALUE="0.500"/>
         <PARAMETER NAME="MMCM_CLKOUT0_PHASE" VALUE="0.000"/>
         <PARAMETER NAME="MMCM_CLKOUT0_USE_FINE_PS" VALUE="false"/>
@@ -1451,17 +1005,17 @@
             <CONNECTION INSTANCE="External_Ports" PORT="sys_clk"/>
           </CONNECTIONS>
         </PORT>
-        <PORT CLKFREQUENCY="100000000" DIR="O" NAME="clk_out1" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
+        <PORT CLKFREQUENCY="50000000" DIR="O" NAME="clk_out1" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
           <CONNECTIONS>
             <CONNECTION INSTANCE="axi_uartlite_0" PORT="s_axi_aclk"/>
-            <CONNECTION INSTANCE="rst_clk_wiz_100M" PORT="slowest_sync_clk"/>
+            <CONNECTION INSTANCE="rst_clk_wiz" PORT="slowest_sync_clk"/>
             <CONNECTION INSTANCE="core_top_0" PORT="clk"/>
             <CONNECTION INSTANCE="host_top_wrapper_0" PORT="clk"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="locked" SIGIS="undef" SIGNAME="clk_wiz_locked">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="rst_clk_wiz_100M" PORT="dcm_locked"/>
+            <CONNECTION INSTANCE="rst_clk_wiz" PORT="dcm_locked"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="I" NAME="reset" POLARITY="ACTIVE_HIGH" SIGIS="rst" SIGNAME="External_Ports_reset">
@@ -1476,44 +1030,44 @@
       <DOCUMENTS/>
       <PARAMETERS>
         <PARAMETER NAME="W_IROM_ADDR" VALUE="12"/>
-        <PARAMETER NAME="W_WRAM_ADDR" VALUE="16"/>
+        <PARAMETER NAME="W_WRAM_ADDR" VALUE="12"/>
         <PARAMETER NAME="Component_Name" VALUE="total_design_core_top_0_0"/>
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
       </PARAMETERS>
       <PORTS>
-        <PORT CLKFREQUENCY="100000000" DIR="I" NAME="clk" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
+        <PORT CLKFREQUENCY="50000000" DIR="I" NAME="clk" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
           <CONNECTIONS>
             <CONNECTION INSTANCE="clk_wiz" PORT="clk_out1"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="11" NAME="irom_addr_a_o" RIGHT="2" SIGIS="undef" SIGNAME="blk_mem_gen_0_addra">
+        <PORT DIR="O" LEFT="11" NAME="irom_addr_a_o" RIGHT="2" SIGIS="undef" SIGNAME="core_top_0_irom_addr_a_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_0" PORT="addra"/>
+            <CONNECTION INSTANCE="irom" PORT="addra"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="11" NAME="irom_addr_b_o" RIGHT="2" SIGIS="undef" SIGNAME="blk_mem_gen_0_addrb">
+        <PORT DIR="O" LEFT="11" NAME="irom_addr_b_o" RIGHT="2" SIGIS="undef" SIGNAME="core_top_0_irom_addr_b_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_0" PORT="addrb"/>
+            <CONNECTION INSTANCE="irom" PORT="addrb"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" NAME="irom_clk_a_o" SIGIS="clk" SIGNAME="blk_mem_gen_0_clka">
+        <PORT DIR="O" NAME="irom_clk_a_o" SIGIS="clk" SIGNAME="core_top_0_irom_clk_a_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_0" PORT="clka"/>
+            <CONNECTION INSTANCE="irom" PORT="clka"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" NAME="irom_clk_b_o" SIGIS="clk" SIGNAME="blk_mem_gen_0_clkb">
+        <PORT DIR="O" NAME="irom_clk_b_o" SIGIS="clk" SIGNAME="core_top_0_irom_clk_b_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_0" PORT="clkb"/>
+            <CONNECTION INSTANCE="irom" PORT="clkb"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="31" NAME="irom_data_a_i" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_0_douta">
+        <PORT DIR="I" LEFT="31" NAME="irom_data_a_i" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_irom_data_a_i">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_0" PORT="douta"/>
+            <CONNECTION INSTANCE="irom" PORT="douta"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="31" NAME="irom_data_b_i" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_0_doutb">
+        <PORT DIR="I" LEFT="31" NAME="irom_data_b_i" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_irom_data_b_i">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_0" PORT="doutb"/>
+            <CONNECTION INSTANCE="irom" PORT="doutb"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="ready_o" SIGIS="undef" SIGNAME="core_top_0_ready_o">
@@ -1521,9 +1075,9 @@
             <CONNECTION INSTANCE="host_top_wrapper_0" PORT="simt_ready_i"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" NAME="rst_n" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="rst_clk_wiz_100M_peripheral_aresetn">
+        <PORT DIR="I" NAME="rst_n" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="rst_clk_wiz_peripheral_aresetn">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="rst_clk_wiz_100M" PORT="peripheral_aresetn"/>
+            <CONNECTION INSTANCE="rst_clk_wiz" PORT="peripheral_aresetn"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="I" NAME="start_i" SIGIS="undef" SIGNAME="host_top_wrapper_0_simt_start_o">
@@ -1531,29 +1085,29 @@
             <CONNECTION INSTANCE="host_top_wrapper_0" PORT="simt_start_o"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="15" NAME="wram_addr_o" RIGHT="2" SIGIS="undef" SIGNAME="blk_mem_gen_1_addra">
+        <PORT DIR="O" LEFT="11" NAME="wram_addr_o" RIGHT="2" SIGIS="undef" SIGNAME="core_top_0_wram_addr_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_1" PORT="addra"/>
+            <CONNECTION INSTANCE="wram" PORT="addra"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" NAME="wram_clk_o" SIGIS="clk" SIGNAME="blk_mem_gen_1_clka">
+        <PORT DIR="O" NAME="wram_clk_o" SIGIS="clk" SIGNAME="core_top_0_wram_clk_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_1" PORT="clka"/>
+            <CONNECTION INSTANCE="wram" PORT="clka"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="31" NAME="wram_rdata_i" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_douta">
+        <PORT DIR="I" LEFT="31" NAME="wram_rdata_i" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_wram_rdata_i">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_1" PORT="douta"/>
+            <CONNECTION INSTANCE="wram" PORT="douta"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="31" NAME="wram_wdata_o" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_dina">
+        <PORT DIR="O" LEFT="31" NAME="wram_wdata_o" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_wram_wdata_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_1" PORT="dina"/>
+            <CONNECTION INSTANCE="wram" PORT="dina"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="3" NAME="wram_wen_o" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_wea">
+        <PORT DIR="O" LEFT="3" NAME="wram_wen_o" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_wram_wen_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_1" PORT="wea"/>
+            <CONNECTION INSTANCE="wram" PORT="wea"/>
           </CONNECTIONS>
         </PORT>
       </PORTS>
@@ -1608,12 +1162,12 @@
       <DOCUMENTS/>
       <PARAMETERS>
         <PARAMETER NAME="MEM_DELAY" VALUE="2"/>
-        <PARAMETER NAME="W_ADDR" VALUE="14"/>
+        <PARAMETER NAME="W_ADDR" VALUE="10"/>
         <PARAMETER NAME="Component_Name" VALUE="total_design_host_top_wrapper_0_0"/>
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
       </PARAMETERS>
       <PORTS>
-        <PORT CLKFREQUENCY="100000000" DIR="I" NAME="clk" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
+        <PORT CLKFREQUENCY="50000000" DIR="I" NAME="clk" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
           <CONNECTIONS>
             <CONNECTION INSTANCE="clk_wiz" PORT="clk_out1"/>
           </CONNECTIONS>
@@ -1703,19 +1257,19 @@
             <CONNECTION INSTANCE="axi_uartlite_0" PORT="s_axi_wvalid"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" LEFT="13" NAME="mem_addr_o" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_addrb">
+        <PORT DIR="O" LEFT="9" NAME="mem_addr_o" RIGHT="0" SIGIS="undef" SIGNAME="host_top_wrapper_0_mem_addr_o">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_1" PORT="addrb"/>
+            <CONNECTION INSTANCE="wram" PORT="addrb"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="O" NAME="mem_clk" SIGIS="clk" SIGNAME="blk_mem_gen_1_clkb">
+        <PORT DIR="O" NAME="mem_clk" SIGIS="clk" SIGNAME="host_top_wrapper_0_mem_clk">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_1" PORT="clkb"/>
+            <CONNECTION INSTANCE="wram" PORT="clkb"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" LEFT="31" NAME="mem_dout_i" RIGHT="0" SIGIS="undef" SIGNAME="blk_mem_gen_1_doutb">
+        <PORT DIR="I" LEFT="31" NAME="mem_dout_i" RIGHT="0" SIGIS="undef" SIGNAME="host_top_wrapper_0_mem_dout_i">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="blk_mem_gen_1" PORT="doutb"/>
+            <CONNECTION INSTANCE="wram" PORT="doutb"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="ready_o" SIGIS="undef" SIGNAME="host_top_wrapper_0_ready_o">
@@ -1723,9 +1277,9 @@
             <CONNECTION INSTANCE="External_Ports" PORT="led"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" NAME="rst_n" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="rst_clk_wiz_100M_peripheral_aresetn">
+        <PORT DIR="I" NAME="rst_n" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="rst_clk_wiz_peripheral_aresetn">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="rst_clk_wiz_100M" PORT="peripheral_aresetn"/>
+            <CONNECTION INSTANCE="rst_clk_wiz" PORT="peripheral_aresetn"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="I" NAME="simt_ready_i" SIGIS="undef" SIGNAME="core_top_0_ready_o">
@@ -1752,7 +1306,7 @@
           <PARAMETER NAME="BUSER_WIDTH" VALUE="0"/>
           <PARAMETER NAME="CLK_DOMAIN" VALUE="/clk_wiz_clk_out1"/>
           <PARAMETER NAME="DATA_WIDTH" VALUE="32"/>
-          <PARAMETER NAME="FREQ_HZ" VALUE="100000000"/>
+          <PARAMETER NAME="FREQ_HZ" VALUE="50000000"/>
           <PARAMETER NAME="HAS_BRESP" VALUE="1"/>
           <PARAMETER NAME="HAS_BURST" VALUE="0"/>
           <PARAMETER NAME="HAS_CACHE" VALUE="0"/>
@@ -1817,10 +1371,227 @@
       </MEMORYMAP>
       <PERIPHERALS>
         <PERIPHERAL INSTANCE="axi_uartlite_0"/>
-        <PERIPHERAL INSTANCE="blk_mem_gen_1"/>
+        <PERIPHERAL INSTANCE="wram"/>
       </PERIPHERALS>
     </MODULE>
-    <MODULE COREREVISION="17" FULLNAME="/rst_clk_wiz_100M" HWVERSION="5.0" INSTANCE="rst_clk_wiz_100M" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="proc_sys_reset" VLNV="xilinx.com:ip:proc_sys_reset:5.0">
+    <MODULE COREREVISION="12" FULLNAME="/irom" HWVERSION="8.4" INSTANCE="irom" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="MEMORY" MODTYPE="blk_mem_gen" VLNV="xilinx.com:ip:blk_mem_gen:8.4">
+      <DOCUMENTS>
+        <DOCUMENT SOURCE="http://www.xilinx.com/cgi-bin/docs/ipdoc?c=blk_mem_gen;v=v8_4;d=pg058-blk-mem-gen.pdf"/>
+      </DOCUMENTS>
+      <PARAMETERS>
+        <PARAMETER NAME="C_ADDRA_WIDTH" VALUE="10"/>
+        <PARAMETER NAME="C_ADDRB_WIDTH" VALUE="10"/>
+        <PARAMETER NAME="C_ALGORITHM" VALUE="1"/>
+        <PARAMETER NAME="C_AXI_ID_WIDTH" VALUE="4"/>
+        <PARAMETER NAME="C_AXI_SLAVE_TYPE" VALUE="0"/>
+        <PARAMETER NAME="C_AXI_TYPE" VALUE="1"/>
+        <PARAMETER NAME="C_BYTE_SIZE" VALUE="9"/>
+        <PARAMETER NAME="C_COMMON_CLK" VALUE="1"/>
+        <PARAMETER NAME="C_COUNT_18K_BRAM" VALUE="0"/>
+        <PARAMETER NAME="C_COUNT_36K_BRAM" VALUE="1"/>
+        <PARAMETER NAME="C_CTRL_ECC_ALGO" VALUE="NONE"/>
+        <PARAMETER NAME="C_DEFAULT_DATA" VALUE="0"/>
+        <PARAMETER NAME="C_DISABLE_WARN_BHV_COLL" VALUE="0"/>
+        <PARAMETER NAME="C_DISABLE_WARN_BHV_RANGE" VALUE="0"/>
+        <PARAMETER NAME="C_ELABORATION_DIR" VALUE="./"/>
+        <PARAMETER NAME="C_ENABLE_32BIT_ADDRESS" VALUE="0"/>
+        <PARAMETER NAME="C_EN_DEEPSLEEP_PIN" VALUE="0"/>
+        <PARAMETER NAME="C_EN_ECC_PIPE" VALUE="0"/>
+        <PARAMETER NAME="C_EN_RDADDRA_CHG" VALUE="0"/>
+        <PARAMETER NAME="C_EN_RDADDRB_CHG" VALUE="0"/>
+        <PARAMETER NAME="C_EN_SAFETY_CKT" VALUE="0"/>
+        <PARAMETER NAME="C_EN_SHUTDOWN_PIN" VALUE="0"/>
+        <PARAMETER NAME="C_EN_SLEEP_PIN" VALUE="0"/>
+        <PARAMETER NAME="C_EST_POWER_SUMMARY" VALUE="Estimated Power for IP     :     5.244 mW"/>
+        <PARAMETER NAME="C_FAMILY" VALUE="artix7"/>
+        <PARAMETER NAME="C_HAS_AXI_ID" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_ENA" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_ENB" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_INJECTERR" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_MEM_OUTPUT_REGS_A" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_MEM_OUTPUT_REGS_B" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_MUX_OUTPUT_REGS_A" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_MUX_OUTPUT_REGS_B" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_REGCEA" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_REGCEB" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_RSTA" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_RSTB" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_SOFTECC_INPUT_REGS_A" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_SOFTECC_OUTPUT_REGS_B" VALUE="0"/>
+        <PARAMETER NAME="C_INITA_VAL" VALUE="0"/>
+        <PARAMETER NAME="C_INITB_VAL" VALUE="0"/>
+        <PARAMETER NAME="C_INIT_FILE" VALUE="NONE"/>
+        <PARAMETER NAME="C_INIT_FILE_NAME" VALUE="total_design_blk_mem_gen_0_0.mif"/>
+        <PARAMETER NAME="C_INTERFACE_TYPE" VALUE="0"/>
+        <PARAMETER NAME="C_LOAD_INIT_FILE" VALUE="1"/>
+        <PARAMETER NAME="C_MEM_TYPE" VALUE="4"/>
+        <PARAMETER NAME="C_MUX_PIPELINE_STAGES" VALUE="0"/>
+        <PARAMETER NAME="C_PRIM_TYPE" VALUE="1"/>
+        <PARAMETER NAME="C_READ_DEPTH_A" VALUE="1024"/>
+        <PARAMETER NAME="C_READ_DEPTH_B" VALUE="1024"/>
+        <PARAMETER NAME="C_READ_LATENCY_A" VALUE="1"/>
+        <PARAMETER NAME="C_READ_LATENCY_B" VALUE="1"/>
+        <PARAMETER NAME="C_READ_WIDTH_A" VALUE="32"/>
+        <PARAMETER NAME="C_READ_WIDTH_B" VALUE="32"/>
+        <PARAMETER NAME="C_RSTRAM_A" VALUE="0"/>
+        <PARAMETER NAME="C_RSTRAM_B" VALUE="0"/>
+        <PARAMETER NAME="C_RST_PRIORITY_A" VALUE="CE"/>
+        <PARAMETER NAME="C_RST_PRIORITY_B" VALUE="CE"/>
+        <PARAMETER NAME="C_SIM_COLLISION_CHECK" VALUE="ALL"/>
+        <PARAMETER NAME="C_USE_BRAM_BLOCK" VALUE="0"/>
+        <PARAMETER NAME="C_USE_BYTE_WEA" VALUE="0"/>
+        <PARAMETER NAME="C_USE_BYTE_WEB" VALUE="0"/>
+        <PARAMETER NAME="C_USE_DEFAULT_DATA" VALUE="0"/>
+        <PARAMETER NAME="C_USE_ECC" VALUE="0"/>
+        <PARAMETER NAME="C_USE_SOFTECC" VALUE="0"/>
+        <PARAMETER NAME="C_USE_URAM" VALUE="0"/>
+        <PARAMETER NAME="C_WEA_WIDTH" VALUE="1"/>
+        <PARAMETER NAME="C_WEB_WIDTH" VALUE="1"/>
+        <PARAMETER NAME="C_WRITE_DEPTH_A" VALUE="1024"/>
+        <PARAMETER NAME="C_WRITE_DEPTH_B" VALUE="1024"/>
+        <PARAMETER NAME="C_WRITE_MODE_A" VALUE="WRITE_FIRST"/>
+        <PARAMETER NAME="C_WRITE_MODE_B" VALUE="WRITE_FIRST"/>
+        <PARAMETER NAME="C_WRITE_WIDTH_A" VALUE="32"/>
+        <PARAMETER NAME="C_WRITE_WIDTH_B" VALUE="32"/>
+        <PARAMETER NAME="C_XDEVICEFAMILY" VALUE="artix7"/>
+        <PARAMETER NAME="AXI_ID_Width" VALUE="4"/>
+        <PARAMETER NAME="AXI_Slave_Type" VALUE="Memory_Slave"/>
+        <PARAMETER NAME="AXI_Type" VALUE="AXI4_Full"/>
+        <PARAMETER NAME="Additional_Inputs_for_Power_Estimation" VALUE="false"/>
+        <PARAMETER NAME="Algorithm" VALUE="Minimum_Area"/>
+        <PARAMETER NAME="Assume_Synchronous_Clk" VALUE="true"/>
+        <PARAMETER NAME="Byte_Size" VALUE="9"/>
+        <PARAMETER NAME="CTRL_ECC_ALGO" VALUE="NONE"/>
+        <PARAMETER NAME="Coe_File" VALUE="../../../../irom.coe"/>
+        <PARAMETER NAME="Collision_Warnings" VALUE="ALL"/>
+        <PARAMETER NAME="Component_Name" VALUE="total_design_blk_mem_gen_0_0"/>
+        <PARAMETER NAME="Disable_Collision_Warnings" VALUE="false"/>
+        <PARAMETER NAME="Disable_Out_of_Range_Warnings" VALUE="false"/>
+        <PARAMETER NAME="ECC" VALUE="false"/>
+        <PARAMETER NAME="EN_DEEPSLEEP_PIN" VALUE="false"/>
+        <PARAMETER NAME="EN_ECC_PIPE" VALUE="false"/>
+        <PARAMETER NAME="EN_SAFETY_CKT" VALUE="false"/>
+        <PARAMETER NAME="EN_SHUTDOWN_PIN" VALUE="false"/>
+        <PARAMETER NAME="EN_SLEEP_PIN" VALUE="false"/>
+        <PARAMETER NAME="Enable_32bit_Address" VALUE="false"/>
+        <PARAMETER NAME="Enable_A" VALUE="Always_Enabled"/>
+        <PARAMETER NAME="Enable_B" VALUE="Always_Enabled"/>
+        <PARAMETER NAME="Error_Injection_Type" VALUE="Single_Bit_Error_Injection"/>
+        <PARAMETER NAME="Fill_Remaining_Memory_Locations" VALUE="false"/>
+        <PARAMETER NAME="Interface_Type" VALUE="Native"/>
+        <PARAMETER NAME="Load_Init_File" VALUE="true"/>
+        <PARAMETER NAME="MEM_FILE" VALUE="NONE"/>
+        <PARAMETER NAME="Memory_Type" VALUE="Dual_Port_ROM"/>
+        <PARAMETER NAME="Operating_Mode_A" VALUE="WRITE_FIRST"/>
+        <PARAMETER NAME="Operating_Mode_B" VALUE="WRITE_FIRST"/>
+        <PARAMETER NAME="Output_Reset_Value_A" VALUE="0"/>
+        <PARAMETER NAME="Output_Reset_Value_B" VALUE="0"/>
+        <PARAMETER NAME="PRIM_type_to_Implement" VALUE="BRAM"/>
+        <PARAMETER NAME="Pipeline_Stages" VALUE="0"/>
+        <PARAMETER NAME="Port_A_Clock" VALUE="100"/>
+        <PARAMETER NAME="Port_A_Enable_Rate" VALUE="100"/>
+        <PARAMETER NAME="Port_A_Write_Rate" VALUE="0"/>
+        <PARAMETER NAME="Port_B_Clock" VALUE="100"/>
+        <PARAMETER NAME="Port_B_Enable_Rate" VALUE="100"/>
+        <PARAMETER NAME="Port_B_Write_Rate" VALUE="0"/>
+        <PARAMETER NAME="Primitive" VALUE="8kx2"/>
+        <PARAMETER NAME="RD_ADDR_CHNG_A" VALUE="false"/>
+        <PARAMETER NAME="RD_ADDR_CHNG_B" VALUE="false"/>
+        <PARAMETER NAME="READ_LATENCY_A" VALUE="1"/>
+        <PARAMETER NAME="READ_LATENCY_B" VALUE="1"/>
+        <PARAMETER NAME="Read_Width_A" VALUE="32"/>
+        <PARAMETER NAME="Read_Width_B" VALUE="32"/>
+        <PARAMETER NAME="Register_PortA_Output_of_Memory_Core" VALUE="false"/>
+        <PARAMETER NAME="Register_PortA_Output_of_Memory_Primitives" VALUE="false"/>
+        <PARAMETER NAME="Register_PortB_Output_of_Memory_Core" VALUE="false"/>
+        <PARAMETER NAME="Register_PortB_Output_of_Memory_Primitives" VALUE="false"/>
+        <PARAMETER NAME="Remaining_Memory_Locations" VALUE="0"/>
+        <PARAMETER NAME="Reset_Memory_Latch_A" VALUE="false"/>
+        <PARAMETER NAME="Reset_Memory_Latch_B" VALUE="false"/>
+        <PARAMETER NAME="Reset_Priority_A" VALUE="CE"/>
+        <PARAMETER NAME="Reset_Priority_B" VALUE="CE"/>
+        <PARAMETER NAME="Reset_Type" VALUE="SYNC"/>
+        <PARAMETER NAME="Use_AXI_ID" VALUE="false"/>
+        <PARAMETER NAME="Use_Byte_Write_Enable" VALUE="false"/>
+        <PARAMETER NAME="Use_Error_Injection_Pins" VALUE="false"/>
+        <PARAMETER NAME="Use_REGCEA_Pin" VALUE="false"/>
+        <PARAMETER NAME="Use_REGCEB_Pin" VALUE="false"/>
+        <PARAMETER NAME="Use_RSTA_Pin" VALUE="false"/>
+        <PARAMETER NAME="Use_RSTB_Pin" VALUE="false"/>
+        <PARAMETER NAME="Write_Depth_A" VALUE="1024"/>
+        <PARAMETER NAME="Write_Width_A" VALUE="32"/>
+        <PARAMETER NAME="Write_Width_B" VALUE="32"/>
+        <PARAMETER NAME="ecctype" VALUE="No_ECC"/>
+        <PARAMETER NAME="register_porta_input_of_softecc" VALUE="false"/>
+        <PARAMETER NAME="register_portb_output_of_softecc" VALUE="false"/>
+        <PARAMETER NAME="softecc" VALUE="false"/>
+        <PARAMETER NAME="use_bram_block" VALUE="Stand_Alone"/>
+        <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
+      </PARAMETERS>
+      <PORTS>
+        <PORT DIR="I" LEFT="9" NAME="addra" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_irom_addr_a_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="irom_addr_a_o"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="I" LEFT="9" NAME="addrb" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_irom_addr_b_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="irom_addr_b_o"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="I" NAME="clka" SIGIS="clk" SIGNAME="core_top_0_irom_clk_a_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="irom_clk_a_o"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="I" NAME="clkb" SIGIS="clk" SIGNAME="core_top_0_irom_clk_b_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="irom_clk_b_o"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="O" LEFT="31" NAME="douta" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_irom_data_a_i">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="irom_data_a_i"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="O" LEFT="31" NAME="doutb" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_irom_data_b_i">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="irom_data_b_i"/>
+          </CONNECTIONS>
+        </PORT>
+      </PORTS>
+      <BUSINTERFACES>
+        <BUSINTERFACE BUSNAME="core_top_0_IROM_A" NAME="BRAM_PORTA" TYPE="TARGET" VLNV="xilinx.com:interface:bram:1.0">
+          <PARAMETER NAME="MASTER_TYPE" VALUE="OTHER"/>
+          <PARAMETER NAME="MEM_ADDRESS_MODE" VALUE="BYTE_ADDRESS"/>
+          <PARAMETER NAME="MEM_ECC" VALUE="NONE"/>
+          <PARAMETER NAME="MEM_SIZE" VALUE="8192"/>
+          <PARAMETER NAME="MEM_WIDTH" VALUE="32"/>
+          <PARAMETER NAME="READ_LATENCY" VALUE="1"/>
+          <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_ONLY"/>
+          <PORTMAPS>
+            <PORTMAP LOGICAL="ADDR" PHYSICAL="addra"/>
+            <PORTMAP LOGICAL="CLK" PHYSICAL="clka"/>
+            <PORTMAP LOGICAL="DOUT" PHYSICAL="douta"/>
+          </PORTMAPS>
+        </BUSINTERFACE>
+        <BUSINTERFACE BUSNAME="core_top_0_IROM_B" NAME="BRAM_PORTB" TYPE="TARGET" VLNV="xilinx.com:interface:bram:1.0">
+          <PARAMETER NAME="MASTER_TYPE" VALUE="OTHER"/>
+          <PARAMETER NAME="MEM_ADDRESS_MODE" VALUE="BYTE_ADDRESS"/>
+          <PARAMETER NAME="MEM_ECC" VALUE="NONE"/>
+          <PARAMETER NAME="MEM_SIZE" VALUE="8192"/>
+          <PARAMETER NAME="MEM_WIDTH" VALUE="32"/>
+          <PARAMETER NAME="READ_LATENCY" VALUE="1"/>
+          <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_ONLY"/>
+          <PORTMAPS>
+            <PORTMAP LOGICAL="ADDR" PHYSICAL="addrb"/>
+            <PORTMAP LOGICAL="CLK" PHYSICAL="clkb"/>
+            <PORTMAP LOGICAL="DOUT" PHYSICAL="doutb"/>
+          </PORTMAPS>
+        </BUSINTERFACE>
+      </BUSINTERFACES>
+    </MODULE>
+    <MODULE COREREVISION="17" FULLNAME="/rst_clk_wiz" HWVERSION="5.0" INSTANCE="rst_clk_wiz" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="PERIPHERAL" MODTYPE="proc_sys_reset" VLNV="xilinx.com:ip:proc_sys_reset:5.0">
       <DOCUMENTS>
         <DOCUMENT SOURCE="http://www.xilinx.com/cgi-bin/docs/ipdoc?c=proc_sys_reset;v=v5_0;d=pg164-proc-sys-reset.pdf"/>
       </DOCUMENTS>
@@ -1855,7 +1626,7 @@
         <PORT DIR="O" LEFT="0" NAME="interconnect_aresetn" POLARITY="ACTIVE_LOW" RIGHT="0" SIGIS="rst"/>
         <PORT DIR="I" NAME="mb_debug_sys_rst" POLARITY="ACTIVE_HIGH" SIGIS="rst"/>
         <PORT DIR="O" NAME="mb_reset" POLARITY="ACTIVE_HIGH" SIGIS="rst"/>
-        <PORT DIR="O" LEFT="0" NAME="peripheral_aresetn" POLARITY="ACTIVE_LOW" RIGHT="0" SIGIS="rst" SIGNAME="rst_clk_wiz_100M_peripheral_aresetn">
+        <PORT DIR="O" LEFT="0" NAME="peripheral_aresetn" POLARITY="ACTIVE_LOW" RIGHT="0" SIGIS="rst" SIGNAME="rst_clk_wiz_peripheral_aresetn">
           <CONNECTIONS>
             <CONNECTION INSTANCE="axi_uartlite_0" PORT="s_axi_aresetn"/>
             <CONNECTION INSTANCE="core_top_0" PORT="rst_n"/>
@@ -1863,13 +1634,242 @@
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" LEFT="0" NAME="peripheral_reset" POLARITY="ACTIVE_HIGH" RIGHT="0" SIGIS="rst"/>
-        <PORT CLKFREQUENCY="100000000" DIR="I" NAME="slowest_sync_clk" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
+        <PORT CLKFREQUENCY="50000000" DIR="I" NAME="slowest_sync_clk" SIGIS="clk" SIGNAME="clk_wiz_clk_out1">
           <CONNECTIONS>
             <CONNECTION INSTANCE="clk_wiz" PORT="clk_out1"/>
           </CONNECTIONS>
         </PORT>
       </PORTS>
       <BUSINTERFACES/>
+    </MODULE>
+    <MODULE COREREVISION="12" FULLNAME="/wram" HWVERSION="8.4" INSTANCE="wram" IPTYPE="PERIPHERAL" IS_ENABLE="1" MODCLASS="MEMORY" MODTYPE="blk_mem_gen" VLNV="xilinx.com:ip:blk_mem_gen:8.4">
+      <DOCUMENTS>
+        <DOCUMENT SOURCE="http://www.xilinx.com/cgi-bin/docs/ipdoc?c=blk_mem_gen;v=v8_4;d=pg058-blk-mem-gen.pdf"/>
+      </DOCUMENTS>
+      <PARAMETERS>
+        <PARAMETER NAME="C_ADDRA_WIDTH" VALUE="10"/>
+        <PARAMETER NAME="C_ADDRB_WIDTH" VALUE="10"/>
+        <PARAMETER NAME="C_ALGORITHM" VALUE="1"/>
+        <PARAMETER NAME="C_AXI_ID_WIDTH" VALUE="4"/>
+        <PARAMETER NAME="C_AXI_SLAVE_TYPE" VALUE="0"/>
+        <PARAMETER NAME="C_AXI_TYPE" VALUE="1"/>
+        <PARAMETER NAME="C_BYTE_SIZE" VALUE="8"/>
+        <PARAMETER NAME="C_COMMON_CLK" VALUE="1"/>
+        <PARAMETER NAME="C_COUNT_18K_BRAM" VALUE="0"/>
+        <PARAMETER NAME="C_COUNT_36K_BRAM" VALUE="1"/>
+        <PARAMETER NAME="C_CTRL_ECC_ALGO" VALUE="NONE"/>
+        <PARAMETER NAME="C_DEFAULT_DATA" VALUE="0"/>
+        <PARAMETER NAME="C_DISABLE_WARN_BHV_COLL" VALUE="0"/>
+        <PARAMETER NAME="C_DISABLE_WARN_BHV_RANGE" VALUE="0"/>
+        <PARAMETER NAME="C_ELABORATION_DIR" VALUE="./"/>
+        <PARAMETER NAME="C_ENABLE_32BIT_ADDRESS" VALUE="0"/>
+        <PARAMETER NAME="C_EN_DEEPSLEEP_PIN" VALUE="0"/>
+        <PARAMETER NAME="C_EN_ECC_PIPE" VALUE="0"/>
+        <PARAMETER NAME="C_EN_RDADDRA_CHG" VALUE="0"/>
+        <PARAMETER NAME="C_EN_RDADDRB_CHG" VALUE="0"/>
+        <PARAMETER NAME="C_EN_SAFETY_CKT" VALUE="0"/>
+        <PARAMETER NAME="C_EN_SHUTDOWN_PIN" VALUE="0"/>
+        <PARAMETER NAME="C_EN_SLEEP_PIN" VALUE="0"/>
+        <PARAMETER NAME="C_EST_POWER_SUMMARY" VALUE="Estimated Power for IP     :     5.9299 mW"/>
+        <PARAMETER NAME="C_FAMILY" VALUE="artix7"/>
+        <PARAMETER NAME="C_HAS_AXI_ID" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_ENA" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_ENB" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_INJECTERR" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_MEM_OUTPUT_REGS_A" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_MEM_OUTPUT_REGS_B" VALUE="1"/>
+        <PARAMETER NAME="C_HAS_MUX_OUTPUT_REGS_A" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_MUX_OUTPUT_REGS_B" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_REGCEA" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_REGCEB" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_RSTA" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_RSTB" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_SOFTECC_INPUT_REGS_A" VALUE="0"/>
+        <PARAMETER NAME="C_HAS_SOFTECC_OUTPUT_REGS_B" VALUE="0"/>
+        <PARAMETER NAME="C_INITA_VAL" VALUE="0"/>
+        <PARAMETER NAME="C_INITB_VAL" VALUE="0"/>
+        <PARAMETER NAME="C_INIT_FILE" VALUE="NONE"/>
+        <PARAMETER NAME="C_INIT_FILE_NAME" VALUE="no_coe_file_loaded"/>
+        <PARAMETER NAME="C_INTERFACE_TYPE" VALUE="0"/>
+        <PARAMETER NAME="C_LOAD_INIT_FILE" VALUE="0"/>
+        <PARAMETER NAME="C_MEM_TYPE" VALUE="2"/>
+        <PARAMETER NAME="C_MUX_PIPELINE_STAGES" VALUE="0"/>
+        <PARAMETER NAME="C_PRIM_TYPE" VALUE="1"/>
+        <PARAMETER NAME="C_READ_DEPTH_A" VALUE="1024"/>
+        <PARAMETER NAME="C_READ_DEPTH_B" VALUE="1024"/>
+        <PARAMETER NAME="C_READ_LATENCY_A" VALUE="1"/>
+        <PARAMETER NAME="C_READ_LATENCY_B" VALUE="1"/>
+        <PARAMETER NAME="C_READ_WIDTH_A" VALUE="32"/>
+        <PARAMETER NAME="C_READ_WIDTH_B" VALUE="32"/>
+        <PARAMETER NAME="C_RSTRAM_A" VALUE="0"/>
+        <PARAMETER NAME="C_RSTRAM_B" VALUE="0"/>
+        <PARAMETER NAME="C_RST_PRIORITY_A" VALUE="CE"/>
+        <PARAMETER NAME="C_RST_PRIORITY_B" VALUE="CE"/>
+        <PARAMETER NAME="C_SIM_COLLISION_CHECK" VALUE="ALL"/>
+        <PARAMETER NAME="C_USE_BRAM_BLOCK" VALUE="0"/>
+        <PARAMETER NAME="C_USE_BYTE_WEA" VALUE="1"/>
+        <PARAMETER NAME="C_USE_BYTE_WEB" VALUE="1"/>
+        <PARAMETER NAME="C_USE_DEFAULT_DATA" VALUE="0"/>
+        <PARAMETER NAME="C_USE_ECC" VALUE="0"/>
+        <PARAMETER NAME="C_USE_SOFTECC" VALUE="0"/>
+        <PARAMETER NAME="C_USE_URAM" VALUE="0"/>
+        <PARAMETER NAME="C_WEA_WIDTH" VALUE="4"/>
+        <PARAMETER NAME="C_WEB_WIDTH" VALUE="4"/>
+        <PARAMETER NAME="C_WRITE_DEPTH_A" VALUE="1024"/>
+        <PARAMETER NAME="C_WRITE_DEPTH_B" VALUE="1024"/>
+        <PARAMETER NAME="C_WRITE_MODE_A" VALUE="WRITE_FIRST"/>
+        <PARAMETER NAME="C_WRITE_MODE_B" VALUE="WRITE_FIRST"/>
+        <PARAMETER NAME="C_WRITE_WIDTH_A" VALUE="32"/>
+        <PARAMETER NAME="C_WRITE_WIDTH_B" VALUE="32"/>
+        <PARAMETER NAME="C_XDEVICEFAMILY" VALUE="artix7"/>
+        <PARAMETER NAME="AXI_ID_Width" VALUE="4"/>
+        <PARAMETER NAME="AXI_Slave_Type" VALUE="Memory_Slave"/>
+        <PARAMETER NAME="AXI_Type" VALUE="AXI4_Full"/>
+        <PARAMETER NAME="Additional_Inputs_for_Power_Estimation" VALUE="false"/>
+        <PARAMETER NAME="Algorithm" VALUE="Minimum_Area"/>
+        <PARAMETER NAME="Assume_Synchronous_Clk" VALUE="true"/>
+        <PARAMETER NAME="Byte_Size" VALUE="8"/>
+        <PARAMETER NAME="CTRL_ECC_ALGO" VALUE="NONE"/>
+        <PARAMETER NAME="Coe_File" VALUE="no_coe_file_loaded"/>
+        <PARAMETER NAME="Collision_Warnings" VALUE="ALL"/>
+        <PARAMETER NAME="Component_Name" VALUE="total_design_blk_mem_gen_1_0"/>
+        <PARAMETER NAME="Disable_Collision_Warnings" VALUE="false"/>
+        <PARAMETER NAME="Disable_Out_of_Range_Warnings" VALUE="false"/>
+        <PARAMETER NAME="ECC" VALUE="false"/>
+        <PARAMETER NAME="EN_DEEPSLEEP_PIN" VALUE="false"/>
+        <PARAMETER NAME="EN_ECC_PIPE" VALUE="false"/>
+        <PARAMETER NAME="EN_SAFETY_CKT" VALUE="false"/>
+        <PARAMETER NAME="EN_SHUTDOWN_PIN" VALUE="false"/>
+        <PARAMETER NAME="EN_SLEEP_PIN" VALUE="false"/>
+        <PARAMETER NAME="Enable_32bit_Address" VALUE="false"/>
+        <PARAMETER NAME="Enable_A" VALUE="Always_Enabled"/>
+        <PARAMETER NAME="Enable_B" VALUE="Always_Enabled"/>
+        <PARAMETER NAME="Error_Injection_Type" VALUE="Single_Bit_Error_Injection"/>
+        <PARAMETER NAME="Fill_Remaining_Memory_Locations" VALUE="false"/>
+        <PARAMETER NAME="Interface_Type" VALUE="Native"/>
+        <PARAMETER NAME="Load_Init_File" VALUE="false"/>
+        <PARAMETER NAME="MEM_FILE" VALUE="NONE"/>
+        <PARAMETER NAME="Memory_Type" VALUE="True_Dual_Port_RAM"/>
+        <PARAMETER NAME="Operating_Mode_A" VALUE="WRITE_FIRST"/>
+        <PARAMETER NAME="Operating_Mode_B" VALUE="WRITE_FIRST"/>
+        <PARAMETER NAME="Output_Reset_Value_A" VALUE="0"/>
+        <PARAMETER NAME="Output_Reset_Value_B" VALUE="0"/>
+        <PARAMETER NAME="PRIM_type_to_Implement" VALUE="BRAM"/>
+        <PARAMETER NAME="Pipeline_Stages" VALUE="0"/>
+        <PARAMETER NAME="Port_A_Clock" VALUE="100"/>
+        <PARAMETER NAME="Port_A_Enable_Rate" VALUE="100"/>
+        <PARAMETER NAME="Port_A_Write_Rate" VALUE="50"/>
+        <PARAMETER NAME="Port_B_Clock" VALUE="100"/>
+        <PARAMETER NAME="Port_B_Enable_Rate" VALUE="100"/>
+        <PARAMETER NAME="Port_B_Write_Rate" VALUE="50"/>
+        <PARAMETER NAME="Primitive" VALUE="8kx2"/>
+        <PARAMETER NAME="RD_ADDR_CHNG_A" VALUE="false"/>
+        <PARAMETER NAME="RD_ADDR_CHNG_B" VALUE="false"/>
+        <PARAMETER NAME="READ_LATENCY_A" VALUE="1"/>
+        <PARAMETER NAME="READ_LATENCY_B" VALUE="1"/>
+        <PARAMETER NAME="Read_Width_A" VALUE="32"/>
+        <PARAMETER NAME="Read_Width_B" VALUE="32"/>
+        <PARAMETER NAME="Register_PortA_Output_of_Memory_Core" VALUE="false"/>
+        <PARAMETER NAME="Register_PortA_Output_of_Memory_Primitives" VALUE="false"/>
+        <PARAMETER NAME="Register_PortB_Output_of_Memory_Core" VALUE="false"/>
+        <PARAMETER NAME="Register_PortB_Output_of_Memory_Primitives" VALUE="true"/>
+        <PARAMETER NAME="Remaining_Memory_Locations" VALUE="0"/>
+        <PARAMETER NAME="Reset_Memory_Latch_A" VALUE="false"/>
+        <PARAMETER NAME="Reset_Memory_Latch_B" VALUE="false"/>
+        <PARAMETER NAME="Reset_Priority_A" VALUE="CE"/>
+        <PARAMETER NAME="Reset_Priority_B" VALUE="CE"/>
+        <PARAMETER NAME="Reset_Type" VALUE="SYNC"/>
+        <PARAMETER NAME="Use_AXI_ID" VALUE="false"/>
+        <PARAMETER NAME="Use_Byte_Write_Enable" VALUE="true"/>
+        <PARAMETER NAME="Use_Error_Injection_Pins" VALUE="false"/>
+        <PARAMETER NAME="Use_REGCEA_Pin" VALUE="false"/>
+        <PARAMETER NAME="Use_REGCEB_Pin" VALUE="false"/>
+        <PARAMETER NAME="Use_RSTA_Pin" VALUE="false"/>
+        <PARAMETER NAME="Use_RSTB_Pin" VALUE="false"/>
+        <PARAMETER NAME="Write_Depth_A" VALUE="1024"/>
+        <PARAMETER NAME="Write_Width_A" VALUE="32"/>
+        <PARAMETER NAME="Write_Width_B" VALUE="32"/>
+        <PARAMETER NAME="ecctype" VALUE="No_ECC"/>
+        <PARAMETER NAME="register_porta_input_of_softecc" VALUE="false"/>
+        <PARAMETER NAME="register_portb_output_of_softecc" VALUE="false"/>
+        <PARAMETER NAME="softecc" VALUE="false"/>
+        <PARAMETER NAME="use_bram_block" VALUE="Stand_Alone"/>
+        <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
+      </PARAMETERS>
+      <PORTS>
+        <PORT DIR="I" LEFT="9" NAME="addra" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_wram_addr_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="wram_addr_o"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="I" LEFT="9" NAME="addrb" RIGHT="0" SIGIS="undef" SIGNAME="host_top_wrapper_0_mem_addr_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="host_top_wrapper_0" PORT="mem_addr_o"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="I" NAME="clka" SIGIS="clk" SIGNAME="core_top_0_wram_clk_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="wram_clk_o"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="I" NAME="clkb" SIGIS="clk" SIGNAME="host_top_wrapper_0_mem_clk">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="host_top_wrapper_0" PORT="mem_clk"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="I" LEFT="31" NAME="dina" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_wram_wdata_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="wram_wdata_o"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="O" LEFT="31" NAME="douta" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_wram_rdata_i">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="wram_rdata_i"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="O" LEFT="31" NAME="doutb" RIGHT="0" SIGIS="undef" SIGNAME="host_top_wrapper_0_mem_dout_i">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="host_top_wrapper_0" PORT="mem_dout_i"/>
+          </CONNECTIONS>
+        </PORT>
+        <PORT DIR="I" LEFT="3" NAME="wea" RIGHT="0" SIGIS="undef" SIGNAME="core_top_0_wram_wen_o">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="core_top_0" PORT="wram_wen_o"/>
+          </CONNECTIONS>
+        </PORT>
+      </PORTS>
+      <BUSINTERFACES>
+        <BUSINTERFACE BUSNAME="core_top_0_WRAM" NAME="BRAM_PORTA" TYPE="TARGET" VLNV="xilinx.com:interface:bram:1.0">
+          <PARAMETER NAME="MASTER_TYPE" VALUE="OTHER"/>
+          <PARAMETER NAME="MEM_ADDRESS_MODE" VALUE="BYTE_ADDRESS"/>
+          <PARAMETER NAME="MEM_ECC" VALUE="NONE"/>
+          <PARAMETER NAME="MEM_SIZE" VALUE="8192"/>
+          <PARAMETER NAME="MEM_WIDTH" VALUE="32"/>
+          <PARAMETER NAME="READ_LATENCY" VALUE="1"/>
+          <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_WRITE"/>
+          <PORTMAPS>
+            <PORTMAP LOGICAL="ADDR" PHYSICAL="addra"/>
+            <PORTMAP LOGICAL="CLK" PHYSICAL="clka"/>
+            <PORTMAP LOGICAL="DIN" PHYSICAL="dina"/>
+            <PORTMAP LOGICAL="DOUT" PHYSICAL="douta"/>
+            <PORTMAP LOGICAL="WE" PHYSICAL="wea"/>
+          </PORTMAPS>
+        </BUSINTERFACE>
+        <BUSINTERFACE BUSNAME="host_top_wrapper_0_MEM" NAME="BRAM_PORTB" TYPE="TARGET" VLNV="xilinx.com:interface:bram:1.0">
+          <PARAMETER NAME="MASTER_TYPE" VALUE="OTHER"/>
+          <PARAMETER NAME="MEM_ADDRESS_MODE" VALUE="BYTE_ADDRESS"/>
+          <PARAMETER NAME="MEM_ECC" VALUE="NONE"/>
+          <PARAMETER NAME="MEM_SIZE" VALUE="8192"/>
+          <PARAMETER NAME="MEM_WIDTH" VALUE="32"/>
+          <PARAMETER NAME="READ_LATENCY" VALUE="1"/>
+          <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_WRITE"/>
+          <PORTMAPS>
+            <PORTMAP LOGICAL="ADDR" PHYSICAL="addrb"/>
+            <PORTMAP LOGICAL="CLK" PHYSICAL="clkb"/>
+            <PORTMAP LOGICAL="DOUT" PHYSICAL="doutb"/>
+          </PORTMAPS>
+        </BUSINTERFACE>
+      </BUSINTERFACES>
     </MODULE>
   </MODULES>
 

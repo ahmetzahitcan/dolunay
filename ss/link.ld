@@ -1,8 +1,8 @@
 MEMORY
 {
     IROM (rx) : ORIGIN = 0x00000000, LENGTH = 4K
-    HCOM (rw) : ORIGIN = 0x40000000, LENGTH = 256
-    WRAM (rw) : ORIGIN = 0x40000100, LENGTH = 16K - 256
+    HCOM (rw) : ORIGIN = 0x40000000, LENGTH = 1K
+    WRAM (rw) : ORIGIN = 0x40000400, LENGTH = 15K
     TLS  (rw) : ORIGIN = 0x80000000, LENGTH = 1K
 }
 
@@ -31,6 +31,14 @@ SECTIONS
     .hostcom (NOLOAD) : ALIGN(4)
     {
         *(.hostcom*)
+        . = ALIGN(4);
+    } > HCOM
+    
+    . = ORIGIN(HCOM) + LENGTH(HCOM) - SIZEOF(.hpmdata);
+
+    .hpmdata : ALIGN(4)
+    {
+        *(.hpmdata*)
         . = ALIGN(4);
     } > HCOM
 
@@ -78,7 +86,6 @@ SECTIONS
         _stack_top = .;
     } > TLS
 
-    ASSERT(SIZEOF(.hostcom) <= LENGTH(HCOM), "Host communication structure too large.")
     ASSERT(_start == ORIGIN(IROM), "_start is not at the entry point.")
     ASSERT((_stack_top - _stack_bottom >= 64), "Stack too small after TLS data.")
     ASSERT((LOADADDR(.tdata) + SIZEOF(.tdata) <= ORIGIN(IROM) + LENGTH(IROM)), "IROM overflow.")

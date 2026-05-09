@@ -74,7 +74,7 @@ module total_design_core_top_0_0 (
 
 (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 clk CLK" *)
 (* X_INTERFACE_MODE = "slave" *)
-(* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME clk, FREQ_HZ 100000000, FREQ_TOLERANCE_HZ 0, PHASE 0.0, CLK_DOMAIN /clk_wiz_clk_out1, INSERT_VIP 0" *)
+(* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME clk, FREQ_HZ 50000000, FREQ_TOLERANCE_HZ 0, PHASE 0.0, CLK_DOMAIN /clk_wiz_clk_out1, INSERT_VIP 0" *)
 input wire clk;
 (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 rst_n RST" *)
 (* X_INTERFACE_MODE = "slave" *)
@@ -87,7 +87,7 @@ output wire ready_o;
 (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME WRAM, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_LATENCY 1" *)
 output wire wram_clk_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 WRAM ADDR" *)
-output wire [15 : 2] wram_addr_o;
+output wire [11 : 2] wram_addr_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 WRAM WE" *)
 output wire [3 : 0] wram_wen_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 WRAM DIN" *)
@@ -112,7 +112,7 @@ output wire [11 : 2] irom_addr_b_o;
 input wire [31 : 0] irom_data_b_i;
 
   core_top #(
-    .W_WRAM_ADDR(16),
+    .W_WRAM_ADDR(12),
     .W_IROM_ADDR(12)
   ) inst (
     .clk(clk),

@@ -37,6 +37,13 @@ uint32_t simt_thread_id(void) {
     return x;
 }
 
+uint32_t simt_block_id(void) {
+    uint32_t x;
+    asm ("csrr %0, mhartid"
+        : "=r" (x));
+    return x;
+}
+
 bool simt_thread_is_follower(void) {
     bool x;
     asm volatile ("csrr %0, %1"
