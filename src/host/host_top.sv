@@ -41,6 +41,50 @@ module host_top #(
     input  wire logic        start_i,
     output      logic        ready_o
 );
+    localparam VECADD_N = 64;
+    logic [31:0] vecadd_x [VECADD_N];
+    logic [31:0] vecadd_y [VECADD_N];
+    logic [31:0] vecadd_out [VECADD_N];
+
+    logic [31:0] vecadd_init [VECADD_N*3];
+    logic [31:0] vecadd_exp [VECADD_N];
+
+    initial begin
+        for (int i = 0; i < VECADD_N; i++) begin
+            vecadd_x[i] = $urandom();
+            vecadd_y[i] = $urandom();
+            vecadd_out[i] = vecadd_x[i] + vecadd_y[i];
+        end
+        for (int i = 0; i < VECADD_N; i++) begin
+            vecadd_init[i] = 0;
+            vecadd_init[i + VECADD_N] = vecadd_x[i];
+            vecadd_init[i + VECADD_N*2] = vecadd_y[i];
+        end
+        for (int i = 0; i < VECADD_N; i++) begin
+            vecadd_exp[i] = vecadd_out[i];
+        end
+    end
+
+    localparam MEM_SIZE = 2**W_ADDR;
+    logic [31:0] mem_init [MEM_SIZE];
+    logic [31:0] mem_exp [MEM_SIZE];
+    logic [31:0] mem_exp_datasize;
+
+    initial begin
+        for (int i = 0; i < VECADD_N*3; i++) begin
+            mem_init[i] = vecadd_init[i];
+        end
+        for (int i = VECADD_N*3; i < MEM_SIZE; i++) begin
+            mem_init[i] = 0;
+        end
+        for (int i = 0; i < VECADD_N; i++) begin
+            mem_exp[i] = vecadd_exp[i];
+        end
+        for (int i = VECADD_N; i < MEM_SIZE; i++) begin
+            mem_exp[i] = 'hX;
+        end
+        mem_exp_datasize = VECADD_N;
+    end
 
     localparam CRLF = {8'h0D, 8'h0A};
     localparam NULL = 8'h00;

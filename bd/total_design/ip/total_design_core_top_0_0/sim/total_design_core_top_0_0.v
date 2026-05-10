@@ -87,7 +87,7 @@ output wire ready_o;
 (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME WRAM, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_LATENCY 1" *)
 output wire wram_clk_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 WRAM ADDR" *)
-output wire [11 : 2] wram_addr_o;
+output wire [14 : 2] wram_addr_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 WRAM WE" *)
 output wire [3 : 0] wram_wen_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 WRAM DIN" *)
@@ -99,7 +99,7 @@ input wire [31 : 0] wram_rdata_i;
 (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME IROM_A, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_LATENCY 1" *)
 output wire irom_clk_a_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 IROM_A ADDR" *)
-output wire [11 : 2] irom_addr_a_o;
+output wire [13 : 2] irom_addr_a_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 IROM_A DOUT" *)
 input wire [31 : 0] irom_data_a_i;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 IROM_B CLK" *)
@@ -107,13 +107,13 @@ input wire [31 : 0] irom_data_a_i;
 (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME IROM_B, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_LATENCY 1" *)
 output wire irom_clk_b_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 IROM_B ADDR" *)
-output wire [11 : 2] irom_addr_b_o;
+output wire [13 : 2] irom_addr_b_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 IROM_B DOUT" *)
 input wire [31 : 0] irom_data_b_i;
 
   core_top #(
-    .W_WRAM_ADDR(12),
-    .W_IROM_ADDR(12)
+    .W_WRAM_ADDR(15),
+    .W_IROM_ADDR(14)
   ) inst (
     .clk(clk),
     .rst_n(rst_n),

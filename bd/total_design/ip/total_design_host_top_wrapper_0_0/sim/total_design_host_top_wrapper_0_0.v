@@ -79,6 +79,8 @@ module total_design_host_top_wrapper_0_0 (
   mem_clk,
   mem_addr_o,
   mem_dout_i,
+  mem_din_o,
+  mem_we_o,
   start_i,
   ready_o,
   simt_start_o,
@@ -139,16 +141,20 @@ output wire m_axi_rready;
 (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME MEM, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_LATENCY 1" *)
 output wire mem_clk;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM ADDR" *)
-output wire [9 : 0] mem_addr_o;
+output wire [12 : 0] mem_addr_o;
 (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM DOUT" *)
 input wire [31 : 0] mem_dout_i;
+(* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM DIN" *)
+output wire [31 : 0] mem_din_o;
+(* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM WE" *)
+output wire mem_we_o;
 input wire start_i;
 output wire ready_o;
 output wire simt_start_o;
 input wire simt_ready_i;
 
   host_top_wrapper #(
-    .W_ADDR(10),
+    .W_ADDR(13),
     .MEM_DELAY(2)
   ) inst (
     .clk(clk),
@@ -175,6 +181,8 @@ input wire simt_ready_i;
     .mem_clk(mem_clk),
     .mem_addr_o(mem_addr_o),
     .mem_dout_i(mem_dout_i),
+    .mem_din_o(mem_din_o),
+    .mem_we_o(mem_we_o),
     .start_i(start_i),
     .ready_o(ready_o),
     .simt_start_o(simt_start_o),

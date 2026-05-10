@@ -2,7 +2,7 @@
 -- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
--- Date        : Sat May  9 15:58:36 2026
+-- Date        : Sun May 10 17:43:01 2026
 -- Host        : fedora running 64-bit unknown
 -- Command     : write_vhdl -force -mode synth_stub
 --               /home/azc/Belgeler/dolunay/bd/total_design/ip/total_design_host_top_wrapper_0_0/total_design_host_top_wrapper_0_0_stub.vhdl
@@ -37,8 +37,10 @@ entity total_design_host_top_wrapper_0_0 is
     m_axi_rvalid : in STD_LOGIC;
     m_axi_rready : out STD_LOGIC;
     mem_clk : out STD_LOGIC;
-    mem_addr_o : out STD_LOGIC_VECTOR ( 9 downto 0 );
+    mem_addr_o : out STD_LOGIC_VECTOR ( 12 downto 0 );
     mem_dout_i : in STD_LOGIC_VECTOR ( 31 downto 0 );
+    mem_din_o : out STD_LOGIC_VECTOR ( 31 downto 0 );
+    mem_we_o : out STD_LOGIC;
     start_i : in STD_LOGIC;
     ready_o : out STD_LOGIC;
     simt_start_o : out STD_LOGIC;
@@ -48,7 +50,7 @@ entity total_design_host_top_wrapper_0_0 is
   attribute CHECK_LICENSE_TYPE : string;
   attribute CHECK_LICENSE_TYPE of total_design_host_top_wrapper_0_0 : entity is "total_design_host_top_wrapper_0_0,host_top_wrapper,{}";
   attribute CORE_GENERATION_INFO : string;
-  attribute CORE_GENERATION_INFO of total_design_host_top_wrapper_0_0 : entity is "total_design_host_top_wrapper_0_0,host_top_wrapper,{x_ipProduct=Vivado 2025.2,x_ipVendor=xilinx.com,x_ipLibrary=module_ref,x_ipName=host_top_wrapper,x_ipVersion=1.0,x_ipCoreRevision=1,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,W_ADDR=10,MEM_DELAY=2}";
+  attribute CORE_GENERATION_INFO of total_design_host_top_wrapper_0_0 : entity is "total_design_host_top_wrapper_0_0,host_top_wrapper,{x_ipProduct=Vivado 2025.2,x_ipVendor=xilinx.com,x_ipLibrary=module_ref,x_ipName=host_top_wrapper,x_ipVersion=1.0,x_ipCoreRevision=1,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,W_ADDR=13,MEM_DELAY=2}";
   attribute DowngradeIPIdentifiedWarnings : string;
   attribute DowngradeIPIdentifiedWarnings of total_design_host_top_wrapper_0_0 : entity is "yes";
   attribute IP_DEFINITION_SOURCE : string;
@@ -59,7 +61,7 @@ architecture stub of total_design_host_top_wrapper_0_0 is
   attribute syn_black_box : boolean;
   attribute black_box_pad_pin : string;
   attribute syn_black_box of stub : architecture is true;
-  attribute black_box_pad_pin of stub : architecture is "clk,rst_n,m_axi_awaddr[6:0],m_axi_awprot[2:0],m_axi_awvalid,m_axi_awready,m_axi_wdata[31:0],m_axi_wstrb[3:0],m_axi_wvalid,m_axi_wready,m_axi_bresp[1:0],m_axi_bvalid,m_axi_bready,m_axi_araddr[6:0],m_axi_arprot[2:0],m_axi_arvalid,m_axi_arready,m_axi_rdata[31:0],m_axi_rresp[1:0],m_axi_rvalid,m_axi_rready,mem_clk,mem_addr_o[9:0],mem_dout_i[31:0],start_i,ready_o,simt_start_o,simt_ready_i";
+  attribute black_box_pad_pin of stub : architecture is "clk,rst_n,m_axi_awaddr[6:0],m_axi_awprot[2:0],m_axi_awvalid,m_axi_awready,m_axi_wdata[31:0],m_axi_wstrb[3:0],m_axi_wvalid,m_axi_wready,m_axi_bresp[1:0],m_axi_bvalid,m_axi_bready,m_axi_araddr[6:0],m_axi_arprot[2:0],m_axi_arvalid,m_axi_arready,m_axi_rdata[31:0],m_axi_rresp[1:0],m_axi_rvalid,m_axi_rready,mem_clk,mem_addr_o[12:0],mem_dout_i[31:0],mem_din_o[31:0],mem_we_o,start_i,ready_o,simt_start_o,simt_ready_i";
   attribute X_INTERFACE_INFO : string;
   attribute X_INTERFACE_INFO of clk : signal is "xilinx.com:signal:clock:1.0 clk CLK";
   attribute X_INTERFACE_MODE : string;
@@ -95,6 +97,8 @@ architecture stub of total_design_host_top_wrapper_0_0 is
   attribute X_INTERFACE_PARAMETER of mem_clk : signal is "XIL_INTERFACENAME MEM, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_LATENCY 1";
   attribute X_INTERFACE_INFO of mem_addr_o : signal is "xilinx.com:interface:bram:1.0 MEM ADDR";
   attribute X_INTERFACE_INFO of mem_dout_i : signal is "xilinx.com:interface:bram:1.0 MEM DOUT";
+  attribute X_INTERFACE_INFO of mem_din_o : signal is "xilinx.com:interface:bram:1.0 MEM DIN";
+  attribute X_INTERFACE_INFO of mem_we_o : signal is "xilinx.com:interface:bram:1.0 MEM WE";
   attribute X_CORE_INFO : string;
   attribute X_CORE_INFO of stub : architecture is "host_top_wrapper,Vivado 2025.2";
 begin

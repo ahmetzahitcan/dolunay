@@ -2,7 +2,7 @@
 // Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
-// Date        : Sat May  9 15:58:36 2026
+// Date        : Sun May 10 17:43:00 2026
 // Host        : fedora running 64-bit unknown
 // Command     : write_verilog -force -mode synth_stub
 //               /home/azc/Belgeler/dolunay/bd/total_design/ip/total_design_host_top_wrapper_0_0/total_design_host_top_wrapper_0_0_stub.v
@@ -14,14 +14,14 @@
 // This empty module with port declaration file causes synthesis tools to infer a black box for IP.
 // The synthesis directives are for Synopsys Synplify support to prevent IO buffer insertion.
 // Please paste the declaration into a Verilog source file or add the file as an additional source.
-(* CHECK_LICENSE_TYPE = "total_design_host_top_wrapper_0_0,host_top_wrapper,{}" *) (* CORE_GENERATION_INFO = "total_design_host_top_wrapper_0_0,host_top_wrapper,{x_ipProduct=Vivado 2025.2,x_ipVendor=xilinx.com,x_ipLibrary=module_ref,x_ipName=host_top_wrapper,x_ipVersion=1.0,x_ipCoreRevision=1,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,W_ADDR=10,MEM_DELAY=2}" *) (* DowngradeIPIdentifiedWarnings = "yes" *) 
+(* CHECK_LICENSE_TYPE = "total_design_host_top_wrapper_0_0,host_top_wrapper,{}" *) (* CORE_GENERATION_INFO = "total_design_host_top_wrapper_0_0,host_top_wrapper,{x_ipProduct=Vivado 2025.2,x_ipVendor=xilinx.com,x_ipLibrary=module_ref,x_ipName=host_top_wrapper,x_ipVersion=1.0,x_ipCoreRevision=1,x_ipLanguage=VERILOG,x_ipSimLanguage=MIXED,W_ADDR=13,MEM_DELAY=2}" *) (* DowngradeIPIdentifiedWarnings = "yes" *) 
 (* IP_DEFINITION_SOURCE = "module_ref" *) (* X_CORE_INFO = "host_top_wrapper,Vivado 2025.2" *) 
 module total_design_host_top_wrapper_0_0(clk, rst_n, m_axi_awaddr, m_axi_awprot, 
   m_axi_awvalid, m_axi_awready, m_axi_wdata, m_axi_wstrb, m_axi_wvalid, m_axi_wready, 
   m_axi_bresp, m_axi_bvalid, m_axi_bready, m_axi_araddr, m_axi_arprot, m_axi_arvalid, 
   m_axi_arready, m_axi_rdata, m_axi_rresp, m_axi_rvalid, m_axi_rready, mem_clk, mem_addr_o, 
-  mem_dout_i, start_i, ready_o, simt_start_o, simt_ready_i)
-/* synthesis syn_black_box black_box_pad_pin="rst_n,m_axi_awaddr[6:0],m_axi_awprot[2:0],m_axi_awvalid,m_axi_awready,m_axi_wdata[31:0],m_axi_wstrb[3:0],m_axi_wvalid,m_axi_wready,m_axi_bresp[1:0],m_axi_bvalid,m_axi_bready,m_axi_araddr[6:0],m_axi_arprot[2:0],m_axi_arvalid,m_axi_arready,m_axi_rdata[31:0],m_axi_rresp[1:0],m_axi_rvalid,m_axi_rready,mem_addr_o[9:0],mem_dout_i[31:0],start_i,ready_o,simt_start_o,simt_ready_i" */
+  mem_dout_i, mem_din_o, mem_we_o, start_i, ready_o, simt_start_o, simt_ready_i)
+/* synthesis syn_black_box black_box_pad_pin="rst_n,m_axi_awaddr[6:0],m_axi_awprot[2:0],m_axi_awvalid,m_axi_awready,m_axi_wdata[31:0],m_axi_wstrb[3:0],m_axi_wvalid,m_axi_wready,m_axi_bresp[1:0],m_axi_bvalid,m_axi_bready,m_axi_araddr[6:0],m_axi_arprot[2:0],m_axi_arvalid,m_axi_arready,m_axi_rdata[31:0],m_axi_rresp[1:0],m_axi_rvalid,m_axi_rready,mem_addr_o[12:0],mem_dout_i[31:0],mem_din_o[31:0],mem_we_o,start_i,ready_o,simt_start_o,simt_ready_i" */
 /* synthesis syn_force_seq_prim="clk" */
 /* synthesis syn_force_seq_prim="mem_clk" */;
   (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 clk CLK" *) (* X_INTERFACE_MODE = "slave" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME clk, ASSOCIATED_BUSIF M_AXI, ASSOCIATED_RESET rst_n, FREQ_HZ 50000000, FREQ_TOLERANCE_HZ 0, PHASE 0.0, CLK_DOMAIN /clk_wiz_clk_out1, INSERT_VIP 0" *) input clk /* synthesis syn_isclock = 1 */;
@@ -46,8 +46,10 @@ module total_design_host_top_wrapper_0_0(clk, rst_n, m_axi_awaddr, m_axi_awprot,
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M_AXI RVALID" *) input m_axi_rvalid;
   (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 M_AXI RREADY" *) output m_axi_rready;
   (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM CLK" *) (* X_INTERFACE_MODE = "master" *) (* X_INTERFACE_PARAMETER = "XIL_INTERFACENAME MEM, MEM_SIZE 8192, MEM_WIDTH 32, MEM_ECC NONE, MASTER_TYPE OTHER, READ_LATENCY 1" *) output mem_clk /* synthesis syn_isclock = 1 */;
-  (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM ADDR" *) output [9:0]mem_addr_o;
+  (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM ADDR" *) output [12:0]mem_addr_o;
   (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM DOUT" *) input [31:0]mem_dout_i;
+  (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM DIN" *) output [31:0]mem_din_o;
+  (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM WE" *) output mem_we_o;
   input start_i;
   output ready_o;
   output simt_start_o;

@@ -100,7 +100,7 @@
         "has_run_ip_tcl": "true",
         "parameters": {
           "W_ADDR": {
-            "value": "10"
+            "value": "13"
           }
         },
         "reference_info": {
@@ -339,10 +339,20 @@
                 "left": "31",
                 "right": "0"
               },
+              "DIN": {
+                "physical_name": "mem_din_o",
+                "direction": "O",
+                "left": "31",
+                "right": "0"
+              },
+              "WE": {
+                "physical_name": "mem_we_o",
+                "direction": "O"
+              },
               "ADDR": {
                 "physical_name": "mem_addr_o",
                 "direction": "O",
-                "left": "9",
+                "left": "12",
                 "right": "0"
               },
               "CLK": {
@@ -428,10 +438,10 @@
         "has_run_ip_tcl": "true",
         "parameters": {
           "W_IROM_ADDR": {
-            "value": "12"
+            "value": "14"
           },
           "W_WRAM_ADDR": {
-            "value": "12"
+            "value": "15"
           }
         },
         "reference_info": {
@@ -466,7 +476,7 @@
               "ADDR": {
                 "physical_name": "wram_addr_o",
                 "direction": "O",
-                "left": "11",
+                "left": "14",
                 "right": "2"
               },
               "CLK": {
@@ -489,7 +499,7 @@
               "ADDR": {
                 "physical_name": "irom_addr_a_o",
                 "direction": "O",
-                "left": "11",
+                "left": "13",
                 "right": "2"
               },
               "CLK": {
@@ -512,7 +522,7 @@
               "ADDR": {
                 "physical_name": "irom_addr_b_o",
                 "direction": "O",
-                "left": "11",
+                "left": "13",
                 "right": "2"
               },
               "CLK": {
@@ -592,7 +602,7 @@
             "value": "false"
           },
           "Write_Depth_A": {
-            "value": "1024"
+            "value": "2048"
           },
           "use_bram_block": {
             "value": "Stand_Alone"
@@ -613,6 +623,9 @@
           "Byte_Size": {
             "value": "8"
           },
+          "Disable_Collision_Warnings": {
+            "value": "false"
+          },
           "Enable_A": {
             "value": "Always_Enabled"
           },
@@ -632,7 +645,7 @@
             "value": "true"
           },
           "Write_Depth_A": {
-            "value": "1024"
+            "value": "8192"
           },
           "Write_Width_A": {
             "value": "32"
@@ -745,8 +758,8 @@
           "clk_wiz/clk_out1",
           "axi_uartlite_0/s_axi_aclk",
           "rst_clk_wiz/slowest_sync_clk",
-          "core_top_0/clk",
-          "host_top_wrapper_0/clk"
+          "host_top_wrapper_0/clk",
+          "core_top_0/clk"
         ]
       },
       "clk_wiz_locked": {
@@ -784,8 +797,8 @@
         "ports": [
           "rst_clk_wiz/peripheral_aresetn",
           "axi_uartlite_0/s_axi_aresetn",
-          "core_top_0/rst_n",
-          "host_top_wrapper_0/rst_n"
+          "host_top_wrapper_0/rst_n",
+          "core_top_0/rst_n"
         ]
       }
     },

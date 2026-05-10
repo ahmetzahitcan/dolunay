@@ -2,10 +2,10 @@
 // Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
-// Date        : Sat May  9 12:44:09 2026
+// Date        : Sat May  9 12:44:08 2026
 // Host        : fedora running 64-bit unknown
-// Command     : write_verilog -force -mode funcsim
-//               /home/azc/Belgeler/dolunay/bd/total_design/ip/total_design_clk_wiz_0/total_design_clk_wiz_0_sim_netlist.v
+// Command     : write_verilog -force -mode funcsim -rename_top total_design_clk_wiz_0 -prefix
+//               total_design_clk_wiz_0_ total_design_clk_wiz_0_sim_netlist.v
 // Design      : total_design_clk_wiz_0
 // Purpose     : This verilog netlist is a functional simulation representation of the design and should not be modified
 //               or synthesized. This netlist cannot be used for SDF annotated simulation.
@@ -29,14 +29,14 @@ module total_design_clk_wiz_0
   wire locked;
   wire reset;
 
-  total_design_clk_wiz_0_clk_wiz inst
+  total_design_clk_wiz_0_total_design_clk_wiz_0_clk_wiz inst
        (.clk_in1(clk_in1),
         .clk_out1(clk_out1),
         .locked(locked),
         .reset(reset));
 endmodule
 
-module total_design_clk_wiz_0_clk_wiz
+module total_design_clk_wiz_0_total_design_clk_wiz_0_clk_wiz
    (clk_out1,
     reset,
     locked,

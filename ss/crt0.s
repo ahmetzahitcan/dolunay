@@ -73,7 +73,12 @@ _start:
     la s0, barrs
     sh2add s0, s1, s0
     binit s0, 0
-    call main
+    jal main
+    bsync s0, 0
+
+    # Log HPMS
+    binit s0, 0
+    jal log_hpms
     bsync s0, 0
 
     # Halt

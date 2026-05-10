@@ -4,8 +4,8 @@
 // Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
 // Date        : Sat May  9 12:44:09 2026
 // Host        : fedora running 64-bit unknown
-// Command     : write_verilog -force -mode synth_stub
-//               /home/azc/Belgeler/dolunay/bd/total_design/ip/total_design_axi_uartlite_0_0/total_design_axi_uartlite_0_0_stub.v
+// Command     : write_verilog -force -mode synth_stub -rename_top total_design_axi_uartlite_0_0 -prefix
+//               total_design_axi_uartlite_0_0_ total_design_axi_uartlite_0_0_stub.v
 // Design      : total_design_axi_uartlite_0_0
 // Purpose     : Stub declaration of top-level module interface
 // Device      : xc7a35tcpg236-1

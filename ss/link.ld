@@ -1,9 +1,9 @@
 MEMORY
 {
-    IROM (rx) : ORIGIN = 0x00000000, LENGTH = 4K
-    HCOM (rw) : ORIGIN = 0x40000000, LENGTH = 1K
-    WRAM (rw) : ORIGIN = 0x40000400, LENGTH = 15K
-    TLS  (rw) : ORIGIN = 0x80000000, LENGTH = 1K
+    IROM (rx) : ORIGIN = 0x00000000, LENGTH = 8K
+    /* HCOM (rw) : ORIGIN = 0x40000000, LENGTH = 4K */
+    WRAM (rw) : ORIGIN = 0x40001000, LENGTH = 28K
+    TLS  (rw) : ORIGIN = 0x80000000, LENGTH = 2K
 }
 
 ENTRY(_start)
@@ -27,20 +27,6 @@ SECTIONS
         *(.rodata*)
         . = ALIGN(4);
     } > IROM
-
-    .hostcom (NOLOAD) : ALIGN(4)
-    {
-        *(.hostcom*)
-        . = ALIGN(4);
-    } > HCOM
-    
-    . = ORIGIN(HCOM) + LENGTH(HCOM) - SIZEOF(.hpmdata);
-
-    .hpmdata : ALIGN(4)
-    {
-        *(.hpmdata*)
-        . = ALIGN(4);
-    } > HCOM
 
     /* The 'AT' ensures the data is physically in ROM so we can copy it */
     .data : ALIGN(4)

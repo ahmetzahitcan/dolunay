@@ -69,7 +69,7 @@ module alu
             ALU_FUNCT_SRA: result_w = $signed(op1_w) >>> op2_w[4:0];
             ALU_FUNCT_OR: result_w = op1_w | op2_w;
             ALU_FUNCT_AND: result_w = op1_w & op2_w;
-            ALU_FUNCT_HARTID: result_w = (warp_id_i << W_THREADS) | THREAD_ID;
+            ALU_FUNCT_HARTID: result_w = {{(XLEN-W_WARPS-W_THREADS){1'b0}}, warp_id_i, {W_THREADS{1'b0}}} | THREAD_ID;
             ALU_FUNCT_WARPID: result_w = warp_id_i;
             ALU_FUNCT_THRID: result_w = THREAD_ID;
             ALU_FUNCT_CYCLETIME: result_w = cycle_time_i[31:0];

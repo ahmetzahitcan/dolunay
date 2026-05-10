@@ -15,7 +15,7 @@ package params_pkg;
     localparam int PC_ALIGN = 4;
     localparam int Z_PC = $clog2(PC_ALIGN);
 
-    localparam int N_WARPS = 8; // Min 4
+    localparam int N_WARPS = 4; // Min 4
     localparam int N_THREADS = 8;
     localparam int N_REGISTERS = 32; // RV32I
     localparam int W_WARPS = $clog2(N_WARPS);

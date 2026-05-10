@@ -124,6 +124,7 @@ module pipeline
     logic [N_THREADS-1:0] exmem_mask_r;
     logic [W_WARPS-1:0] exmem_warp_id_r;
     logic [N_THREADS-1:0] mem_instr_replay_mask_w;
+    logic [N_THREADS-1:0] mem_instr_retired_mask_w;
 
     // - Barrier signals
     logic [N_THREADS-1:0] barr_load_total_w;
@@ -200,7 +201,7 @@ module pipeline
             assign instruction_retire_w = ~exmem_instr_r.barr_load & mem_en_w;
 
             assign winst_retired_w[I] = instruction_retire_w;
-            assign inst_retired_w[I] = instruction_retire_w ? exmem_mask_r : '0;
+            assign inst_retired_w[I] = instruction_retire_w ? mem_instr_retired_mask_w : '0;
 
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
@@ -567,6 +568,8 @@ module pipeline
         end
     end
 
+    assign mem_instr_retired_mask_w = exmem_mask_r & ~mem_instr_replay_mask_w;
+
     // - SC Output
 
     logic [N_THREADS-1:0] mem_sc_output_w;
@@ -577,7 +580,7 @@ module pipeline
     always_ff @( posedge clk ) begin
         memwb_instr_r <= exmem_instr_r;
         memwb_alu_result_r <= exmem_alu_result_r;
-        memwb_mask_r <= exmem_mask_r;
+        memwb_mask_r <= mem_instr_retired_mask_w;
         memwb_pc_r <= exmem_pc_r;
         memwb_warp_id_r <= exmem_warp_id_r;
         memwb_msel_r <= mem_msel_w;

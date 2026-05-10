@@ -4,8 +4,8 @@
 -- Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
 -- Date        : Sat May  9 12:44:09 2026
 -- Host        : fedora running 64-bit unknown
--- Command     : write_vhdl -force -mode synth_stub
---               /home/azc/Belgeler/dolunay/bd/total_design/ip/total_design_rst_clk_wiz_100M_0/total_design_rst_clk_wiz_100M_0_stub.vhdl
+-- Command     : write_vhdl -force -mode synth_stub -rename_top total_design_rst_clk_wiz_100M_0 -prefix
+--               total_design_rst_clk_wiz_100M_0_ total_design_rst_clk_wiz_100M_0_stub.vhdl
 -- Design      : total_design_rst_clk_wiz_100M_0
 -- Purpose     : Stub declaration of top-level module interface
 -- Device      : xc7a35tcpg236-1

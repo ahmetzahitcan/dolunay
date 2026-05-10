@@ -2,7 +2,7 @@
 //Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 //--------------------------------------------------------------------------------
 //Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
-//Date        : Sat May  9 15:58:12 2026
+//Date        : Sun May 10 17:42:27 2026
 //Host        : fedora running 64-bit unknown
 //Command     : generate_target total_design.bd
 //Design      : total_design
@@ -29,21 +29,23 @@ module total_design
 
   wire clk_wiz_clk_out1;
   wire clk_wiz_locked;
-  wire [11:2]core_top_0_IROM_A_ADDR;
+  wire [13:2]core_top_0_IROM_A_ADDR;
   wire core_top_0_IROM_A_CLK;
   wire [31:0]core_top_0_IROM_A_DOUT;
-  wire [11:2]core_top_0_IROM_B_ADDR;
+  wire [13:2]core_top_0_IROM_B_ADDR;
   wire core_top_0_IROM_B_CLK;
   wire [31:0]core_top_0_IROM_B_DOUT;
-  wire [11:2]core_top_0_WRAM_ADDR;
+  wire [14:2]core_top_0_WRAM_ADDR;
   wire core_top_0_WRAM_CLK;
   wire [31:0]core_top_0_WRAM_DIN;
   wire [31:0]core_top_0_WRAM_DOUT;
   wire [3:0]core_top_0_WRAM_WE;
   wire core_top_0_ready_o;
-  wire [9:0]host_top_wrapper_0_MEM_ADDR;
+  wire [12:0]host_top_wrapper_0_MEM_ADDR;
   wire host_top_wrapper_0_MEM_CLK;
+  wire [31:0]host_top_wrapper_0_MEM_DIN;
   wire [31:0]host_top_wrapper_0_MEM_DOUT;
+  wire host_top_wrapper_0_MEM_WE;
   wire [6:0]host_top_wrapper_0_M_AXI_ARADDR;
   wire host_top_wrapper_0_M_AXI_ARREADY;
   wire host_top_wrapper_0_M_AXI_ARVALID;
@@ -135,15 +137,17 @@ module total_design
         .m_axi_wvalid(host_top_wrapper_0_M_AXI_WVALID),
         .mem_addr_o(host_top_wrapper_0_MEM_ADDR),
         .mem_clk(host_top_wrapper_0_MEM_CLK),
+        .mem_din_o(host_top_wrapper_0_MEM_DIN),
         .mem_dout_i(host_top_wrapper_0_MEM_DOUT),
+        .mem_we_o(host_top_wrapper_0_MEM_WE),
         .ready_o(led),
         .rst_n(rst_clk_wiz_100M_peripheral_aresetn),
         .simt_ready_i(core_top_0_ready_o),
         .simt_start_o(host_top_wrapper_0_simt_start_o),
         .start_i(led2));
   total_design_blk_mem_gen_0_0 irom
-       (.addra(core_top_0_IROM_A_ADDR),
-        .addrb(core_top_0_IROM_B_ADDR),
+       (.addra(core_top_0_IROM_A_ADDR[12:2]),
+        .addrb(core_top_0_IROM_B_ADDR[12:2]),
         .clka(core_top_0_IROM_A_CLK),
         .clkb(core_top_0_IROM_B_CLK),
         .douta(core_top_0_IROM_A_DOUT),
@@ -161,9 +165,9 @@ module total_design
         .clka(core_top_0_WRAM_CLK),
         .clkb(host_top_wrapper_0_MEM_CLK),
         .dina(core_top_0_WRAM_DIN),
-        .dinb({1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b0,1'b1,1'b0,1'b0,1'b0}),
+        .dinb(host_top_wrapper_0_MEM_DIN),
         .douta(core_top_0_WRAM_DOUT),
         .doutb(host_top_wrapper_0_MEM_DOUT),
         .wea(core_top_0_WRAM_WE),
-        .web({1'b0,1'b0,1'b0,1'b0}));
+        .web({host_top_wrapper_0_MEM_WE,host_top_wrapper_0_MEM_WE,host_top_wrapper_0_MEM_WE,host_top_wrapper_0_MEM_WE}));
 endmodule

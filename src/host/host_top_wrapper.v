@@ -56,6 +56,8 @@ module host_top_wrapper
     (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM CLK" *)  output  wire        mem_clk,
     (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM ADDR" *) output wire [W_ADDR-1:0] mem_addr_o,
     (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM DOUT"  *) input  wire [31:0] mem_dout_i,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM DIN"   *) output wire [31:0] mem_din_o,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:bram:1.0 MEM WE"    *) output wire        mem_we_o,
 
     input wire start_i,
     output wire ready_o,
@@ -70,7 +72,7 @@ module host_top_wrapper
     assign m_axi_awprot = 3'b000;
     assign m_axi_arprot = 3'b000;
 
-    host_top #(
+    host_top_new #(
         .W_ADDR(W_ADDR),
         .MEM_DELAY(MEM_DELAY)
     ) u_host_top (
@@ -97,6 +99,8 @@ module host_top_wrapper
         .m_axi_rready_o(m_axi_rready),
         .block_mem_addr_o(mem_addr_o),
         .block_mem_dout_i(mem_dout_i),
+        .block_mem_din_o(mem_din_o),
+        .block_mem_we_o(mem_we_o),
         .start_i(start_i),
         .ready_o(ready_o)
     );

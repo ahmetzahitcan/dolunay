@@ -4,8 +4,8 @@
 -- Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
 -- Date        : Sat May  9 12:44:09 2026
 -- Host        : fedora running 64-bit unknown
--- Command     : write_vhdl -force -mode funcsim
---               /home/azc/Belgeler/dolunay/bd/total_design/ip/total_design_axi_uartlite_0_0/total_design_axi_uartlite_0_0_sim_netlist.vhdl
+-- Command     : write_vhdl -force -mode funcsim -rename_top total_design_axi_uartlite_0_0 -prefix
+--               total_design_axi_uartlite_0_0_ total_design_axi_uartlite_0_0_sim_netlist.vhdl
 -- Design      : total_design_axi_uartlite_0_0
 -- Purpose     : This VHDL netlist is a functional simulation representation of the design and should not be modified or
 --               synthesized. This netlist cannot be used for SDF annotated simulation.
@@ -21,8 +21,6 @@ entity total_design_axi_uartlite_0_0_baudrate is
     SR : in STD_LOGIC_VECTOR ( 0 to 0 );
     s_axi_aclk : in STD_LOGIC
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_baudrate : entity is "baudrate";
 end total_design_axi_uartlite_0_0_baudrate;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_baudrate is
@@ -282,8 +280,6 @@ entity total_design_axi_uartlite_0_0_pselect_f is
     \GEN_BKEND_CE_REGISTERS[0].ce_out_i_reg[0]\ : in STD_LOGIC;
     \GEN_BKEND_CE_REGISTERS[0].ce_out_i_reg[0]_0\ : in STD_LOGIC
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_pselect_f : entity is "pselect_f";
 end total_design_axi_uartlite_0_0_pselect_f;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_pselect_f is
@@ -354,8 +350,6 @@ entity total_design_axi_uartlite_0_0_srl_fifo is
     Interrupt_reg : in STD_LOGIC_VECTOR ( 0 to 0 );
     s_axi_wdata : in STD_LOGIC_VECTOR ( 7 downto 0 )
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_srl_fifo : entity is "srl_fifo";
 end total_design_axi_uartlite_0_0_srl_fifo;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_srl_fifo is
@@ -1112,8 +1106,6 @@ entity total_design_axi_uartlite_0_0_xpm_cdc_single is
   attribute DEST_SYNC_FF of total_design_axi_uartlite_0_0_xpm_cdc_single : entity is 4;
   attribute INIT_SYNC_FF : integer;
   attribute INIT_SYNC_FF of total_design_axi_uartlite_0_0_xpm_cdc_single : entity is 0;
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_xpm_cdc_single : entity is "xpm_cdc_single";
   attribute SIM_ASSERT_CHK : integer;
   attribute SIM_ASSERT_CHK of total_design_axi_uartlite_0_0_xpm_cdc_single : entity is 0;
   attribute SRC_INPUT_REG : integer;
@@ -1234,8 +1226,6 @@ entity total_design_axi_uartlite_0_0_address_decoder is
     \GEN_BKEND_CE_REGISTERS[2].ce_out_i_reg[2]_3\ : in STD_LOGIC;
     \GEN_BKEND_CE_REGISTERS[2].ce_out_i_reg[2]_4\ : in STD_LOGIC
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_address_decoder : entity is "address_decoder";
 end total_design_axi_uartlite_0_0_address_decoder;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_address_decoder is
@@ -1673,8 +1663,6 @@ entity total_design_axi_uartlite_0_0_uartlite_rx is
     status_reg_reg : in STD_LOGIC;
     \addr_i_reg[0]\ : in STD_LOGIC
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_uartlite_rx : entity is "uartlite_rx";
 end total_design_axi_uartlite_0_0_uartlite_rx;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_uartlite_rx is
@@ -2388,8 +2376,6 @@ entity total_design_axi_uartlite_0_0_uartlite_tx is
     Interrupt_reg : in STD_LOGIC_VECTOR ( 0 to 0 );
     s_axi_wdata : in STD_LOGIC_VECTOR ( 7 downto 0 )
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_uartlite_tx : entity is "uartlite_tx";
 end total_design_axi_uartlite_0_0_uartlite_tx;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_uartlite_tx is
@@ -2688,8 +2674,6 @@ entity total_design_axi_uartlite_0_0_slave_attachment is
     s_axi_araddr : in STD_LOGIC_VECTOR ( 1 downto 0 );
     s_axi_awaddr : in STD_LOGIC_VECTOR ( 1 downto 0 )
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_slave_attachment : entity is "slave_attachment";
 end total_design_axi_uartlite_0_0_slave_attachment;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_slave_attachment is
@@ -3121,8 +3105,6 @@ entity total_design_axi_uartlite_0_0_uartlite_core is
     \GEN_BKEND_CE_REGISTERS[1].ce_out_i_reg\ : in STD_LOGIC;
     s_axi_wdata : in STD_LOGIC_VECTOR ( 7 downto 0 )
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_uartlite_core : entity is "uartlite_core";
 end total_design_axi_uartlite_0_0_uartlite_core;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_uartlite_core is
@@ -3318,8 +3300,6 @@ entity total_design_axi_uartlite_0_0_axi_lite_ipif is
     s_axi_araddr : in STD_LOGIC_VECTOR ( 1 downto 0 );
     s_axi_awaddr : in STD_LOGIC_VECTOR ( 1 downto 0 )
   );
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_axi_lite_ipif : entity is "axi_lite_ipif";
 end total_design_axi_uartlite_0_0_axi_lite_ipif;
 
 architecture STRUCTURE of total_design_axi_uartlite_0_0_axi_lite_ipif is
@@ -3410,8 +3390,6 @@ entity total_design_axi_uartlite_0_0_axi_uartlite is
   attribute C_S_AXI_DATA_WIDTH of total_design_axi_uartlite_0_0_axi_uartlite : entity is 32;
   attribute C_USE_PARITY : integer;
   attribute C_USE_PARITY of total_design_axi_uartlite_0_0_axi_uartlite : entity is 0;
-  attribute ORIG_REF_NAME : string;
-  attribute ORIG_REF_NAME of total_design_axi_uartlite_0_0_axi_uartlite : entity is "axi_uartlite";
   attribute downgradeipidentifiedwarnings : string;
   attribute downgradeipidentifiedwarnings of total_design_axi_uartlite_0_0_axi_uartlite : entity is "yes";
 end total_design_axi_uartlite_0_0_axi_uartlite;
