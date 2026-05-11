@@ -438,7 +438,7 @@
         "has_run_ip_tcl": "true",
         "parameters": {
           "W_IROM_ADDR": {
-            "value": "14"
+            "value": "13"
           },
           "W_WRAM_ADDR": {
             "value": "15"
@@ -499,7 +499,7 @@
               "ADDR": {
                 "physical_name": "irom_addr_a_o",
                 "direction": "O",
-                "left": "13",
+                "left": "12",
                 "right": "2"
               },
               "CLK": {
@@ -522,7 +522,7 @@
               "ADDR": {
                 "physical_name": "irom_addr_b_o",
                 "direction": "O",
-                "left": "13",
+                "left": "12",
                 "right": "2"
               },
               "CLK": {
@@ -758,8 +758,8 @@
           "clk_wiz/clk_out1",
           "axi_uartlite_0/s_axi_aclk",
           "rst_clk_wiz/slowest_sync_clk",
-          "host_top_wrapper_0/clk",
-          "core_top_0/clk"
+          "core_top_0/clk",
+          "host_top_wrapper_0/clk"
         ]
       },
       "clk_wiz_locked": {
@@ -797,8 +797,8 @@
         "ports": [
           "rst_clk_wiz/peripheral_aresetn",
           "axi_uartlite_0/s_axi_aresetn",
-          "host_top_wrapper_0/rst_n",
-          "core_top_0/rst_n"
+          "core_top_0/rst_n",
+          "host_top_wrapper_0/rst_n"
         ]
       }
     },
