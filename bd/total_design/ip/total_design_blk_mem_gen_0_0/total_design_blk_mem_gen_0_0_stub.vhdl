@@ -2,7 +2,7 @@
 -- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
 -- --------------------------------------------------------------------------------
 -- Tool Version: Vivado v.2025.2 (lin64) Build 6299465 Fri Nov 14 12:34:56 MST 2025
--- Date        : Sun May 10 17:43:03 2026
+-- Date        : Sun May 10 22:40:55 2026
 -- Host        : fedora running 64-bit unknown
 -- Command     : write_vhdl -force -mode synth_stub
 --               /home/azc/Belgeler/dolunay/bd/total_design/ip/total_design_blk_mem_gen_0_0/total_design_blk_mem_gen_0_0_stub.vhdl

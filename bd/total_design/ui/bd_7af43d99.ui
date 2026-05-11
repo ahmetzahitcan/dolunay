@@ -1,7 +1,7 @@
 {
    "ActiveEmotionalView":"Default View",
    "Default View_ScaleFactor":"0.973324",
-   "Default View_TopLeft":"265,102",
+   "Default View_TopLeft":"302,102",
    "ExpandedHierarchyInLayout":"",
    "guistr":"# # String gsaved with Nlview 7.8.0 2024-04-26 e1825d835c VDI=44 GEI=38 GUI=JA:21.0 TLS
 #  -string -flagsOSRD
@@ -31,8 +31,8 @@ preplace netloc axi_uartlite_0_UART 1 2 2 NJ 60 NJ
 preplace netloc core_top_0_IROM_A 1 2 1 760 220n
 preplace netloc core_top_0_IROM_B 1 2 1 750 240n
 preplace netloc core_top_0_WRAM 1 2 1 750 120n
-preplace netloc host_top_wrapper_0_M_AXI 1 1 1 380 50n
 preplace netloc host_top_wrapper_0_MEM 1 1 2 310 -190 760J
+preplace netloc host_top_wrapper_0_M_AXI 1 1 1 380 50n
 levelinfo -pg 1 -20 170 560 900 1030
 pagesize -pg 1 -db -bbox -sgen -150 -210 1220 570
 "

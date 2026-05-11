@@ -70,7 +70,7 @@
             "MASTER_TYPE": [ { "value": "OTHER", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
             "READ_WRITE_MODE": [ { "value": "", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
             "READ_LATENCY": [ { "value": "1", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
-            "MEM_ADDRESS_MODE": [ { "value": "", "value_src": "weak", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
+            "MEM_ADDRESS_MODE": [ { "value": "", "value_src": "weak", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
           },
           "port_maps": {
             "DOUT": [ { "physical_name": "wram_rdata_i" } ],
@@ -91,7 +91,7 @@
             "MASTER_TYPE": [ { "value": "OTHER", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
             "READ_WRITE_MODE": [ { "value": "", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
             "READ_LATENCY": [ { "value": "1", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
-            "MEM_ADDRESS_MODE": [ { "value": "", "value_src": "weak", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
+            "MEM_ADDRESS_MODE": [ { "value": "", "value_src": "weak", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
           },
           "port_maps": {
             "DOUT": [ { "physical_name": "irom_data_a_i" } ],
@@ -110,7 +110,7 @@
             "MASTER_TYPE": [ { "value": "OTHER", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
             "READ_WRITE_MODE": [ { "value": "", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ],
             "READ_LATENCY": [ { "value": "1", "value_permission": "bd_and_user", "resolve_type": "generated", "format": "long", "is_ips_inferred": true, "is_static_object": false } ],
-            "MEM_ADDRESS_MODE": [ { "value": "", "value_src": "weak", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
+            "MEM_ADDRESS_MODE": [ { "value": "", "value_src": "weak", "value_permission": "bd_and_user", "resolve_type": "generated", "is_ips_inferred": true, "is_static_object": false } ]
           },
           "port_maps": {
             "DOUT": [ { "physical_name": "irom_data_b_i" } ],
@@ -151,5 +151,5 @@
       }
     }
   },
-  "checksum": "cf5e142f"
+  "checksum": "eb1fe8e3"
 }

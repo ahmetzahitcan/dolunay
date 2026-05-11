@@ -44,6 +44,7 @@ module host_top_new #(
     output      logic        ready_o
 );
     localparam N_WARPS = 4;
+    localparam N_THREADS = 8;
     localparam HCOM_SIZE = 1024;
 
     // =========================================================================
@@ -51,6 +52,7 @@ module host_top_new #(
     // =========================================================================
     /*
     localparam N  = 64;
+    localparam EXP_BASE  = 0;
     localparam EXP_SIZE  = N;
 
     // Compute the value to write at address `addr` during the init phase.
@@ -78,8 +80,9 @@ module host_top_new #(
     // =========================================================================
     // Test Definition: saxpy
     // =========================================================================
-    
+    /*
     localparam N  = 64;
+    localparam EXP_BASE  = 0;
     localparam EXP_SIZE  = N;
 
     // Compute the value to write at address `addr` during the init phase.
@@ -104,8 +107,172 @@ module host_top_new #(
         int i = 32'(addr);
         return 32'(48*i + 1321);
     endfunction
-    
+    */
+    // =========================================================================
+    // Test Definition: nearn
+    // =========================================================================
+    /*
+    localparam ARRAY_SIZE  = 128;
+    localparam DIM_COUNT = 4;
+    localparam EXP_BASE  = ARRAY_SIZE*DIM_COUNT + DIM_COUNT;
+    localparam EXP_SIZE  = 2;
 
+    function automatic logic [31:0] gen_value(input int query_idx, input int dim_idx);
+        return (((query_idx+1)*(dim_idx+1)*121 + 1337) & 32'h7fff) - 32'h3fff;
+    endfunction
+
+    function automatic logic [31:0] get_query_value(input int dim_idx);
+        return gen_value(32'h0badf00d, dim_idx);
+    endfunction
+
+    function automatic logic [31:0] get_dist(input logic [31:0] q0 [DIM_COUNT], input logic [31:0] q1 [DIM_COUNT]);
+        logic [31:0] distance = 0;
+        for (int i = 0; i < DIM_COUNT; i++) begin
+            logic signed [31:0] diff = q0[i] - q1[i];
+            distance += diff * diff;
+        end
+        return distance;
+    endfunction
+
+    function automatic logic [1:0][31:0] gen_exp();
+        logic [31:0] best_idx = 0;
+        logic [31:0] best_dist = -1;
+        logic [31:0] query [DIM_COUNT];
+        logic [31:0] data [DIM_COUNT];
+        logic [31:0] distance;
+
+        for (int i = 0; i < DIM_COUNT; i++) begin
+            query[i] = get_query_value(i);
+        end
+
+        for (int i = 0; i < ARRAY_SIZE; i++) begin
+            for (int j = 0; j < DIM_COUNT; j++) begin
+                data[j] = gen_value(i, j);
+            end
+
+            distance = get_dist(query, data);
+            if (distance < best_dist) begin
+                best_dist = distance;
+                best_idx = i;
+            end 
+        end
+        return {best_dist, best_idx};
+    endfunction
+
+    // Compute the value to write at address `addr` during the init phase.
+    function automatic logic [31:0] gen_init_value(input logic [W_ADDR-1:0] addr);
+        if (addr < ARRAY_SIZE * DIM_COUNT) begin
+            return gen_value(32'(addr/DIM_COUNT), 32'(addr%DIM_COUNT));
+        end else if (addr < ARRAY_SIZE * DIM_COUNT + DIM_COUNT) begin
+            return get_query_value(32'(addr - ARRAY_SIZE*DIM_COUNT));
+        end else
+            return 32'd0;
+    endfunction
+
+    // Compute the expected value at address `addr` during the check phase.
+    function automatic logic [31:0] gen_exp_value(input logic [W_ADDR-1:0] addr);
+        logic [1:0][31:0] exp_val = gen_exp();
+        if (addr == EXP_BASE) begin
+            return exp_val[0];
+        end else if (addr == EXP_BASE + 1) begin
+            return exp_val[1];
+        end else
+            return 32'd0;
+    endfunction
+    */
+    // =========================================================================
+    // Test Definition: gemm
+    // =========================================================================
+    /*
+    localparam M = 8;
+    localparam N = 8;
+    localparam K = 8;
+    localparam EXP_BASE  = M * N + N * K + M * K;
+    localparam EXP_SIZE  = M * K;
+
+    // Compute the value to write at address `addr` during the init phase.
+    function automatic logic [31:0] gen_init_value(input logic [W_ADDR-1:0] addr);
+        int i;
+        int j;
+
+        if (addr < M * N) begin
+            // mat_a[i][j] = i + j
+            return 32'(32'(addr/N) + 32'(addr%N));
+        end else if (addr < M * N + N * K) begin
+            // mat_b[i][j] = i - j
+            j = 32'(addr - M * N);
+            return 32'(32'(j/K) - 32'(j%K));
+        end else if (addr < M * N + N * K + M * K) begin
+            // mat_x[i][j] = i * j
+            i = 32'(addr - M * N - N * K);
+            j = 32'(i % K);
+            i = 32'(i / K);
+            return 32'(i * j);
+        end else
+            return 32'd0;
+    endfunction
+
+    // Compute the expected value at address `addr` during the check phase.
+    function automatic logic [31:0] gen_exp_value(input logic [W_ADDR-1:0] addr);
+        // mat_c[i][j] = mat_x[i][j] + sum_k(mat_a[i][k] * mat_b[k][j])
+        int i;
+        int j;
+        logic [31:0] sum;
+        int index;
+
+        index = addr - EXP_BASE;
+        i = 32'(index / K);
+        j = 32'(index % K);
+        sum = i * j;
+        for (int k = 0; k < N; k++) begin
+            sum += (32'(i + k) * 32'(k - j));
+        end
+        return sum;
+    endfunction
+    */
+    // =========================================================================
+    // Test Definition: ping_pong
+    // =========================================================================
+    /*
+    localparam EXP_BASE = 0;
+    localparam EXP_SIZE = N_WARPS * (N_THREADS / 2);
+
+    // Compute the value to write at address `addr` during the init phase.
+    function automatic logic [31:0] gen_init_value(input logic [W_ADDR-1:0] addr);
+        return 32'd0;
+    endfunction
+
+    // Compute the expected value at address `addr` during the check phase.
+    function automatic logic [31:0] gen_exp_value(input logic [W_ADDR-1:0] addr);
+        return 32'd128;
+    endfunction
+    
+    */
+    // =========================================================================
+    // Test Definition: spmc
+    // =========================================================================
+    
+    localparam N = 16;
+    localparam EXP_BASE = N;
+    localparam EXP_SIZE = N * ((N_WARPS * N_THREADS) - 1);
+
+    function automatic logic [31:0] get_value(input int idx);
+        logic [31:0] val;
+        val = 32'(idx * 5 - 17);
+        if (val == -1) val = 0;
+        return val;
+    endfunction
+
+    // Compute the value to write at address `addr` during the init phase.
+    function automatic logic [31:0] gen_init_value(input logic [W_ADDR-1:0] addr);
+        return get_value(32'(addr % N));
+    endfunction
+
+    // Compute the expected value at address `addr` during the check phase.
+    function automatic logic [31:0] gen_exp_value(input logic [W_ADDR-1:0] addr);
+        return get_value(32'(addr % N));
+    endfunction
+    
     // =========================================================================
     // FSM
     // =========================================================================
@@ -303,7 +470,7 @@ module host_top_new #(
                 // ---------------------------------------------------------
                 S_WAIT_SIMT: begin
                     if (simt_ready_i) begin
-                        addr_r         <= '0;
+                        addr_r         <= EXP_BASE;
                         err_count_r    <= '0;
                         wait_counter_r <= '0;
                         state_r        <= S_CHECK_READ;
@@ -342,7 +509,7 @@ module host_top_new #(
 
                 S_CHECK_PRINT_WAIT: begin
                     if (prints_ready_w) begin
-                        if (addr_r == EXP_SIZE - 1'b1) begin
+                        if (addr_r == EXP_BASE + EXP_SIZE - 1'b1) begin
                             state_r <= S_INIT_MSG_RESULT;
                         end else begin
                             addr_r         <= addr_r + 1'b1;

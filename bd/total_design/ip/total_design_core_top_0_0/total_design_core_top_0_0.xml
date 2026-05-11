@@ -884,14 +884,14 @@
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.CLK.FREQ_TOLERANCE_HZ" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.CLK.PHASE" xilinx:valueSource="ip_propagated" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_A.MASTER_TYPE" xilinx:valuePermission="bd_and_user"/>
-        <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_A.MEM_ADDRESS_MODE" xilinx:valueSource="weak"/>
+        <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_A.MEM_ADDRESS_MODE" xilinx:valueSource="weak" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_A.MEM_ECC" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_A.MEM_SIZE" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_A.MEM_WIDTH" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_A.READ_LATENCY" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_A.READ_WRITE_MODE" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_B.MASTER_TYPE" xilinx:valuePermission="bd_and_user"/>
-        <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_B.MEM_ADDRESS_MODE" xilinx:valueSource="weak"/>
+        <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_B.MEM_ADDRESS_MODE" xilinx:valueSource="weak" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_B.MEM_ECC" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_B.MEM_SIZE" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_B.MEM_WIDTH" xilinx:valuePermission="bd_and_user"/>
@@ -899,7 +899,7 @@
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.IROM_B.READ_WRITE_MODE" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.RST_N.POLARITY" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.WRAM.MASTER_TYPE" xilinx:valuePermission="bd_and_user"/>
-        <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.WRAM.MEM_ADDRESS_MODE" xilinx:valueSource="weak"/>
+        <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.WRAM.MEM_ADDRESS_MODE" xilinx:valueSource="weak" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.WRAM.MEM_ECC" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.WRAM.MEM_SIZE" xilinx:valuePermission="bd_and_user"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.WRAM.MEM_WIDTH" xilinx:valuePermission="bd_and_user"/>
