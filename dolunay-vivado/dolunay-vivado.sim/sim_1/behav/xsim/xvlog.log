@@ -1,0 +1,24 @@
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/azc/Belgeler/dolunay/src/host/host_top_new.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module host_top_new
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/azc/Belgeler/dolunay/src/host/printc.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module printc
+INFO: [VRFC 10-2263] Analyzing SystemVerilog file "/home/azc/Belgeler/dolunay/src/host/prints.sv" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module prints
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/src/core_top.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module core_top
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/ip/total_design_host_top_wrapper_0_0/sim/total_design_host_top_wrapper_0_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module total_design_host_top_wrapper_0_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/ip/total_design_core_top_0_0/sim/total_design_core_top_0_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module total_design_core_top_0_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/ip/total_design_blk_mem_gen_0_0/sim/total_design_blk_mem_gen_0_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module total_design_blk_mem_gen_0_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/ip/total_design_blk_mem_gen_1_0/sim/total_design_blk_mem_gen_1_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module total_design_blk_mem_gen_1_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/ip/total_design_clk_wiz_0/total_design_clk_wiz_0_clk_wiz.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module total_design_clk_wiz_0_clk_wiz
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/ip/total_design_clk_wiz_0/total_design_clk_wiz_0.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module total_design_clk_wiz_0
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/sim/total_design.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module total_design
+INFO: [VRFC 10-2263] Analyzing Verilog file "/home/azc/Belgeler/dolunay/bd/total_design/hdl/total_design_wrapper.v" into library xil_defaultlib
+INFO: [VRFC 10-311] analyzing module total_design_wrapper

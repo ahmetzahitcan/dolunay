@@ -1,0 +1,7 @@
+# compile vhdl design source files
+vhdl xil_defaultlib  \
+"../../../../tez-vivado.ip_user_files/bd/total_design/ip/total_design_axi_uartlite_0_0/sim/total_design_axi_uartlite_0_0.vhd" \
+"../../../../tez-vivado.ip_user_files/bd/total_design/ip/total_design_rst_clk_wiz_100M_0/sim/total_design_rst_clk_wiz_100M_0.vhd" \
+
+# Do not sort compile order
+nosort

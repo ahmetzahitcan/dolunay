@@ -1,0 +1,154 @@
+Vivado Simulator v2025.2
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+Running: /home/azc/Xilinx/2025.2/Vivado/bin/unwrapped/lnx64.o/xelab --incr --debug typical --relax --mt 8 -L xil_defaultlib -L axi_lite_ipif_v3_0_4 -L axi_uartlite_v2_0_39 -L blk_mem_gen_v8_4_12 -L proc_sys_reset_v5_0_17 -L uvm -L unisims_ver -L unimacro_ver -L secureip -L xpm --snapshot tb_total_design_behav xil_defaultlib.tb_total_design xil_defaultlib.glbl -log elaborate.log 
+Using 8 slave threads.
+WARNING: [XSIM 43-3431] One or more environment variables have been detected which affect the operation of the C compiler. These are typically not set in standard installations and are not tested by AMD, however they may be appropriate for your system, so the flow will attempt to continue.  If errors occur, try running xelab with the "-mt off -v 1" switches to see more information from the C compiler. The following environment variables have been detected:
+Starting static elaboration
+Pass Through NonSizing Optimizer
+WARNING: [VRFC 10-5021] port 'interrupt' is not connected on this instance [/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/sim/total_design.v:76]
+WARNING: [VRFC 10-5021] port 'mb_reset' is not connected on this instance [/home/azc/Belgeler/dolunay/tez-vivado/tez-vivado.ip_user_files/bd/total_design/sim/total_design.v:155]
+Completed static elaboration
+WARNING: [XSIM 43-4455] File "/home/azc/Belgeler/dolunay/src/thread_scheduler.sv" Line 73 : Unsupported feature in assertion/property/sequence 'Deferred Assertion is not supported'. It will be ignored.
+WARNING: [XSIM 43-4127] File "/home/azc/Belgeler/dolunay/src/register_file.sv" Line 29 : The "System Verilog Assertion" is not supported yet for simulation. The statement will be ignored.
+Starting simulation data flow analysis
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/params_pkg.sv" Line 3. Module params_pkg doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/control_unit_pkg.sv" Line 3. Module control_unit_pkg doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/core_top.v" Line 3. Module core_top(W_WRAM_ADDR=15,W_IROM_ADDR=14) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/pipeline.sv" Line 3. Module pipeline(WRAM_SIZE=32768,IROM_SIZE=16384) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/hpms.sv" Line 3. Module hpms doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/warp_scheduler.sv" Line 3. Module warp_scheduler doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/thread_scheduler.sv" Line 3. Module thread_scheduler doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/thread_scheduler.sv" Line 3. Module thread_scheduler doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/thread_scheduler.sv" Line 3. Module thread_scheduler doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/thread_scheduler.sv" Line 3. Module thread_scheduler doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/control_unit_ext.sv" Line 3. Module control_unit_ext doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/control_unit.sv" Line 3. Module control_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/immediate_decoder.sv" Line 3. Module immediate_decoder doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/sim__instr_formatter.sv" Line 3. Module sim__instr_formatter doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/register_file.sv" Line 6. Module register_file doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/alu.sv" Line 3. Module alu doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/alu.sv" Line 3. Module alu(THREAD_ID=1) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/alu.sv" Line 3. Module alu(THREAD_ID=2) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/alu.sv" Line 3. Module alu(THREAD_ID=3) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/alu.sv" Line 3. Module alu(THREAD_ID=4) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/alu.sv" Line 3. Module alu(THREAD_ID=5) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/alu.sv" Line 3. Module alu(THREAD_ID=6) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/alu.sv" Line 3. Module alu(THREAD_ID=7) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/priority_encoder.sv" Line 3. Module priority_encoder(WIDTH=8) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/ram.sv" Line 3. Module ram(DEPTH=2048) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/ram.sv" Line 3. Module ram(DEPTH=2048) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/ram.sv" Line 3. Module ram(DEPTH=2048) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/ram.sv" Line 3. Module ram(DEPTH=2048) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/ram.sv" Line 3. Module ram(DEPTH=2048) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/ram.sv" Line 3. Module ram(DEPTH=2048) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/ram.sv" Line 3. Module ram(DEPTH=2048) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/ram.sv" Line 3. Module ram(DEPTH=2048) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/mem_write_formatter.sv" Line 3. Module mem_write_formatter(DATA_LEN=8) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/branch_cond_unit.sv" Line 3. Module branch_cond_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/branch_cond_unit.sv" Line 3. Module branch_cond_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/branch_cond_unit.sv" Line 3. Module branch_cond_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/branch_cond_unit.sv" Line 3. Module branch_cond_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/branch_cond_unit.sv" Line 3. Module branch_cond_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/branch_cond_unit.sv" Line 3. Module branch_cond_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/branch_cond_unit.sv" Line 3. Module branch_cond_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/branch_cond_unit.sv" Line 3. Module branch_cond_unit doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/mem_read_formatter.sv" Line 3. Module mem_read_formatter(DATA_LEN=10) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/host/host_top_wrapper.v" Line 3. Module host_top_wrapper(W_ADDR=13) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/host/host_top_new.sv" Line 3. Module host_top_new(W_ADDR=13) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/host/prints.sv" Line 3. Module prints(MAX_LEN=40,HEX_COUNT=4) doesn't have a timescale but at least one module in design has a timescale.
+WARNING: [XSIM 43-4099] "/home/azc/Belgeler/dolunay/src/host/printc.sv" Line 3. Module printc doesn't have a timescale but at least one module in design has a timescale.
+Completed simulation data flow analysis
+Time Resolution for simulation is 1ps
+Compiling package std.standard
+Compiling package std.textio
+Compiling package ieee.std_logic_1164
+Compiling package ieee.numeric_std
+Compiling package ieee.std_logic_arith
+Compiling package ieee.std_logic_unsigned
+Compiling package axi_lite_ipif_v3_0_4.ipif_pkg
+Compiling package xpm.vcomponents
+Compiling package synopsys.attributes
+Compiling package ieee.std_logic_misc
+Compiling package unisim.vcomponents
+Compiling package ieee.vital_timing
+Compiling package ieee.vital_primitives
+Compiling package unisim.vpkg
+Compiling package xil_defaultlib.tb_config_pkg
+Compiling package xil_defaultlib.params_pkg
+Compiling package xil_defaultlib.control_unit_pkg
+Compiling architecture rtl of entity axi_uartlite_v2_0_39.baudrate [\baudrate(c_ratio=326)\]
+Compiling module xpm.xpm_cdc_single(DEST_SYNC_FF=4,IN...
+Compiling architecture imp of entity axi_uartlite_v2_0_39.srl_fifo [\srl_fifo(c_dwidth=8,c_depth=16)...]
+Compiling architecture rtl of entity axi_uartlite_v2_0_39.uartlite_rx [\uartlite_rx(c_family="artix7")(...]
+Compiling architecture rtl of entity axi_uartlite_v2_0_39.uartlite_tx [\uartlite_tx(c_family="artix7")(...]
+Compiling architecture rtl of entity axi_uartlite_v2_0_39.uartlite_core [\uartlite_core(c_family="artix7"...]
+Compiling architecture imp of entity axi_lite_ipif_v3_0_4.pselect_f [\pselect_f(c_ab=2,c_aw=2,c_bar="...]
+Compiling architecture imp of entity axi_lite_ipif_v3_0_4.pselect_f [\pselect_f(c_ab=2,c_aw=2,c_bar="...]
+Compiling architecture imp of entity axi_lite_ipif_v3_0_4.pselect_f [\pselect_f(c_ab=2,c_aw=2,c_bar="...]
+Compiling architecture imp of entity axi_lite_ipif_v3_0_4.pselect_f [\pselect_f(c_ab=2,c_aw=2,c_bar="...]
+Compiling architecture imp of entity axi_lite_ipif_v3_0_4.address_decoder [\address_decoder(c_bus_awidth=4,...]
+Compiling architecture imp of entity axi_lite_ipif_v3_0_4.slave_attachment [\slave_attachment(c_ard_addr_ran...]
+Compiling architecture imp of entity axi_lite_ipif_v3_0_4.axi_lite_ipif [\axi_lite_ipif(c_s_axi_addr_widt...]
+Compiling architecture rtl of entity axi_uartlite_v2_0_39.axi_uartlite [\axi_uartlite(c_family="artix7",...]
+Compiling architecture total_design_axi_uartlite_0_0_arch of entity xil_defaultlib.total_design_axi_uartlite_0_0 [total_design_axi_uartlite_0_0_de...]
+Compiling module unisims_ver.IBUF
+Compiling module unisims_ver.MMCME2_ADV(CLKFBOUT_MULT_F=62.5,...
+Compiling module unisims_ver.BUFG
+Compiling module xil_defaultlib.total_design_clk_wiz_0_clk_wiz
+Compiling module xil_defaultlib.total_design_clk_wiz_0
+Compiling module xil_defaultlib.hpms
+Compiling module xil_defaultlib.warp_scheduler
+Compiling module xil_defaultlib.thread_scheduler
+Compiling module xil_defaultlib.immediate_decoder
+Compiling module xil_defaultlib.sim__instr_formatter
+Compiling module xil_defaultlib.control_unit
+Compiling module xil_defaultlib.control_unit_ext
+Compiling module xil_defaultlib.register_file
+Compiling module xil_defaultlib.alu
+Compiling module xil_defaultlib.alu(THREAD_ID=1)
+Compiling module xil_defaultlib.alu(THREAD_ID=2)
+Compiling module xil_defaultlib.alu(THREAD_ID=3)
+Compiling module xil_defaultlib.alu(THREAD_ID=4)
+Compiling module xil_defaultlib.alu(THREAD_ID=5)
+Compiling module xil_defaultlib.alu(THREAD_ID=6)
+Compiling module xil_defaultlib.alu(THREAD_ID=7)
+Compiling module xil_defaultlib.priority_encoder(WIDTH=8)
+Compiling module xil_defaultlib.ram(DEPTH=2048)
+Compiling module xil_defaultlib.mem_write_formatter(DATA_LEN=8)
+Compiling module xil_defaultlib.branch_cond_unit
+Compiling module xil_defaultlib.mem_read_formatter(DATA_LEN=10)
+Compiling module xil_defaultlib.pipeline(WRAM_SIZE=32768,IROM_SI...
+Compiling module xil_defaultlib.core_top(W_WRAM_ADDR=15,W_IROM_A...
+Compiling module xil_defaultlib.total_design_core_top_0_0
+Compiling module xil_defaultlib.printc
+Compiling module xil_defaultlib.prints(MAX_LEN=40,HEX_COUNT=4)
+Compiling module xil_defaultlib.host_top_new(W_ADDR=13)
+Compiling module xil_defaultlib.host_top_wrapper(W_ADDR=13)
+Compiling module xil_defaultlib.total_design_host_top_wrapper_0_...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12_output_stage...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12_softecc_outp...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12_mem_module(C...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12(C_FAMILY="ar...
+Compiling module xil_defaultlib.total_design_blk_mem_gen_0_0
+Compiling architecture fdre_v of entity unisim.FDRE [fdre_default]
+Compiling architecture fdre_v of entity unisim.FDRE [\FDRE(init='1')\]
+Compiling architecture srl16e_v of entity unisim.SRL16E [\SRL16E(init="1111111111111111")...]
+Compiling architecture srl16_v of entity unisim.SRL16 [\SRL16(init="1111111111111111")(...]
+Compiling architecture imp of entity proc_sys_reset_v5_0_17.lpf [\lpf(c_ext_rst_width=4,c_aux_rst...]
+Compiling architecture imp of entity proc_sys_reset_v5_0_17.upcnt_n [\upcnt_n(c_size=6)\]
+Compiling architecture imp of entity proc_sys_reset_v5_0_17.sequence_psr [sequence_psr_default]
+Compiling architecture imp of entity proc_sys_reset_v5_0_17.proc_sys_reset [\proc_sys_reset(c_family="artix7...]
+Compiling architecture total_design_rst_clk_wiz_100m_0_arch of entity xil_defaultlib.total_design_rst_clk_wiz_100M_0 [total_design_rst_clk_wiz_100m_0_...]
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12_output_stage...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12_output_stage...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12_softecc_outp...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12_mem_module(C...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_axi_regs_fwd_v8_4(C_DATA...
+Compiling module blk_mem_gen_v8_4_12.blk_mem_gen_v8_4_12(C_FAMILY="ar...
+Compiling module xil_defaultlib.total_design_blk_mem_gen_1_0
+Compiling module xil_defaultlib.total_design
+Compiling module xil_defaultlib.total_design_wrapper
+Compiling module xil_defaultlib.tb_total_design
+Compiling module xil_defaultlib.glbl
+Built simulation snapshot tb_total_design_behav

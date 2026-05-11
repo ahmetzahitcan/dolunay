@@ -1,0 +1,47 @@
+# compile verilog/system verilog design source files
+sv xil_defaultlib  --include "../../../../../../../Xilinx/2025.2/data/rsb/busdef" --include "../../../../../bd/total_design/ipshared/a415" \
+"../../../../../src/host/host_top_new.sv" \
+"../../../../../src/host/printc.sv" \
+"../../../../../src/host/prints.sv" \
+
+verilog xil_defaultlib  --include "../../../../../../../Xilinx/2025.2/data/rsb/busdef" --include "../../../../../bd/total_design/ipshared/a415" \
+"../../../../../src/host/host_top_wrapper.v" \
+
+sv xil_defaultlib  --include "../../../../../../../Xilinx/2025.2/data/rsb/busdef" --include "../../../../../bd/total_design/ipshared/a415" \
+"../../../../../src/params_pkg.sv" \
+"../../../../../src/control_unit_pkg.sv" \
+"../../../../../src/alu.sv" \
+"../../../../../src/branch_cond_unit.sv" \
+"../../../../../src/control_unit.sv" \
+"../../../../../src/control_unit_ext.sv" \
+"../../../../../src/hpms.sv" \
+"../../../../../src/immediate_decoder.sv" \
+"../../../../../src/mem_read_formatter.sv" \
+"../../../../../src/mem_write_formatter.sv" \
+"../../../../../src/pipeline.sv" \
+"../../../../../src/priority_encoder.sv" \
+"../../../../../src/ram.sv" \
+"../../../../../src/register_file.sv" \
+"../../../../../src/thread_scheduler.sv" \
+"../../../../../src/warp_scheduler.sv" \
+
+verilog xil_defaultlib  --include "../../../../../../../Xilinx/2025.2/data/rsb/busdef" --include "../../../../../bd/total_design/ipshared/a415" \
+"../../../../../src/core_top.v" \
+"../../../../tez-vivado.ip_user_files/bd/total_design/ip/total_design_host_top_wrapper_0_0/sim/total_design_host_top_wrapper_0_0.v" \
+"../../../../tez-vivado.ip_user_files/bd/total_design/ip/total_design_core_top_0_0/sim/total_design_core_top_0_0.v" \
+"../../../../tez-vivado.ip_user_files/bd/total_design/ip/total_design_blk_mem_gen_0_0/sim/total_design_blk_mem_gen_0_0.v" \
+"../../../../tez-vivado.ip_user_files/bd/total_design/ip/total_design_blk_mem_gen_1_0/sim/total_design_blk_mem_gen_1_0.v" \
+"../../../../tez-vivado.ip_user_files/bd/total_design/ip/total_design_clk_wiz_0/total_design_clk_wiz_0_clk_wiz.v" \
+"../../../../tez-vivado.ip_user_files/bd/total_design/ip/total_design_clk_wiz_0/total_design_clk_wiz_0.v" \
+"../../../../tez-vivado.ip_user_files/bd/total_design/sim/total_design.v" \
+"../../../../../bd/total_design/hdl/total_design_wrapper.v" \
+
+sv xil_defaultlib  --include "../../../../../../../Xilinx/2025.2/data/rsb/busdef" --include "../../../../../bd/total_design/ipshared/a415" \
+"../../../../../tb/tb_config_pkg.sv" \
+"../../../../../tb/tb_total_design.sv" \
+
+# compile glbl module
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort
