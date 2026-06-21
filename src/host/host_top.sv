@@ -1,7 +1,7 @@
 `default_nettype none
 
 module host_top #(
-    parameter int W_ADDR = 30,
+    parameter int W_ADDR = 12,
     parameter int MEM_DELAY = 2
 )(
     input  wire logic        clk,

@@ -1,0 +1,12 @@
+Features.Width = N_WIDTH * N_THREADS
+Features.EnableVectors = 1
+Features.EnableNanBox = ?
+Features.FpFmtMask = FP32-only (5'b10000)
+Features.IntFmtMask = INT32-only (4'b0010)
+
+Implementation.PipeRegs = '{default: 1} (number of pipeline regs, per FP-format per opgroup. insane!)
+Implementation.UnitTypes = ? (i don't fully get this one, might be safe to use default)
+Implementation.PipeConfig = ? (don't understand, might be safe to use default, might not have a default)
+Implementation.DivSqrtSel = PULP or THMULTI (chooses DivSqrt unit, cannot use TH32) develop-only?
+
+EnableSIMDMask = 1'b0
