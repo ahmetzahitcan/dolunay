@@ -130,8 +130,41 @@ module pipeline
     logic [N_THREADS-1:0] exls_mask_r;
     logic [W_WARPS-1:0] exls_warp_id_r;
 
-    logic [N_THREADS-1:0] mem_instr_replay_mask_w;
-    logic [N_THREADS-1:0] mem_instr_retired_mask_w;
+    logic [N_THREADS-1:0][XLEN-1:0] ls_store_data_fmt_w;
+    logic [N_THREADS-1:0] ls_store_wen_w;
+
+    // - Memory Access stage signals
+    instr_s lsma_instr_r;
+    logic [N_THREADS-1:0][XLEN-1:0] lsma_alu_result_r;
+    logic [XLEN-1:Z_PC] lsma_pc_r;
+    logic [N_THREADS-1:0] lsma_mask_r;
+    logic [W_WARPS-1:0] lsma_warp_id_r;
+    logic [W_THREADS-1:0] lsma_leader_id_r;
+    logic [N_THREADS-1:0] lsma_leader_one_hot_r;
+    logic lsma_leader_valid_r;
+    logic [N_WARPS-1:0][N_THREADS-1:0] lsma_reservation_r;
+    msel_e [N_THREADS-1:0] lsma_msel_r;
+    logic [N_THREADS-1:0][XLEN-1:0] lsma_store_data_fmt_r;
+    logic [N_THREADS-1:0] lsma_store_wen_r;
+    logic [N_THREADS-1:0] lsma_coalesced_r;
+    logic [XLEN-1:0] lsma_leader_target_r;
+    
+    logic [N_THREADS-1:0] ma_instr_replay_mask_w;
+    logic [N_THREADS-1:0] ma_instr_retired_mask_w;
+    
+    // - Scheduler Update stage signals
+    instr_s masu_instr_r;
+    logic [N_THREADS-1:0][XLEN-1:0] masu_alu_result_r;
+    logic [XLEN-1:Z_PC] masu_pc_r;
+    logic [N_THREADS-1:0] masu_mask_r;
+    logic [W_WARPS-1:0] masu_warp_id_r;
+    msel_e [N_THREADS-1:0] masu_msel_r;
+    logic [XLEN-1:0] masu_branch_target_r;
+    logic [N_THREADS-1:0] masu_branch_flag_r;
+    logic [N_THREADS-1:0] masu_branch_mask_r;
+    logic masu_branching_r;
+    logic [N_THREADS-1:0] masu_instr_replay_mask_r;
+    logic [N_THREADS-1:0] masu_instr_retired_mask_r;
 
     // - Barrier signals
     logic [N_THREADS-1:0] barr_load_total_w;
@@ -140,15 +173,17 @@ module pipeline
     logic [N_WARPS-1:0][N_THREADS-1:0] barr_sync_parked_next_w;
 
     // - Writeback stage signals
-    instr_s memwb_instr_r;
-    logic [N_THREADS-1:0][XLEN-1:0] memwb_alu_result_r;
-    logic [XLEN-1:Z_PC] memwb_pc_r;
-    logic [N_THREADS-1:0] memwb_mask_r;
-    logic [W_WARPS-1:0] memwb_warp_id_r;
-    msel_e [N_THREADS-1:0] memwb_msel_r;
-    logic [Z_ADDR-1:0] memwb_leader_alignment_r;
-    logic [XLEN-1:0] memwb_wram_rdata_w;
-    logic [N_THREADS-1:0][XLEN-1:0] memwb_tlocal_rdata_w;
+    instr_s suwb_instr_r;
+    logic [N_THREADS-1:0][XLEN-1:0] suwb_alu_result_r;
+    logic [XLEN-1:Z_PC] suwb_pc_r;
+    logic [N_THREADS-1:0] suwb_mask_r;
+    logic [W_WARPS-1:0] suwb_warp_id_r;
+    msel_e [N_THREADS-1:0] suwb_msel_r;
+    logic [Z_ADDR-1:0] suwb_leader_alignment_r;
+    logic [N_THREADS-1:0] suwb_leader_one_hot_r;
+    logic [N_THREADS-1:0][XLEN-1:0] suwb_tlocal_rdata_fmt_r;
+    logic [XLEN-1:0] suwb_irom_data_fmt_w;
+    logic [XLEN-1:0] suwb_wram_rdata_fmt_w;
 
     logic [N_THREADS-1:0] wb_write_en_mask_w;
     logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
@@ -544,7 +579,7 @@ module pipeline
                 .addr_i(bank_addr),
                 .wdata_i(lsma_store_data_fmt_r[I]),
                 .wen_i(wen_byte_w),
-                .rdata_o(masu_tlocal_rdata_w[I])
+                .rdata_o(su_tlocal_rdata_w[I])
             );
         end
     endgenerate    
