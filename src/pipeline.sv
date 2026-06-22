@@ -88,8 +88,8 @@ module pipeline
             unique0 if (start_i & ready_o) begin
                 wdone_r <= '0;
             end else if (running_w) begin
-                if (memwb_instr_r.is_wdone & wb_stage_valid_r) begin
-                    wdone_r[memwb_warp_id_r] <= 1'b1;
+                if (suwb_instr_r.is_wdone & wb_stage_valid_r) begin
+                    wdone_r[suwb_warp_id_r] <= 1'b1;
                 end
             end
             ws_stage_valid_r <= running_w;
@@ -97,9 +97,9 @@ module pipeline
             id_stage_valid_r <= if_stage_valid_r;
             ex_stage_valid_r <= id_stage_valid_r;
             ls_stage_valid_r <= ex_stage_valid_r;
-            mem_stage_valid_r <= ls_stage_valid_r;
-            tsu_stage_valid_r <= mem_stage_valid_r;
-            wb_stage_valid_r <= tsu_stage_valid_r;
+            ma_stage_valid_r <= ls_stage_valid_r;
+            su_stage_valid_r <= ma_stage_valid_r;
+            wb_stage_valid_r <= su_stage_valid_r;
         end
     end
 
@@ -148,10 +148,11 @@ module pipeline
     logic [N_THREADS-1:0] lsma_store_wen_r;
     logic [N_THREADS-1:0] lsma_coalesced_r;
     logic [XLEN-1:0] lsma_leader_target_r;
+    logic [N_THREADS-1:0][XLEN-1:0] lsma_rs2_data_r;
     
     logic [N_THREADS-1:0] ma_instr_replay_mask_w;
     logic [N_THREADS-1:0] ma_instr_retired_mask_w;
-    
+
     // - Scheduler Update stage signals
     instr_s masu_instr_r;
     logic [N_THREADS-1:0][XLEN-1:0] masu_alu_result_r;
@@ -165,6 +166,12 @@ module pipeline
     logic masu_branching_r;
     logic [N_THREADS-1:0] masu_instr_replay_mask_r;
     logic [N_THREADS-1:0] masu_instr_retired_mask_r;
+    logic [Z_ADDR-1:0] masu_leader_alignment_r;
+    logic [N_THREADS-1:0] masu_leader_one_hot_r;
+
+    logic [XLEN-1:0] su_wram_rdata_w;
+    logic [XLEN-1:0] su_irom_rdata_w;
+    logic [N_THREADS-1:0][XLEN-1:0] su_tlocal_rdata_w;
 
     // - Barrier signals
     logic [N_THREADS-1:0] barr_load_total_w;
@@ -182,8 +189,8 @@ module pipeline
     logic [Z_ADDR-1:0] suwb_leader_alignment_r;
     logic [N_THREADS-1:0] suwb_leader_one_hot_r;
     logic [N_THREADS-1:0][XLEN-1:0] suwb_tlocal_rdata_fmt_r;
-    logic [XLEN-1:0] suwb_irom_data_fmt_w;
-    logic [XLEN-1:0] suwb_wram_rdata_fmt_w;
+    logic [XLEN-1:0] suwb_irom_data_fmt_r;
+    logic [XLEN-1:0] suwb_wram_rdata_fmt_r;
 
     logic [N_THREADS-1:0] wb_write_en_mask_w;
     logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
@@ -228,21 +235,21 @@ module pipeline
     // - Thread Schedulers
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin
-            logic mem_en_w;
-            assign mem_en_w = (exmem_warp_id_r == I) & mem_stage_valid_r;
+            logic su_en_w;
+            assign su_en_w = (masu_warp_id_r == I) & su_stage_valid_r;
 
             logic wb_en_w;
-            assign wb_en_w = (memwb_warp_id_r == I) & wb_stage_valid_r;
+            assign wb_en_w = (suwb_warp_id_r == I) & wb_stage_valid_r;
 
             // FIXME: this is a hack
-            assign bsync_1_w[I] = mem_en_w ? (bsync_1_r[I] ^ (exmem_instr_r.barr_load | exmem_instr_r.barr_sync)) : bsync_1_r[I];
+            assign bsync_1_w[I] = su_en_w ? (bsync_1_r[I] ^ (masu_instr_r.barr_load | masu_instr_r.barr_sync)) : bsync_1_r[I];
 
             // FIXME: this is a hack
             logic instruction_retire_w;
-            assign instruction_retire_w = ~exmem_instr_r.barr_load & mem_en_w;
+            assign instruction_retire_w = ~masu_instr_r.barr_load & su_en_w;
 
             assign winst_retired_w[I] = instruction_retire_w;
-            assign inst_retired_w[I] = instruction_retire_w ? mem_instr_retired_mask_w : '0;
+            assign inst_retired_w[I] = instruction_retire_w ? masu_instr_retired_mask_r : '0;
 
             (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
@@ -250,22 +257,22 @@ module pipeline
                 .rst_n(rst_n & ~start_i),
 
                 .instr_completed_i(winst_retired_w[I]), 
-                .instr_replay_mask_i(mem_instr_replay_mask_w),
+                .instr_replay_mask_i(ma_instr_replay_mask_w),
 
-                .yield_i(exmem_instr_r.yield & mem_en_w),
+                .yield_i(masu_instr_r.yield & su_en_w),
 
-                .barr_sync_i(exmem_instr_r.barr_sync & mem_en_w),
+                .barr_sync_i(masu_instr_r.barr_sync & su_en_w),
                 .barr_sync_total_o(barr_sync_total_w[I]),
                 .barr_sync_parked_next_o(barr_sync_parked_next_w[I]),
                 .barr_sync_release_o(), // Not needed
 
-                .barr_load_i(memwb_instr_r.barr_load & wb_en_w),
+                .barr_load_i(suwb_instr_r.barr_load & wb_en_w),
                 .barr_load_total_i(barr_load_total_w),
                 .barr_load_parked_i(barr_load_parked_w),
 
-                .branch_i(mem_branching_w & mem_en_w),
-                .pc_branch_i(mem_branch_target_w),
-                .mask_branch_i(mem_branch_mask_w),
+                .branch_i(masu_branching_r & su_en_w),
+                .pc_branch_i(masu_branch_target_r),
+                .mask_branch_i(masu_branch_mask_r),
 
                 .pc_o(u_thread_scheduler_pc_w[I]),
                 .mask_o(u_thread_scheduler_mask_w[I])
@@ -280,7 +287,7 @@ module pipeline
     assign irom_addr_a_o = if_pc_w[W_IROM_ADDR-1:Z_PC];
     assign if_irom_data_w = irom_data_a_i;
 
-    assign irom_addr_b_o = exmem_alu_result_r[mem_leader_id_w][W_IROM_ADDR-1:Z_PC];
+    assign irom_addr_b_o = exls_alu_result_r[ls_leader_id_w][W_IROM_ADDR-1:Z_PC];
     assign su_irom_data_w = irom_data_b_i;
 
     assign ifid_undec_instr32_w = if_irom_data_w[31:2];
@@ -322,9 +329,9 @@ module pipeline
         .rs2_idx_i(id_instr_w.rs2_idx),
         .rs2_data_o(idex_rs2_data_w),
 
-        .write_warp_id_i(memwb_warp_id_r),
+        .write_warp_id_i(suwb_warp_id_r),
         .write_en_mask_i(wb_write_en_mask_w),
-        .rd_idx_i(memwb_instr_r.rd_idx),
+        .rd_idx_i(suwb_instr_r.rd_idx),
         .write_data_i(wb_write_data_w)
     );
 
@@ -502,8 +509,8 @@ module pipeline
 
     always_ff @( posedge clk ) begin
         lsma_instr_r <= exls_instr_r;
-        lsma_alu_result_r <= exls_alu_result_w;
-        lsma_rs2_data_r <= exls_rs2_data_w;
+        lsma_alu_result_r <= exls_alu_result_r;
+        lsma_rs2_data_r <= exls_rs2_data_r;
         lsma_mask_r <= exls_mask_r;
         lsma_pc_r <= exls_pc_r;
         lsma_warp_id_r <= exls_warp_id_r;
@@ -570,7 +577,7 @@ module pipeline
                 ~lsma_instr_r.is_sc;
 
             logic [ADDR_ALIGN-1:0] wen_byte_w;
-            assign wen_byte_w = wen_any_w ? ma_store_wen_w[I] : '0;
+            assign wen_byte_w = wen_any_w ? lsma_store_wen_r[I] : '0;
 
             ram #(
                 .DEPTH(TLOCAL_BANK_DEPTH)
@@ -618,7 +625,7 @@ module pipeline
 
     always_comb begin
         if (lsma_instr_r.is_jalr) begin
-            ma_instr_replay_mask_w = lsma_mask_r & ~lsma_coalesced_w;
+            ma_instr_replay_mask_w = lsma_mask_r & ~lsma_coalesced_r;
         end else if (lsma_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
                 case (lsma_msel_r[i]) // FIXME: unique
@@ -639,7 +646,7 @@ module pipeline
     always_ff @( posedge clk ) begin
         masu_pc_r <= lsma_pc_r;
         masu_instr_r <= lsma_instr_r;
-        masu_alu_result_r <= lsma_alu_result_w;
+        masu_alu_result_r <= lsma_alu_result_r;
         masu_mask_r <= lsma_mask_r;
         masu_warp_id_r <= lsma_warp_id_r;
         masu_msel_r <= lsma_msel_r;
@@ -649,6 +656,8 @@ module pipeline
         masu_branching_r <= ma_branching_w;
         masu_instr_replay_mask_r <= ma_instr_replay_mask_w;
         masu_instr_retired_mask_r <= ma_instr_retired_mask_w;
+        masu_leader_alignment_r <= ma_leader_alignment_w;
+        masu_leader_one_hot_r <= lsma_leader_one_hot_r;
     end
 
     // Scheduler Update Stage
@@ -660,7 +669,7 @@ module pipeline
     logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_in_w;
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            su_rfmt_in_w[i] = masu_tlocal_rdata_w[i];
+            su_rfmt_in_w[i] = su_tlocal_rdata_w[i];
         end
         su_rfmt_in_w[N_THREADS] = su_wram_rdata_w;
         su_rfmt_in_w[N_THREADS+1] = su_irom_rdata_w;
@@ -706,7 +715,7 @@ module pipeline
         suwb_leader_one_hot_r <= masu_leader_one_hot_r;
         suwb_tlocal_rdata_fmt_r <= su_tlocal_rdata_fmt_w;
         suwb_wram_rdata_fmt_r <= su_wram_rdata_fmt_w;
-        suwb_irom_data_fmt_r <= su_irom_data_fmt_w;
+        suwb_irom_data_fmt_r <= su_irom_rdata_fmt_w;
     end
 
     // Writeback
@@ -717,7 +726,7 @@ module pipeline
     assign wb_sc_output_w = ~suwb_leader_one_hot_r;
 
     logic [XLEN-1:0] wb_pc_p4_w;
-    assign wb_pc_p4_w = {memwb_pc_r + 1'b1, 2'b00};
+    assign wb_pc_p4_w = {suwb_pc_r + 1'b1, 2'b00};
 
     always_comb begin
         wb_write_data_w = 'x;
