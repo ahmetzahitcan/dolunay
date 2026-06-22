@@ -149,12 +149,11 @@ module pipeline
     logic [Z_ADDR-1:0] memwb_leader_alignment_r;
     logic [XLEN-1:0] memwb_wram_rdata_w;
     logic [N_THREADS-1:0][XLEN-1:0] memwb_tlocal_rdata_w;
-    logic [N_THREADS-1:0] memwb_sc_output_r;
 
     logic [N_THREADS-1:0] wb_write_en_mask_w;
     logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
 
-    logic [31:0] wb_irom_data_w;
+    logic [31:0] su_irom_data_w;
 
     // Warp Select
     logic [W_WARPS-1:0] ws_warp_id_w;
@@ -247,7 +246,7 @@ module pipeline
     assign if_irom_data_w = irom_data_a_i;
 
     assign irom_addr_b_o = exmem_alu_result_r[mem_leader_id_w][W_IROM_ADDR-1:Z_PC];
-    assign wb_irom_data_w = irom_data_b_i;
+    assign su_irom_data_w = irom_data_b_i;
 
     assign ifid_undec_instr32_w = if_irom_data_w[31:2];
 
@@ -505,7 +504,7 @@ module pipeline
     assign wram_addr_o = lsma_alu_result_r[lsma_leader_id_r][W_WRAM_ADDR-1:Z_ADDR];
     assign wram_wdata_o = lsma_store_data_fmt_r[lsma_leader_id_r];
     assign wram_wen_o = (lsma_leader_valid_r & ma_write_en_w[lsma_leader_id_r]) ? lsma_store_wen_r[lsma_leader_id_r] : '0;
-    assign masu_wram_rdata_w = wram_rdata_i;
+    assign su_wram_rdata_w = wram_rdata_i;
 
     `ifndef SYNTHESIS
         always_ff @(negedge clk) begin
@@ -617,68 +616,70 @@ module pipeline
         masu_instr_retired_mask_r <= ma_instr_retired_mask_w;
     end
 
-    // Memory -- FIXME
+    // Scheduler Update Stage
 
-    // - SC Output
+    logic [XLEN-1:0] su_wram_rdata_fmt_w;
+    logic [XLEN-1:0] su_irom_rdata_fmt_w;
+    logic [N_THREADS-1:0][XLEN-1:0] su_tlocal_rdata_fmt_w;
 
-    logic [N_THREADS-1:0] mem_sc_output_w;
-    assign mem_sc_output_w = ~mem_leader_one_hot_w;
-
-    // - Pipeline Registers
-
-    always_ff @( posedge clk ) begin
-        memwb_instr_r <= exmem_instr_r;
-        memwb_alu_result_r <= exmem_alu_result_r;
-        memwb_mask_r <= mem_instr_retired_mask_w;
-        memwb_pc_r <= exmem_pc_r;
-        memwb_warp_id_r <= exmem_warp_id_r;
-        memwb_msel_r <= mem_msel_w;
-        memwb_leader_alignment_r <= mem_leader_alignment_w;
-        memwb_sc_output_r <= mem_sc_output_w;
-    end
-
-    // Writeback
-
-    logic [XLEN-1:0] wb_wram_rdata_fmt_w;
-    logic [XLEN-1:0] wb_irom_rdata_fmt_w;
-    logic [N_THREADS-1:0][XLEN-1:0] wb_tlocal_rdata_fmt_w;
-
-    logic [N_THREADS+1:0][XLEN-1:0] wb_rfmt_in_w;
+    logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_in_w;
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            wb_rfmt_in_w[i] = memwb_tlocal_rdata_w[i];
+            su_rfmt_in_w[i] = masu_tlocal_rdata_w[i];
         end
-        wb_rfmt_in_w[N_THREADS] = memwb_wram_rdata_w;
-        wb_rfmt_in_w[N_THREADS+1] = wb_irom_data_w;
+        su_rfmt_in_w[N_THREADS] = su_wram_rdata_w;
+        su_rfmt_in_w[N_THREADS+1] = su_irom_rdata_w;
     end
 
-    logic [N_THREADS+1:0][XLEN-1:0] wb_rfmt_out_w;
+    logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_out_w;
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            wb_tlocal_rdata_fmt_w[i] = wb_rfmt_out_w[i];
+            su_tlocal_rdata_fmt_w[i] = su_rfmt_out_w[i];
         end
-        wb_wram_rdata_fmt_w = wb_rfmt_out_w[N_THREADS];
-        wb_irom_rdata_fmt_w = wb_rfmt_out_w[N_THREADS+1];
+        su_wram_rdata_fmt_w = su_rfmt_out_w[N_THREADS];
+        su_irom_rdata_fmt_w = su_rfmt_out_w[N_THREADS+1];
     end
 
-    logic [N_THREADS+1:0][Z_ADDR-1:0] wb_rfmt_alignment_w;
+    logic [N_THREADS+1:0][Z_ADDR-1:0] su_rfmt_alignment_w;
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            wb_rfmt_alignment_w[i] = memwb_alu_result_r[i][Z_ADDR-1:0];
+            su_rfmt_alignment_w[i] = masu_alu_result_r[i][Z_ADDR-1:0];
         end
-        wb_rfmt_alignment_w[N_THREADS] = memwb_leader_alignment_r;
-        wb_rfmt_alignment_w[N_THREADS+1] = memwb_leader_alignment_r;
+        su_rfmt_alignment_w[N_THREADS] = masu_leader_alignment_r;
+        su_rfmt_alignment_w[N_THREADS+1] = masu_leader_alignment_r;
     end
 
     mem_read_formatter #(
         .DATA_LEN(N_THREADS + 2)
     ) u_rfmt (
-        .opsize_i(memwb_instr_r.mem_opsize),
-        .extendmode_i(memwb_instr_r.mem_extendmode),
-        .m_data_i(wb_rfmt_in_w),
-        .alignment_i(wb_rfmt_alignment_w),
-        .p_data_o(wb_rfmt_out_w)
+        .opsize_i(masu_instr_r.mem_opsize),
+        .extendmode_i(masu_instr_r.mem_extendmode),
+        .m_data_i(su_rfmt_in_w),
+        .alignment_i(su_rfmt_alignment_w),
+        .p_data_o(su_rfmt_out_w)
     );
+
+    // - Pipeline Registers
+    always_ff @( posedge clk ) begin
+        suwb_instr_r <= masu_instr_r;
+        suwb_alu_result_r <= masu_alu_result_r;
+        suwb_mask_r <= masu_instr_retired_mask_r;
+        suwb_pc_r <= masu_pc_r;
+        suwb_warp_id_r <= masu_warp_id_r;
+        suwb_msel_r <= masu_msel_r;
+        suwb_leader_alignment_r <= masu_leader_alignment_r;
+        suwb_leader_one_hot_r <= masu_leader_one_hot_r;
+        suwb_tlocal_rdata_fmt_r <= su_tlocal_rdata_fmt_w;
+        suwb_wram_rdata_fmt_r <= su_wram_rdata_fmt_w;
+        suwb_irom_data_fmt_r <= su_irom_data_fmt_w;
+    end
+
+    // Writeback
+
+    // - SC Output
+
+    logic [N_THREADS-1:0] wb_sc_output_w;
+    assign wb_sc_output_w = ~suwb_leader_one_hot_r;
 
     logic [XLEN-1:0] wb_pc_p4_w;
     assign wb_pc_p4_w = {memwb_pc_r + 1'b1, 2'b00};
@@ -686,27 +687,27 @@ module pipeline
     always_comb begin
         wb_write_data_w = 'x;
 
-        if (wb_stage_valid_r & memwb_instr_r.wb_active) begin
-            case (memwb_instr_r.wb_source) // FIXME: unique
-                WB_SOURCE_ALU: wb_write_data_w = memwb_alu_result_r;
+        if (wb_stage_valid_r & suwb_instr_r.wb_active) begin
+            case (suwb_instr_r.wb_source) // FIXME: unique
+                WB_SOURCE_ALU: wb_write_data_w = suwb_alu_result_r;
                 WB_SOURCE_MEM: for (int i = 0; i < N_THREADS; i++) begin
-                    case (memwb_msel_r[i]) // FIXME: unique
-                        MSEL_IROM: wb_write_data_w[i] = wb_irom_rdata_fmt_w;
-                        MSEL_WRAM: wb_write_data_w[i] = wb_wram_rdata_fmt_w;
-                        MSEL_TLOCAL: wb_write_data_w[i] = wb_tlocal_rdata_fmt_w[i];
+                    case (suwb_msel_r[i]) // FIXME: unique
+                        MSEL_IROM: wb_write_data_w[i] = suwb_irom_data_fmt_r;
+                        MSEL_WRAM: wb_write_data_w[i] = suwb_wram_rdata_fmt_r;
+                        MSEL_TLOCAL: wb_write_data_w[i] = suwb_tlocal_rdata_fmt_r[i];
                     endcase
                 end
                 WB_SOURCE_PC_P4: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = wb_pc_p4_w;
-                WB_SOURCE_SC: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = {{(XLEN-1){1'b0}}, memwb_sc_output_r[i]};
+                WB_SOURCE_SC: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = {{(XLEN-1){1'b0}}, wb_sc_output_w[i]};
             endcase
         end 
     end
 
-    assign wb_write_en_mask_w = memwb_instr_r.wb_active ? memwb_mask_r : '0;
+    assign wb_write_en_mask_w = suwb_instr_r.wb_active ? suwb_mask_r : '0;
 
     // - Barrier Load Logic
-    assign barr_load_total_w = wb_wram_rdata_fmt_w[N_THREADS*2-1:N_THREADS];
-    assign barr_load_parked_w = wb_wram_rdata_fmt_w[N_THREADS-1:0];
+    assign barr_load_total_w = suwb_wram_rdata_fmt_r[N_THREADS*2-1:N_THREADS];
+    assign barr_load_parked_w = suwb_wram_rdata_fmt_r[N_THREADS-1:0];
 
 endmodule
 
