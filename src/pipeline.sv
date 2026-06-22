@@ -68,7 +68,9 @@ module pipeline
     logic if_stage_valid_r;
     logic id_stage_valid_r;
     logic ex_stage_valid_r;
-    logic mem_stage_valid_r;
+    logic ls_stage_valid_r;
+    logic ma_stage_valid_r;
+    logic su_stage_valid_r;
     logic wb_stage_valid_r;
 
     always_ff @( posedge clk ) begin
@@ -78,7 +80,9 @@ module pipeline
             if_stage_valid_r <= '0;
             id_stage_valid_r <= '0;
             ex_stage_valid_r <= '0;
-            mem_stage_valid_r <= '0;
+            ls_stage_valid_r <= '0;
+            ma_stage_valid_r <= '0;
+            su_stage_valid_r <= '0;
             wb_stage_valid_r <= '0;
         end else begin           
             unique0 if (start_i & ready_o) begin
@@ -92,8 +96,10 @@ module pipeline
             if_stage_valid_r <= ws_stage_valid_r;
             id_stage_valid_r <= if_stage_valid_r;
             ex_stage_valid_r <= id_stage_valid_r;
-            mem_stage_valid_r <= ex_stage_valid_r;
-            wb_stage_valid_r <= mem_stage_valid_r;
+            ls_stage_valid_r <= ex_stage_valid_r;
+            mem_stage_valid_r <= ls_stage_valid_r;
+            tsu_stage_valid_r <= mem_stage_valid_r;
+            wb_stage_valid_r <= tsu_stage_valid_r;
         end
     end
 
@@ -116,13 +122,14 @@ module pipeline
     logic [XLEN-1:Z_PC] idex_pc_r;
     logic [N_THREADS-1:0] idex_mask_r;
 
-    // - Memory stage signals
-    instr_s exmem_instr_r;
-    logic [N_THREADS-1:0][XLEN-1:0] exmem_alu_result_r;
-    logic [N_THREADS-1:0][XLEN-1:0] exmem_rs2_data_r;
-    logic [XLEN-1:Z_PC] exmem_pc_r;
-    logic [N_THREADS-1:0] exmem_mask_r;
-    logic [W_WARPS-1:0] exmem_warp_id_r;
+    // - Leader Select stage signals
+    instr_s exls_instr_r;
+    logic [N_THREADS-1:0][XLEN-1:0] exls_alu_result_r;
+    logic [N_THREADS-1:0][XLEN-1:0] exls_rs2_data_r;
+    logic [XLEN-1:Z_PC] exls_pc_r;
+    logic [N_THREADS-1:0] exls_mask_r;
+    logic [W_WARPS-1:0] exls_warp_id_r;
+
     logic [N_THREADS-1:0] mem_instr_replay_mask_w;
     logic [N_THREADS-1:0] mem_instr_retired_mask_w;
 
@@ -325,250 +332,292 @@ module pipeline
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        exmem_instr_r <= idex_instr_r;
-        exmem_alu_result_r <= ex_alu_result_w;
-        exmem_rs2_data_r <= idex_rs2_data_w;
-        exmem_mask_r <= idex_mask_r;
-        exmem_pc_r <= idex_pc_r;
-        exmem_warp_id_r <= idex_warp_id_r;
+        exls_instr_r <= idex_instr_r;
+        exls_alu_result_r <= ex_alu_result_w;
+        exls_rs2_data_r <= idex_rs2_data_w;
+        exls_mask_r <= idex_mask_r;
+        exls_pc_r <= idex_pc_r;
+        exls_warp_id_r <= idex_warp_id_r;
     end
 
-    // Memory
+    // Leader Select Stage
 
-    logic [N_WARPS-1:0][N_THREADS-1:0] mem_reservation_r;
-    logic [N_WARPS-1:0][N_THREADS-1:0] mem_reservation_next_w;
+    // -- LR/SC Reservations
+
+    logic [N_WARPS-1:0][N_THREADS-1:0] ls_reservation_r;
+    logic [N_WARPS-1:0][N_THREADS-1:0] ls_reservation_next_w;
 
     always_ff @( posedge clk ) begin
         if (!rst_n) begin
-            mem_reservation_r <= '0;
-        end else if (mem_stage_valid_r) begin
-            mem_reservation_r <= mem_reservation_next_w;
+            ls_reservation_r <= '0;
+        end else if (ls_stage_valid_r) begin
+            ls_reservation_r <= ls_reservation_next_w;
         end
     end
 
     always_comb begin
-        mem_reservation_next_w = mem_reservation_r;
-        if (exmem_instr_r.is_lr) begin
-            mem_reservation_next_w[exmem_warp_id_r] = mem_reservation_r[exmem_warp_id_r] | exmem_mask_r;
-        end else if (exmem_instr_r.is_sc) begin
-            mem_reservation_next_w = '0;
+        ls_reservation_next_w = ls_reservation_r;
+        if (exls_instr_r.is_lr) begin
+            ls_reservation_next_w[exls_warp_id_r] = ls_reservation_r[exls_warp_id_r] | exls_mask_r;
+        end else if (exls_instr_r.is_sc) begin
+            ls_reservation_next_w = '0;
         end
     end
 
-    msel_e [N_THREADS-1:0] mem_msel_w;
+    // -- Memory Regions Accessed
+
+    msel_e [N_THREADS-1:0] ls_msel_w;
 
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            case (exmem_alu_result_r[i][XLEN-1:XLEN-2]) inside // FIXME: unique
-                2'b00: mem_msel_w[i] = MSEL_IROM;
-                2'b01: mem_msel_w[i] = MSEL_WRAM;
-                2'b1?: mem_msel_w[i] = MSEL_TLOCAL;
-                default: mem_msel_w[i] = MSEL_UNDEFINED;
+            case (exls_alu_result_r[i][XLEN-1:XLEN-2]) inside // FIXME: unique
+                2'b00: ls_msel_w[i] = MSEL_IROM;
+                2'b01: ls_msel_w[i] = MSEL_WRAM;
+                2'b1?: ls_msel_w[i] = MSEL_TLOCAL;
+                default: ls_msel_w[i] = MSEL_UNDEFINED;
             endcase
         end
     end
 
-    logic [N_THREADS-1:0][XLEN-1:0] mem_store_data_fmt_w;
-    logic [N_THREADS-1:0][ADDR_ALIGN-1:0] mem_store_wen_w;
-
     // - Leader Selection
 
-    logic [N_THREADS-1:0] mem_leader_candidates_w;
+    logic [N_THREADS-1:0] ls_leader_candidates_w;
 
     always_comb begin
-        if (exmem_instr_r.mem_active) begin
+        if (exls_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
-                case (mem_msel_w[i]) // FIXME: unique
-                    MSEL_IROM: mem_leader_candidates_w[i] = exmem_mask_r[i] & (exmem_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD); // FIXME: can this be just exmem_mask_r[i]?
+                case (ls_msel_w[i]) // FIXME: unique
+                    MSEL_IROM: ls_leader_candidates_w[i] = exls_mask_r[i] & (exls_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD); // FIXME: can this be just exls_mask_r[i]?
                     MSEL_WRAM: begin
-                        if (exmem_instr_r.is_sc) begin
-                            mem_leader_candidates_w[i] = mem_reservation_r[exmem_warp_id_r][i] & exmem_mask_r[i];
+                        if (exls_instr_r.is_sc) begin
+                            ls_leader_candidates_w[i] = ls_reservation_r[exls_warp_id_r][i] & exls_mask_r[i];
                         end else begin
-                            mem_leader_candidates_w[i] = exmem_mask_r[i];
+                            ls_leader_candidates_w[i] = exls_mask_r[i];
                         end
                     end
-                    MSEL_TLOCAL: mem_leader_candidates_w[i] = '0;
+                    MSEL_TLOCAL: ls_leader_candidates_w[i] = '0;
                 endcase
             end
         end else begin
-            mem_leader_candidates_w = exmem_mask_r;
+            ls_leader_candidates_w = exls_mask_r;
         end
     end
 
-    logic [W_THREADS-1:0] mem_leader_id_w;
-    logic [N_THREADS-1:0] mem_leader_one_hot_w;
-    logic mem_leader_valid_w;
+    logic [W_THREADS-1:0] ls_leader_id_w;
+    logic [N_THREADS-1:0] ls_leader_one_hot_w;
+    logic ls_leader_valid_w;
 
     priority_encoder #(
         .WIDTH(N_THREADS)
-    ) u_mem_leader_pe (
-        .input_i(mem_leader_candidates_w),
-        .index_o(mem_leader_id_w),
-        .one_hot_o(mem_leader_one_hot_w),
-        .valid_o(mem_leader_valid_w)
+    ) u_ls_leader_pe (
+        .input_i(ls_leader_candidates_w),
+        .index_o(ls_leader_id_w),
+        .one_hot_o(ls_leader_one_hot_w),
+        .valid_o(ls_leader_valid_w)
     );
-
-    // - Write Enable Signals
-
-    logic [N_THREADS-1:0] mem_write_en_w;
-
-    always_comb begin
-        for (int i = 0; i < N_THREADS; i++) begin
-            mem_write_en_w[i] = 
-                mem_stage_valid_r & 
-                exmem_mask_r[i] & 
-                exmem_instr_r.mem_active & 
-                (exmem_instr_r.mem_loadstore == MEM_LOADSTORE_STORE);
-        end
-    end
-
-    // - Work RAM
-
-    assign wram_addr_o = exmem_alu_result_r[mem_leader_id_w][W_WRAM_ADDR-1:Z_ADDR];
-    assign wram_wdata_o = mem_store_data_fmt_w[mem_leader_id_w];
-    assign wram_wen_o = (mem_leader_valid_w & mem_write_en_w[mem_leader_id_w]) ? mem_store_wen_w[mem_leader_id_w] : '0;
-    assign memwb_wram_rdata_w = wram_rdata_i;
-
-    `ifndef SYNTHESIS
-        always_ff @(negedge clk) begin
-            if (mem_stage_valid_r & exmem_instr_r.mem_active & mem_leader_valid_w) begin
-                assert (mem_msel_w[mem_leader_id_w] != MSEL_TLOCAL) 
-                    else $error("Leader cannot have MSEL_TLOCAL");
-
-                assert (exmem_instr_r.mem_loadstore != MEM_LOADSTORE_STORE || mem_msel_w[mem_leader_id_w] != MSEL_IROM) 
-                    else $error("Leader cannot have MSEL_IROM during store operation");
-            end
-        end
-    `endif
-
-    logic [Z_ADDR-1:0] mem_leader_alignment_w;
-    assign mem_leader_alignment_w = exmem_alu_result_r[mem_leader_id_w][Z_ADDR-1:0];
-
-    // - Thread-local Memory
-
-    generate
-        for (genvar I = 0; I < N_THREADS; I++) begin
-            logic [W_TLOCAL_BANK_ADDR-1:Z_ADDR] bank_addr;
-            assign bank_addr = {exmem_warp_id_r, exmem_alu_result_r[I][W_TLOCAL_ADDR_PT-1:Z_ADDR]};
-
-            logic wen_any_w;
-            assign wen_any_w = 
-                mem_write_en_w[I] & 
-                (mem_msel_w[I] == MSEL_TLOCAL) &
-                ~exmem_instr_r.is_sc;
-
-            logic [ADDR_ALIGN-1:0] wen_byte_w;
-            assign wen_byte_w = wen_any_w ? mem_store_wen_w[I] : '0;
-
-            ram #(
-                .DEPTH(TLOCAL_BANK_DEPTH)
-            ) u_tlocal_bank (
-                .clk(clk),
-                .addr_i(bank_addr),
-                .wdata_i(mem_store_data_fmt_w[I]),
-                .wen_i(wen_byte_w),
-                .rdata_o(memwb_tlocal_rdata_w[I])
-            );
-        end
-    endgenerate    
 
     // - Formatting
 
-    logic [N_THREADS-1:0][XLEN-1:0] mem_store_data_w;
+    logic [N_THREADS-1:0][XLEN-1:0] ls_store_data_w;
 
     always_comb begin
-        case (exmem_instr_r.mem_store_source) // FIXME: unique
-            MEM_STORE_SOURCE_RS2: mem_store_data_w = exmem_rs2_data_r;
+        case (exls_instr_r.mem_store_source) // FIXME: unique
+            MEM_STORE_SOURCE_RS2: ls_store_data_w = exls_rs2_data_r;
             MEM_STORE_SOURCE_BINIT: for(int i = 0; i < N_THREADS; i++) begin
-                mem_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, exmem_mask_r, {N_THREADS{1'b0}}};
+                ls_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, exls_mask_r, {N_THREADS{1'b0}}};
             end
             MEM_STORE_SOURCE_BSYNC: for(int i = 0; i < N_THREADS; i++) begin
-                mem_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, barr_sync_total_w[exmem_warp_id_r], barr_sync_parked_next_w[exmem_warp_id_r]};
+                ls_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, barr_sync_total_w[exls_warp_id_r], barr_sync_parked_next_w[exls_warp_id_r]};
             end
-            default: mem_store_data_w = 'x;
+            default: ls_store_data_w = 'x;
         endcase
     end
 
-    logic [N_THREADS-1:0][Z_ADDR-1:0] mem_alignment_w;
+    logic [N_THREADS-1:0][Z_ADDR-1:0] ls_mem_alignment_w;
 
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            mem_alignment_w[i] = exmem_alu_result_r[i][Z_ADDR-1:0];
+            ls_mem_alignment_w[i] = exls_alu_result_r[i][Z_ADDR-1:0];
         end
     end
 
     mem_write_formatter #(
         .DATA_LEN(N_THREADS)
     ) u_wfmt (
-        .p_data_i(mem_store_data_w),
-        .opsize_i(exmem_instr_r.mem_opsize),
-        .alignment_i(mem_alignment_w),
-        .m_data_o(mem_store_data_fmt_w),
-        .m_wen_o(mem_store_wen_w)
+        .p_data_i(ls_store_data_w),
+        .opsize_i(exls_instr_r.mem_opsize),
+        .alignment_i(ls_mem_alignment_w),
+        .m_data_o(ls_store_data_fmt_w),
+        .m_wen_o(ls_store_wen_w)
     );
 
     // - Coalescing Logic
 
-    logic [XLEN-1:0] mem_leader_target_w;
-    assign mem_leader_target_w = exmem_alu_result_r[mem_leader_id_w][XLEN-1:0];
+    logic [XLEN-1:0] ls_leader_target_w;
+    assign ls_leader_target_w = exls_alu_result_r[ls_leader_id_w][XLEN-1:0];
 
-    logic [N_THREADS-1:0] mem_coalesced_w;
+    logic [N_THREADS-1:0] ls_coalesced_w;
 
     generate
         for(genvar I = 0; I < N_THREADS; I++) begin
-            assign mem_coalesced_w[I] = exmem_alu_result_r[I][XLEN-1:0] == mem_leader_target_w;
+            assign ls_coalesced_w[I] = exls_alu_result_r[I][XLEN-1:0] == ls_leader_target_w;
         end
     endgenerate
 
+    // - Pipeline Registers - FIXME: Declare this!
+
+    always_ff @( posedge clk ) begin
+        lsma_instr_r <= exls_instr_r;
+        lsma_alu_result_r <= exls_alu_result_w;
+        lsma_rs2_data_r <= exls_rs2_data_w;
+        lsma_mask_r <= exls_mask_r;
+        lsma_pc_r <= exls_pc_r;
+        lsma_warp_id_r <= exls_warp_id_r;
+        lsma_leader_id_r <= ls_leader_id_w;
+        lsma_leader_one_hot_r <= ls_leader_one_hot_w;
+        lsma_leader_valid_r <= ls_leader_valid_w;
+        lsma_reservation_r <= ls_reservation_r;
+        lsma_msel_r <= ls_msel_w;
+        lsma_store_data_fmt_r <= ls_store_data_fmt_w;
+        lsma_store_wen_r <= ls_store_wen_w;
+        lsma_coalesced_r <= ls_coalesced_w;
+        lsma_leader_target_r <= ls_leader_target_w;
+    end
+
+    // Memory Access Stage
+
+    // - Write Enable Signals
+
+    logic [N_THREADS-1:0] ma_write_en_w;
+
+    always_comb begin
+        for (int i = 0; i < N_THREADS; i++) begin
+            ma_write_en_w[i] = 
+                ma_stage_valid_r & 
+                lsma_mask_r[i] & 
+                lsma_instr_r.mem_active & 
+                (lsma_instr_r.mem_loadstore == MEM_LOADSTORE_STORE);
+        end
+    end
+
+    // - Work RAM
+
+    assign wram_addr_o = lsma_alu_result_r[lsma_leader_id_r][W_WRAM_ADDR-1:Z_ADDR];
+    assign wram_wdata_o = lsma_store_data_fmt_r[lsma_leader_id_r];
+    assign wram_wen_o = (lsma_leader_valid_r & ma_write_en_w[lsma_leader_id_r]) ? lsma_store_wen_r[lsma_leader_id_r] : '0;
+    assign masu_wram_rdata_w = wram_rdata_i;
+
+    `ifndef SYNTHESIS
+        always_ff @(negedge clk) begin
+            if (ma_stage_valid_r & lsma_instr_r.mem_active & lsma_leader_valid_r) begin
+                assert (lsma_msel_r[lsma_leader_id_r] != MSEL_TLOCAL) 
+                    else $error("Leader cannot have MSEL_TLOCAL");
+
+                assert (lsma_instr_r.mem_loadstore != MEM_LOADSTORE_STORE || lsma_msel_r[lsma_leader_id_r] != MSEL_IROM) 
+                    else $error("Leader cannot have MSEL_IROM during store operation");
+            end
+        end
+    `endif
+
+    logic [Z_ADDR-1:0] ma_leader_alignment_w;
+    assign ma_leader_alignment_w = lsma_alu_result_r[lsma_leader_id_r][Z_ADDR-1:0];
+
+    // - Thread-local Memory
+
+    generate
+        for (genvar I = 0; I < N_THREADS; I++) begin
+            logic [W_TLOCAL_BANK_ADDR-1:Z_ADDR] bank_addr;
+            assign bank_addr = {lsma_warp_id_r, lsma_alu_result_r[I][W_TLOCAL_ADDR_PT-1:Z_ADDR]};
+
+            logic wen_any_w;
+            assign wen_any_w = 
+                ma_write_en_w[I] & 
+                (lsma_msel_r[I] == MSEL_TLOCAL) &
+                ~lsma_instr_r.is_sc;
+
+            logic [ADDR_ALIGN-1:0] wen_byte_w;
+            assign wen_byte_w = wen_any_w ? ma_store_wen_w[I] : '0;
+
+            ram #(
+                .DEPTH(TLOCAL_BANK_DEPTH)
+            ) u_tlocal_bank (
+                .clk(clk),
+                .addr_i(bank_addr),
+                .wdata_i(lsma_store_data_fmt_r[I]),
+                .wen_i(wen_byte_w),
+                .rdata_o(masu_tlocal_rdata_w[I])
+            );
+        end
+    endgenerate    
+
     // - Branching Logic
 
-    logic [N_THREADS-1:0] mem_branch_flag_w;
-    logic [N_THREADS-1:0] mem_branch_mask_w;
-    logic mem_branching_w;
-    logic [XLEN-1:Z_PC] mem_branch_target_w;
+    logic [N_THREADS-1:0] ma_branch_flag_w;
+    logic [N_THREADS-1:0] ma_branch_mask_w;
+    logic ma_branching_w;
+    logic [XLEN-1:Z_PC] ma_branch_target_w;
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin
             (* DONT_TOUCH = "true" *)
             branch_cond_unit u_bcu(
-                .alu_result_i(exmem_alu_result_r[I]),
-                .coalesced_i(mem_coalesced_w[I]),
-                .branch_cond_i(exmem_instr_r.branch_cond),
-                .branch_flag_o(mem_branch_flag_w[I])
+                .alu_result_i(lsma_alu_result_r[I]),
+                .coalesced_i(lsma_coalesced_r[I]),
+                .branch_cond_i(lsma_instr_r.branch_cond),
+                .branch_flag_o(ma_branch_flag_w[I])
             );
         end
     endgenerate
  
-    assign mem_branch_mask_w = mem_branch_flag_w & exmem_mask_r; 
-    assign mem_branching_w = |mem_branch_mask_w;
+    assign ma_branch_mask_w = ma_branch_flag_w & lsma_mask_r; 
+    assign ma_branching_w = |ma_branch_mask_w;
     
     always_comb begin
-        if (exmem_instr_r.is_jalr) begin
-            mem_branch_target_w = mem_leader_target_w[XLEN-1:Z_PC];
+        if (lsma_instr_r.is_jalr) begin
+            ma_branch_target_w = lsma_leader_target_r[XLEN-1:Z_PC];
         end else begin
-            mem_branch_target_w = exmem_pc_r + exmem_instr_r.imm[31:2];
+            ma_branch_target_w = lsma_pc_r + lsma_instr_r.imm[31:2];
         end
     end
 
     // - Replay Logic
 
     always_comb begin
-        if (exmem_instr_r.is_jalr) begin
-            mem_instr_replay_mask_w = exmem_mask_r & ~mem_coalesced_w;
-        end else if (exmem_instr_r.mem_active) begin
+        if (lsma_instr_r.is_jalr) begin
+            ma_instr_replay_mask_w = lsma_mask_r & ~lsma_coalesced_w;
+        end else if (lsma_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
-                case (mem_msel_w[i]) // FIXME: unique
-                    MSEL_IROM: mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & exmem_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD;
-                    MSEL_WRAM: mem_instr_replay_mask_w[i] = exmem_mask_r[i] & (~mem_coalesced_w[i]) & ~exmem_instr_r.is_sc;
-                    MSEL_TLOCAL: mem_instr_replay_mask_w[i] = '0;
+                case (lsma_msel_r[i]) // FIXME: unique
+                    MSEL_IROM: ma_instr_replay_mask_w[i] = lsma_mask_r[i] & (~lsma_coalesced_r[i]) & lsma_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD;
+                    MSEL_WRAM: ma_instr_replay_mask_w[i] = lsma_mask_r[i] & (~lsma_coalesced_r[i]) & ~lsma_instr_r.is_sc;
+                    MSEL_TLOCAL: ma_instr_replay_mask_w[i] = '0;
                 endcase
             end
         end else begin
-            mem_instr_replay_mask_w = '0;
+            ma_instr_replay_mask_w = '0;
         end
     end
 
-    assign mem_instr_retired_mask_w = exmem_mask_r & ~mem_instr_replay_mask_w;
+    assign ma_instr_retired_mask_w = lsma_mask_r & ~ma_instr_replay_mask_w;
+
+    // - Pipeline Registers
+
+    always_ff @( posedge clk ) begin
+        masu_pc_r <= lsma_pc_r;
+        masu_instr_r <= lsma_instr_r;
+        masu_alu_result_r <= lsma_alu_result_w;
+        masu_mask_r <= lsma_mask_r;
+        masu_warp_id_r <= lsma_warp_id_r;
+        masu_msel_r <= lsma_msel_r;
+        masu_branch_target_r <= ma_branch_target_w;
+        masu_branch_flag_r <= ma_branch_flag_w;
+        masu_branch_mask_r <= ma_branch_mask_w;
+        masu_branching_r <= ma_branching_w;
+        masu_instr_replay_mask_r <= ma_instr_replay_mask_w;
+        masu_instr_retired_mask_r <= ma_instr_retired_mask_w;
+    end
+
+    // Memory -- FIXME
 
     // - SC Output
 
