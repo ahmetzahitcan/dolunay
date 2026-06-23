@@ -170,7 +170,7 @@ module pipeline
     logic [N_THREADS-1:0] masu_leader_one_hot_r;
 
     logic [XLEN-1:0] su_wram_rdata_w;
-    logic [XLEN-1:0] su_irom_rdata_w;
+    logic [31:0] su_irom_data_w;
     logic [N_THREADS-1:0][XLEN-1:0] su_tlocal_rdata_w;
 
     // - Barrier signals
@@ -194,8 +194,6 @@ module pipeline
 
     logic [N_THREADS-1:0] wb_write_en_mask_w;
     logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
-
-    logic [31:0] su_irom_data_w;
 
     // Warp Select
     logic [W_WARPS-1:0] ws_warp_id_w;
@@ -287,7 +285,7 @@ module pipeline
     assign irom_addr_a_o = if_pc_w[W_IROM_ADDR-1:Z_PC];
     assign if_irom_data_w = irom_data_a_i;
 
-    assign irom_addr_b_o = exls_alu_result_r[ls_leader_id_w][W_IROM_ADDR-1:Z_PC];
+    assign irom_addr_b_o = lsma_alu_result_r[lsma_leader_id_r][W_IROM_ADDR-1:Z_PC];
     assign su_irom_data_w = irom_data_b_i;
 
     assign ifid_undec_instr32_w = if_irom_data_w[31:2];
@@ -663,7 +661,7 @@ module pipeline
     // Scheduler Update Stage
 
     logic [XLEN-1:0] su_wram_rdata_fmt_w;
-    logic [XLEN-1:0] su_irom_rdata_fmt_w;
+    logic [XLEN-1:0] su_irom_data_fmt_w;
     logic [N_THREADS-1:0][XLEN-1:0] su_tlocal_rdata_fmt_w;
 
     logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_in_w;
@@ -672,7 +670,7 @@ module pipeline
             su_rfmt_in_w[i] = su_tlocal_rdata_w[i];
         end
         su_rfmt_in_w[N_THREADS] = su_wram_rdata_w;
-        su_rfmt_in_w[N_THREADS+1] = su_irom_rdata_w;
+        su_rfmt_in_w[N_THREADS+1] = su_irom_data_w;
     end
 
     logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_out_w;
@@ -681,7 +679,7 @@ module pipeline
             su_tlocal_rdata_fmt_w[i] = su_rfmt_out_w[i];
         end
         su_wram_rdata_fmt_w = su_rfmt_out_w[N_THREADS];
-        su_irom_rdata_fmt_w = su_rfmt_out_w[N_THREADS+1];
+        su_irom_data_fmt_w = su_rfmt_out_w[N_THREADS+1];
     end
 
     logic [N_THREADS+1:0][Z_ADDR-1:0] su_rfmt_alignment_w;
@@ -715,7 +713,7 @@ module pipeline
         suwb_leader_one_hot_r <= masu_leader_one_hot_r;
         suwb_tlocal_rdata_fmt_r <= su_tlocal_rdata_fmt_w;
         suwb_wram_rdata_fmt_r <= su_wram_rdata_fmt_w;
-        suwb_irom_data_fmt_r <= su_irom_rdata_fmt_w;
+        suwb_irom_data_fmt_r <= su_irom_data_fmt_w;
     end
 
     // Writeback
