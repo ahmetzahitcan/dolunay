@@ -131,7 +131,7 @@ module pipeline
     logic [W_WARPS-1:0] exls_warp_id_r;
 
     logic [N_THREADS-1:0][XLEN-1:0] ls_store_data_fmt_w;
-    logic [N_THREADS-1:0] ls_store_wen_w;
+    logic [N_THREADS-1:0][ADDR_ALIGN-1:0] ls_store_wen_w;
 
     // - Memory Access stage signals
     instr_s lsma_instr_r;
@@ -145,7 +145,7 @@ module pipeline
     logic [N_WARPS-1:0][N_THREADS-1:0] lsma_reservation_r;
     msel_e [N_THREADS-1:0] lsma_msel_r;
     logic [N_THREADS-1:0][XLEN-1:0] lsma_store_data_fmt_r;
-    logic [N_THREADS-1:0] lsma_store_wen_r;
+    logic [N_THREADS-1:0][ADDR_ALIGN-1:0] lsma_store_wen_r;
     logic [N_THREADS-1:0] lsma_coalesced_r;
     logic [XLEN-1:0] lsma_leader_target_r;
     logic [N_THREADS-1:0][XLEN-1:0] lsma_rs2_data_r;
