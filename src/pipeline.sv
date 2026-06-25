@@ -255,7 +255,7 @@ module pipeline
                 .rst_n(rst_n & ~start_i),
 
                 .instr_completed_i(winst_retired_w[I]), 
-                .instr_replay_mask_i(ma_instr_replay_mask_w),
+                .instr_replay_mask_i(masu_instr_replay_mask_r),
 
                 .yield_i(masu_instr_r.yield & su_en_w),
 
