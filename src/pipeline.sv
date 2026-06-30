@@ -3,6 +3,7 @@
 module pipeline
     import params_pkg::*;
     import control_unit_pkg::*;
+    import pipeline_pkg::*;
 # (
     parameter int WRAM_SIZE,
     localparam int WRAM_DEPTH = WRAM_SIZE / ADDR_ALIGN,
@@ -32,13 +33,7 @@ module pipeline
     output logic [W_IROM_ADDR-1:Z_PC] irom_addr_b_o,
     input wire logic [XLEN-1:0] irom_data_b_i
 );
-    // Typedefs
-    typedef enum logic [1:0] {
-        MSEL_IROM,
-        MSEL_WRAM,
-        MSEL_TLOCAL,
-        MSEL_UNDEFINED='x
-    } msel_e;
+    // Typedefs moved to pipeline_pkg
 
     // HPMs
     logic [N_WARPS-1:0] winst_retired_w;
@@ -227,9 +222,6 @@ module pipeline
     logic [XLEN-1:Z_PC] if_pc_w;
     logic [N_THREADS-1:0] if_mask_w;
 
-    assign if_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_r];   
-    assign if_mask_w = u_thread_scheduler_mask_w[wsif_warp_id_r];
-
     // - Thread Schedulers
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin
@@ -280,15 +272,21 @@ module pipeline
 
     // - Instruction Memory
 
-    logic [XLEN-1:0] if_irom_data_w;
-
-    assign irom_addr_a_o = if_pc_w[W_IROM_ADDR-1:Z_PC];
-    assign if_irom_data_w = irom_data_a_i;
+    pipeline_stage_if #(
+        .W_IROM_ADDR(W_IROM_ADDR)
+    ) u_stage_if (
+        .wsif_warp_id_r(wsif_warp_id_r),
+        .u_thread_scheduler_pc_w(u_thread_scheduler_pc_w),
+        .u_thread_scheduler_mask_w(u_thread_scheduler_mask_w),
+        .irom_data_a_i(irom_data_a_i),
+        .if_pc_w(if_pc_w),
+        .if_mask_w(if_mask_w),
+        .irom_addr_a_o(irom_addr_a_o),
+        .ifid_undec_instr32_w(ifid_undec_instr32_w)
+    );
 
     assign irom_addr_b_o = lsma_alu_result_r[lsma_leader_id_r][W_IROM_ADDR-1:Z_PC];
     assign su_irom_data_w = irom_data_b_i;
-
-    assign ifid_undec_instr32_w = if_irom_data_w[31:2];
 
     // - Pipeline Registers
 
@@ -304,13 +302,12 @@ module pipeline
 
     instr_s id_instr_w;
 
-    (* DONT_TOUCH = "true" *)
-    control_unit_ext u_control_unit(
-        .undec_instr32_i(ifid_undec_instr32_w),
-        .pc_i(ifid_pc_r),
-        .valid_i(id_stage_valid_r),
+    pipeline_stage_id u_stage_id (
+        .ifid_undec_instr32_w(ifid_undec_instr32_w),
+        .ifid_pc_r(ifid_pc_r),
+        .id_stage_valid_r(id_stage_valid_r),
         .bsync_1_i(bsync_1_r[ifid_warp_id_r]),
-        .instr_o(id_instr_w)
+        .id_instr_w(id_instr_w)
     );
 
     // - Register File
@@ -348,25 +345,18 @@ module pipeline
 
     logic [N_THREADS-1:0][XLEN-1:0] ex_alu_result_w;
 
-    generate
-        for (genvar I = 0; I < N_THREADS; I++) begin
-            (* DONT_TOUCH = "true" *)
-            alu #(
-                .THREAD_ID(I)
-            ) u_alu (
-                .rs1_val_i(idex_rs1_data_w[I]),
-                .rs2_val_i(idex_rs2_data_w[I]),
-                .instr_i(idex_instr_r),
-                .warp_id_i(idex_warp_id_r),
-                .pc_i(idex_pc_r),
-                .result_o(ex_alu_result_w[I]),
-                .cycle_time_i(cycletime_w),
-                .instret_i(instret_w[idex_warp_id_r][I]),
-                .wuinstret_i(wuinstret_w[idex_warp_id_r]),
-                .wtinstret_i(wtinstret_w[idex_warp_id_r])
-            );
-        end
-    endgenerate
+    pipeline_stage_ex u_stage_ex (
+        .idex_rs1_data_w(idex_rs1_data_w),
+        .idex_rs2_data_w(idex_rs2_data_w),
+        .idex_instr_r(idex_instr_r),
+        .idex_warp_id_r(idex_warp_id_r),
+        .idex_pc_r(idex_pc_r),
+        .cycletime_w(cycletime_w),
+        .instret_w(instret_w),
+        .wuinstret_w(wuinstret_w),
+        .wtinstret_w(wtinstret_w),
+        .ex_alu_result_w(ex_alu_result_w)
+    );
 
     // - Pipeline Registers
 
@@ -384,124 +374,35 @@ module pipeline
     // -- LR/SC Reservations
 
     logic [N_WARPS-1:0][N_THREADS-1:0] ls_reservation_r;
-    logic [N_WARPS-1:0][N_THREADS-1:0] ls_reservation_next_w;
-
-    always_ff @( posedge clk ) begin
-        if (!rst_n) begin
-            ls_reservation_r <= '0;
-        end else if (ls_stage_valid_r) begin
-            ls_reservation_r <= ls_reservation_next_w;
-        end
-    end
-
-    always_comb begin
-        ls_reservation_next_w = ls_reservation_r;
-        if (exls_instr_r.is_lr) begin
-            ls_reservation_next_w[exls_warp_id_r] = ls_reservation_r[exls_warp_id_r] | exls_mask_r;
-        end else if (exls_instr_r.is_sc) begin
-            ls_reservation_next_w = '0;
-        end
-    end
-
-    // -- Memory Regions Accessed
-
     msel_e [N_THREADS-1:0] ls_msel_w;
-
-    always_comb begin
-        for (int i = 0; i < N_THREADS; i++) begin
-            case (exls_alu_result_r[i][XLEN-1:XLEN-2]) inside // FIXME: unique
-                2'b00: ls_msel_w[i] = MSEL_IROM;
-                2'b01: ls_msel_w[i] = MSEL_WRAM;
-                2'b1?: ls_msel_w[i] = MSEL_TLOCAL;
-                default: ls_msel_w[i] = MSEL_UNDEFINED;
-            endcase
-        end
-    end
-
-    // - Leader Selection
-
-    logic [N_THREADS-1:0] ls_leader_candidates_w;
-
-    always_comb begin
-        if (exls_instr_r.mem_active) begin
-            for (int i = 0; i < N_THREADS; i++) begin
-                case (ls_msel_w[i]) // FIXME: unique
-                    MSEL_IROM: ls_leader_candidates_w[i] = exls_mask_r[i] & (exls_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD); // FIXME: can this be just exls_mask_r[i]?
-                    MSEL_WRAM: begin
-                        if (exls_instr_r.is_sc) begin
-                            ls_leader_candidates_w[i] = ls_reservation_r[exls_warp_id_r][i] & exls_mask_r[i];
-                        end else begin
-                            ls_leader_candidates_w[i] = exls_mask_r[i];
-                        end
-                    end
-                    MSEL_TLOCAL: ls_leader_candidates_w[i] = '0;
-                endcase
-            end
-        end else begin
-            ls_leader_candidates_w = exls_mask_r;
-        end
-    end
-
     logic [W_THREADS-1:0] ls_leader_id_w;
     logic [N_THREADS-1:0] ls_leader_one_hot_w;
     logic ls_leader_valid_w;
-
-    priority_encoder #(
-        .WIDTH(N_THREADS)
-    ) u_ls_leader_pe (
-        .input_i(ls_leader_candidates_w),
-        .index_o(ls_leader_id_w),
-        .one_hot_o(ls_leader_one_hot_w),
-        .valid_o(ls_leader_valid_w)
-    );
-
-    // - Formatting
-
-    logic [N_THREADS-1:0][XLEN-1:0] ls_store_data_w;
-
-    always_comb begin
-        case (exls_instr_r.mem_store_source) // FIXME: unique
-            MEM_STORE_SOURCE_RS2: ls_store_data_w = exls_rs2_data_r;
-            MEM_STORE_SOURCE_BINIT: for(int i = 0; i < N_THREADS; i++) begin
-                ls_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, exls_mask_r, {N_THREADS{1'b0}}};
-            end
-            MEM_STORE_SOURCE_BSYNC: for(int i = 0; i < N_THREADS; i++) begin
-                ls_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, barr_sync_total_w[exls_warp_id_r], barr_sync_parked_next_w[exls_warp_id_r]};
-            end
-            default: ls_store_data_w = 'x;
-        endcase
-    end
-
-    logic [N_THREADS-1:0][Z_ADDR-1:0] ls_mem_alignment_w;
-
-    always_comb begin
-        for (int i = 0; i < N_THREADS; i++) begin
-            ls_mem_alignment_w[i] = exls_alu_result_r[i][Z_ADDR-1:0];
-        end
-    end
-
-    mem_write_formatter #(
-        .DATA_LEN(N_THREADS)
-    ) u_wfmt (
-        .p_data_i(ls_store_data_w),
-        .opsize_i(exls_instr_r.mem_opsize),
-        .alignment_i(ls_mem_alignment_w),
-        .m_data_o(ls_store_data_fmt_w),
-        .m_wen_o(ls_store_wen_w)
-    );
-
-    // - Coalescing Logic
-
-    logic [XLEN-1:0] ls_leader_target_w;
-    assign ls_leader_target_w = exls_alu_result_r[ls_leader_id_w][XLEN-1:0];
-
     logic [N_THREADS-1:0] ls_coalesced_w;
+    logic [XLEN-1:0] ls_leader_target_w;
 
-    generate
-        for(genvar I = 0; I < N_THREADS; I++) begin
-            assign ls_coalesced_w[I] = exls_alu_result_r[I][XLEN-1:0] == ls_leader_target_w;
-        end
-    endgenerate
+    pipeline_stage_ls u_stage_ls (
+        .clk(clk),
+        .rst_n(rst_n),
+        .exls_instr_r(exls_instr_r),
+        .exls_alu_result_r(exls_alu_result_r),
+        .exls_rs2_data_r(exls_rs2_data_r),
+        .exls_mask_r(exls_mask_r),
+        .exls_warp_id_r(exls_warp_id_r),
+        .exls_pc_r(exls_pc_r),
+        .ls_stage_valid_r(ls_stage_valid_r),
+        .barr_sync_total_w(barr_sync_total_w),
+        .barr_sync_parked_next_w(barr_sync_parked_next_w),
+        .ls_reservation_r(ls_reservation_r),
+        .ls_msel_w(ls_msel_w),
+        .ls_leader_id_w(ls_leader_id_w),
+        .ls_leader_one_hot_w(ls_leader_one_hot_w),
+        .ls_leader_valid_w(ls_leader_valid_w),
+        .ls_store_data_fmt_w(ls_store_data_fmt_w),
+        .ls_store_wen_w(ls_store_wen_w),
+        .ls_coalesced_w(ls_coalesced_w),
+        .ls_leader_target_w(ls_leader_target_w)
+    );
 
     // - Pipeline Registers - FIXME: Declare this!
 
@@ -525,119 +426,46 @@ module pipeline
 
     // Memory Access Stage
 
-    // - Write Enable Signals
-
     logic [N_THREADS-1:0] ma_write_en_w;
-
-    always_comb begin
-        for (int i = 0; i < N_THREADS; i++) begin
-            ma_write_en_w[i] = 
-                ma_stage_valid_r & 
-                lsma_mask_r[i] & 
-                lsma_instr_r.mem_active & 
-                (lsma_instr_r.mem_loadstore == MEM_LOADSTORE_STORE);
-        end
-    end
-
-    // - Work RAM
-
-    assign wram_addr_o = lsma_alu_result_r[lsma_leader_id_r][W_WRAM_ADDR-1:Z_ADDR];
-    assign wram_wdata_o = lsma_store_data_fmt_r[lsma_leader_id_r];
-    assign wram_wen_o = (lsma_leader_valid_r & ma_write_en_w[lsma_leader_id_r]) ? lsma_store_wen_r[lsma_leader_id_r] : '0;
-    assign su_wram_rdata_w = wram_rdata_i;
-
-    `ifndef SYNTHESIS
-        always_ff @(negedge clk) begin
-            if (ma_stage_valid_r & lsma_instr_r.mem_active & lsma_leader_valid_r) begin
-                assert (lsma_msel_r[lsma_leader_id_r] != MSEL_TLOCAL) 
-                    else $error("Leader cannot have MSEL_TLOCAL");
-
-                assert (lsma_instr_r.mem_loadstore != MEM_LOADSTORE_STORE || lsma_msel_r[lsma_leader_id_r] != MSEL_IROM) 
-                    else $error("Leader cannot have MSEL_IROM during store operation");
-            end
-        end
-    `endif
-
-    logic [Z_ADDR-1:0] ma_leader_alignment_w;
-    assign ma_leader_alignment_w = lsma_alu_result_r[lsma_leader_id_r][Z_ADDR-1:0];
-
-    // - Thread-local Memory
-
-    generate
-        for (genvar I = 0; I < N_THREADS; I++) begin
-            logic [W_TLOCAL_BANK_ADDR-1:Z_ADDR] bank_addr;
-            assign bank_addr = {lsma_warp_id_r, lsma_alu_result_r[I][W_TLOCAL_ADDR_PT-1:Z_ADDR]};
-
-            logic wen_any_w;
-            assign wen_any_w = 
-                ma_write_en_w[I] & 
-                (lsma_msel_r[I] == MSEL_TLOCAL) &
-                ~lsma_instr_r.is_sc;
-
-            logic [ADDR_ALIGN-1:0] wen_byte_w;
-            assign wen_byte_w = wen_any_w ? lsma_store_wen_r[I] : '0;
-
-            ram #(
-                .DEPTH(TLOCAL_BANK_DEPTH)
-            ) u_tlocal_bank (
-                .clk(clk),
-                .addr_i(bank_addr),
-                .wdata_i(lsma_store_data_fmt_r[I]),
-                .wen_i(wen_byte_w),
-                .rdata_o(su_tlocal_rdata_w[I])
-            );
-        end
-    endgenerate    
-
-    // - Branching Logic
-
     logic [N_THREADS-1:0] ma_branch_flag_w;
     logic [N_THREADS-1:0] ma_branch_mask_w;
     logic ma_branching_w;
     logic [XLEN-1:Z_PC] ma_branch_target_w;
+    logic [Z_ADDR-1:0] ma_leader_alignment_w;
 
-    generate
-        for (genvar I = 0; I < N_THREADS; I++) begin
-            (* DONT_TOUCH = "true" *)
-            branch_cond_unit u_bcu(
-                .alu_result_i(lsma_alu_result_r[I]),
-                .coalesced_i(lsma_coalesced_r[I]),
-                .branch_cond_i(lsma_instr_r.branch_cond),
-                .branch_flag_o(ma_branch_flag_w[I])
-            );
-        end
-    endgenerate
- 
-    assign ma_branch_mask_w = ma_branch_flag_w & lsma_mask_r; 
-    assign ma_branching_w = |ma_branch_mask_w;
-    
-    always_comb begin
-        if (lsma_instr_r.is_jalr) begin
-            ma_branch_target_w = lsma_leader_target_r[XLEN-1:Z_PC];
-        end else begin
-            ma_branch_target_w = lsma_pc_r + lsma_instr_r.imm[31:2];
-        end
-    end
+    assign su_wram_rdata_w = wram_rdata_i;
 
-    // - Replay Logic
-
-    always_comb begin
-        if (lsma_instr_r.is_jalr) begin
-            ma_instr_replay_mask_w = lsma_mask_r & ~lsma_coalesced_r;
-        end else if (lsma_instr_r.mem_active) begin
-            for (int i = 0; i < N_THREADS; i++) begin
-                case (lsma_msel_r[i]) // FIXME: unique
-                    MSEL_IROM: ma_instr_replay_mask_w[i] = lsma_mask_r[i] & (~lsma_coalesced_r[i]) & lsma_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD;
-                    MSEL_WRAM: ma_instr_replay_mask_w[i] = lsma_mask_r[i] & (~lsma_coalesced_r[i]) & ~lsma_instr_r.is_sc;
-                    MSEL_TLOCAL: ma_instr_replay_mask_w[i] = '0;
-                endcase
-            end
-        end else begin
-            ma_instr_replay_mask_w = '0;
-        end
-    end
-
-    assign ma_instr_retired_mask_w = lsma_mask_r & ~ma_instr_replay_mask_w;
+    pipeline_stage_ma #(
+        .W_WRAM_ADDR(W_WRAM_ADDR)
+    ) u_stage_ma (
+        .clk(clk),
+        .ma_stage_valid_r(ma_stage_valid_r),
+        .lsma_instr_r(lsma_instr_r),
+        .lsma_alu_result_r(lsma_alu_result_r),
+        .lsma_mask_r(lsma_mask_r),
+        .lsma_warp_id_r(lsma_warp_id_r),
+        .lsma_pc_r(lsma_pc_r),
+        .lsma_leader_id_r(lsma_leader_id_r),
+        .lsma_leader_one_hot_r(lsma_leader_one_hot_r),
+        .lsma_leader_valid_r(lsma_leader_valid_r),
+        .lsma_msel_r(lsma_msel_r),
+        .lsma_store_data_fmt_r(lsma_store_data_fmt_r),
+        .lsma_store_wen_r(lsma_store_wen_r),
+        .lsma_coalesced_r(lsma_coalesced_r),
+        .lsma_leader_target_r(lsma_leader_target_r),
+        .ma_write_en_w(ma_write_en_w),
+        .ma_branch_flag_w(ma_branch_flag_w),
+        .ma_branch_mask_w(ma_branch_mask_w),
+        .ma_branching_w(ma_branching_w),
+        .ma_branch_target_w(ma_branch_target_w),
+        .ma_instr_replay_mask_w(ma_instr_replay_mask_w),
+        .ma_instr_retired_mask_w(ma_instr_retired_mask_w),
+        .ma_leader_alignment_w(ma_leader_alignment_w),
+        .wram_addr_o(wram_addr_o),
+        .wram_wdata_o(wram_wdata_o),
+        .wram_wen_o(wram_wen_o),
+        .su_tlocal_rdata_w(su_tlocal_rdata_w)
+    );
 
     // - Pipeline Registers
 
@@ -664,41 +492,16 @@ module pipeline
     logic [XLEN-1:0] su_irom_data_fmt_w;
     logic [N_THREADS-1:0][XLEN-1:0] su_tlocal_rdata_fmt_w;
 
-    logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_in_w;
-    always_comb begin
-        for (int i = 0; i < N_THREADS; i++) begin
-            su_rfmt_in_w[i] = su_tlocal_rdata_w[i];
-        end
-        su_rfmt_in_w[N_THREADS] = su_wram_rdata_w;
-        su_rfmt_in_w[N_THREADS+1] = su_irom_data_w;
-    end
-
-    logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_out_w;
-    always_comb begin
-        for (int i = 0; i < N_THREADS; i++) begin
-            su_tlocal_rdata_fmt_w[i] = su_rfmt_out_w[i];
-        end
-        su_wram_rdata_fmt_w = su_rfmt_out_w[N_THREADS];
-        su_irom_data_fmt_w = su_rfmt_out_w[N_THREADS+1];
-    end
-
-    logic [N_THREADS+1:0][Z_ADDR-1:0] su_rfmt_alignment_w;
-    always_comb begin
-        for (int i = 0; i < N_THREADS; i++) begin
-            su_rfmt_alignment_w[i] = masu_alu_result_r[i][Z_ADDR-1:0];
-        end
-        su_rfmt_alignment_w[N_THREADS] = masu_leader_alignment_r;
-        su_rfmt_alignment_w[N_THREADS+1] = masu_leader_alignment_r;
-    end
-
-    mem_read_formatter #(
-        .DATA_LEN(N_THREADS + 2)
-    ) u_rfmt (
-        .opsize_i(masu_instr_r.mem_opsize),
-        .extendmode_i(masu_instr_r.mem_extendmode),
-        .m_data_i(su_rfmt_in_w),
-        .alignment_i(su_rfmt_alignment_w),
-        .p_data_o(su_rfmt_out_w)
+    pipeline_stage_su u_stage_su (
+        .masu_instr_r(masu_instr_r),
+        .masu_alu_result_r(masu_alu_result_r),
+        .masu_leader_alignment_r(masu_leader_alignment_r),
+        .su_tlocal_rdata_w(su_tlocal_rdata_w),
+        .su_wram_rdata_w(su_wram_rdata_w),
+        .su_irom_data_w(su_irom_data_w),
+        .su_tlocal_rdata_fmt_w(su_tlocal_rdata_fmt_w),
+        .su_wram_rdata_fmt_w(su_wram_rdata_fmt_w),
+        .su_irom_data_fmt_w(su_irom_data_fmt_w)
     );
 
     // - Pipeline Registers
@@ -718,38 +521,22 @@ module pipeline
 
     // Writeback
 
-    // - SC Output
-
-    logic [N_THREADS-1:0] wb_sc_output_w;
-    assign wb_sc_output_w = ~suwb_leader_one_hot_r;
-
-    logic [XLEN-1:0] wb_pc_p4_w;
-    assign wb_pc_p4_w = {suwb_pc_r + 1'b1, 2'b00};
-
-    always_comb begin
-        wb_write_data_w = 'x;
-
-        if (wb_stage_valid_r & suwb_instr_r.wb_active) begin
-            case (suwb_instr_r.wb_source) // FIXME: unique
-                WB_SOURCE_ALU: wb_write_data_w = suwb_alu_result_r;
-                WB_SOURCE_MEM: for (int i = 0; i < N_THREADS; i++) begin
-                    case (suwb_msel_r[i]) // FIXME: unique
-                        MSEL_IROM: wb_write_data_w[i] = suwb_irom_data_fmt_r;
-                        MSEL_WRAM: wb_write_data_w[i] = suwb_wram_rdata_fmt_r;
-                        MSEL_TLOCAL: wb_write_data_w[i] = suwb_tlocal_rdata_fmt_r[i];
-                    endcase
-                end
-                WB_SOURCE_PC_P4: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = wb_pc_p4_w;
-                WB_SOURCE_SC: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = {{(XLEN-1){1'b0}}, wb_sc_output_w[i]};
-            endcase
-        end 
-    end
-
-    assign wb_write_en_mask_w = suwb_instr_r.wb_active ? suwb_mask_r : '0;
-
-    // - Barrier Load Logic
-    assign barr_load_total_w = suwb_wram_rdata_fmt_r[N_THREADS*2-1:N_THREADS];
-    assign barr_load_parked_w = suwb_wram_rdata_fmt_r[N_THREADS-1:0];
+    pipeline_stage_wb u_stage_wb (
+        .wb_stage_valid_r(wb_stage_valid_r),
+        .suwb_instr_r(suwb_instr_r),
+        .suwb_alu_result_r(suwb_alu_result_r),
+        .suwb_pc_r(suwb_pc_r),
+        .suwb_mask_r(suwb_mask_r),
+        .suwb_leader_one_hot_r(suwb_leader_one_hot_r),
+        .suwb_msel_r(suwb_msel_r),
+        .suwb_tlocal_rdata_fmt_r(suwb_tlocal_rdata_fmt_r),
+        .suwb_wram_rdata_fmt_r(suwb_wram_rdata_fmt_r),
+        .suwb_irom_data_fmt_r(suwb_irom_data_fmt_r),
+        .wb_write_data_w(wb_write_data_w),
+        .wb_write_en_mask_w(wb_write_en_mask_w),
+        .barr_load_total_w(barr_load_total_w),
+        .barr_load_parked_w(barr_load_parked_w)
+    );
 
 endmodule
 
