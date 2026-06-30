@@ -222,6 +222,15 @@ module pipeline
     logic [XLEN-1:Z_PC] if_pc_w;
     logic [N_THREADS-1:0] if_mask_w;
 
+    assign if_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_r];   
+    assign if_mask_w = u_thread_scheduler_mask_w[wsif_warp_id_r];
+
+    assign irom_addr_a_o = if_pc_w[W_IROM_ADDR-1:Z_PC];
+
+    logic [XLEN-1:0] if_irom_data_w;
+    assign if_irom_data_w = irom_data_a_i;
+    assign ifid_undec_instr32_w = if_irom_data_w[31:2];
+
     // - Thread Schedulers
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin
@@ -271,19 +280,6 @@ module pipeline
     endgenerate
 
     // - Instruction Memory
-
-    pipeline_stage_if #(
-        .W_IROM_ADDR(W_IROM_ADDR)
-    ) u_stage_if (
-        .wsif_warp_id_r(wsif_warp_id_r),
-        .u_thread_scheduler_pc_w(u_thread_scheduler_pc_w),
-        .u_thread_scheduler_mask_w(u_thread_scheduler_mask_w),
-        .irom_data_a_i(irom_data_a_i),
-        .if_pc_w(if_pc_w),
-        .if_mask_w(if_mask_w),
-        .irom_addr_a_o(irom_addr_a_o),
-        .ifid_undec_instr32_w(ifid_undec_instr32_w)
-    );
 
     assign irom_addr_b_o = lsma_alu_result_r[lsma_leader_id_r][W_IROM_ADDR-1:Z_PC];
     assign su_irom_data_w = irom_data_b_i;
