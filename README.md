@@ -24,7 +24,7 @@ A limitation of legacy SIMT models is that they cannot execute certain intra-war
 
 Dolunay is the first open-source RISC-V SIMT architecture to support ITS. It uses cooperative multitasking and synchronization barriers to support many intra-warp synchronization primitives that wouldn't be possible for legacy SIMT architectures.
 
-Dolunay is still only a proof-of-concept, but is being actively developed. The following animation shows how Dolunay executes conditional code, as well as its ability to multitask cooperatively via the YIELD custom instruction.
+Dolunay is still only a proof-of-concept, but is being actively developed. The following animation shows how Dolunay executes conditional code, as well as its ability to multitask cooperatively via the `YIELD` custom instruction.
 
 
 ![hippo](https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExa3lqNzJmd2l6OHg2MXhjeHgyNThoY202bTBndmE5aGcycDZ4bmZ2byZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/Vmi7f02fj10shXwOhl/giphy.gif)
