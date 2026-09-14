@@ -17,7 +17,7 @@ module pipeline
 
     input wire logic start_i,
     output logic ready_o,
-    
+
     // WRAM Interface
     output logic [W_WRAM_ADDR-1:Z_ADDR] wram_addr_o,
     output logic [XLEN-1:0] wram_wdata_o,
@@ -84,7 +84,7 @@ module pipeline
             ma_stage_valid_r <= '0;
             su_stage_valid_r <= '0;
             wb_stage_valid_r <= '0;
-        end else begin           
+        end else begin
             unique0 if (start_i & ready_o) begin
                 wdone_r <= '0;
             end else if (running_w) begin
@@ -149,7 +149,7 @@ module pipeline
     logic [N_THREADS-1:0] lsma_coalesced_r;
     logic [XLEN-1:0] lsma_leader_target_r;
     logic [N_THREADS-1:0][XLEN-1:0] lsma_rs2_data_r;
-    
+
     logic [N_THREADS-1:0] ma_instr_replay_mask_w;
     logic [N_THREADS-1:0] ma_instr_retired_mask_w;
 
@@ -227,7 +227,7 @@ module pipeline
     logic [XLEN-1:Z_PC] if_pc_w;
     logic [N_THREADS-1:0] if_mask_w;
 
-    assign if_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_r];   
+    assign if_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_r];
     assign if_mask_w = u_thread_scheduler_mask_w[wsif_warp_id_r];
 
     // - Thread Schedulers
@@ -254,7 +254,7 @@ module pipeline
                 .clk(clk),
                 .rst_n(rst_n & ~start_i),
 
-                .instr_completed_i(winst_retired_w[I]), 
+                .instr_completed_i(winst_retired_w[I]),
                 .instr_replay_mask_i(masu_instr_replay_mask_r),
 
                 .yield_i(masu_instr_r.yield & su_en_w),
@@ -367,6 +367,77 @@ module pipeline
             );
         end
     endgenerate
+
+    // - FPU
+
+    localparam FPU_WIDTH = N_THREADS * XLEN;
+
+    // FIXME: For simplicity, we hard code fpu_operands[0 and 2] = rs1; fpu_operands[1] = rs2
+    logic [2:0][FPU_WIDTH-1:0] fpu_operands;
+    always_comb begin
+        for (integer I = 0; I < N_THREADS; I++) begin
+            fpu_operands[0][I*XLEN +: XLEN] = idex_rs1_data_w[I];
+            fpu_operands[1][I*XLEN +: XLEN] = idex_rs2_data_w[I];
+            fpu_operands[2][I*XLEN +: XLEN] = idex_rs1_data_w[I];
+        end
+    end
+
+    // FIXME: For simplicity, we hard code fpu_rounding_mode as round to nearest
+    fpnew_pkg::roundmode_e fpu_rnd_mode;
+    assign fpu_rnd_mode = fpnew_pkg::RNE;
+
+    // FIXME: For simplicity, we hard core operation as addition. This won't backfire at all!
+    fpnew_pkg::operation_e fpu_op;
+    logic fpu_op_mod;
+    assign fpu_op = fpnew_pkg::ADD;
+    assign fpu_op_mod = 0;
+
+    // FIXME: For simplicity, we hard code formats too; but this time, this might make it into the final product!
+    fpnew_pkg::fp_format_e fpu_src_fmt;
+    fpnew_pkg::fp_format_e fpu_dst_fmt;
+    fpnew_pkg::int_format_e fpu_int_fmt;
+    assign fpu_src_fmt = fpnew_pkg::FP32;
+    assign fpu_dst_fmt = fpnew_pkg::FP32;
+    assign fpu_int_fmt = fpnew_pkg::INT32;
+
+    // FIXME: I am unsure if SIMD mask should be all ones, or match the thread mask.
+    logic [N_THREADS-1:0] fpu_simd_mask;
+    assign fpu_simd_mask = '1;
+
+    fpnew_top #(
+        .Features       (
+            '{
+                Width:           FPU_WIDTH,
+                EnableVectors:   1'b1,
+                EnableNanBox:    1'b1,
+                FpFmtMask:       5'b10000,
+                IntFmtMask:      4'b0010
+            }
+        ),
+        .Implementation ( fpnew_pkg::DEFAULT_SNITCH ) // FIXME: DIVSQRT is disabled!
+    ) fpu (
+    	.clk_i         (clk),
+    	.rst_ni        (rst_n),
+    	.operands_i    (fpu_operands),
+    	.rnd_mode_i    (fpu_rnd_mode),
+    	.op_i          (fpu_op),
+    	.op_mod_i      (fpu_op_mod),
+    	.src_fmt_i     (fpu_src_fmt),
+    	.dst_fmt_i     (fpu_dst_fmt),
+    	.int_fmt_i     (fpu_int_fmt),
+    	.vectorial_op_i(1'b1), // FIXME: This is probably safe to hardcode, right? Do check though.
+    	.simd_mask_i   (fpu_simd_mask),
+    	.in_valid_i    (in_valid_i),
+    	.in_ready_o    (in_ready_o),
+    	.flush_i       (flush_i),
+    	.result_o      (result_o),
+    	.status_o      (status_o),
+    	.tag_o         (tag_o),
+    	.out_valid_o   (out_valid_o),
+    	.out_ready_i   (out_ready_i),
+    	.busy_o        (busy_o),
+    	.early_valid_o (early_valid_o)
+    );
 
     // - Pipeline Registers
 
@@ -531,10 +602,10 @@ module pipeline
 
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            ma_write_en_w[i] = 
-                ma_stage_valid_r & 
-                lsma_mask_r[i] & 
-                lsma_instr_r.mem_active & 
+            ma_write_en_w[i] =
+                ma_stage_valid_r &
+                lsma_mask_r[i] &
+                lsma_instr_r.mem_active &
                 (lsma_instr_r.mem_loadstore == MEM_LOADSTORE_STORE);
         end
     end
@@ -549,10 +620,10 @@ module pipeline
     `ifndef SYNTHESIS
         always_ff @(negedge clk) begin
             if (ma_stage_valid_r & lsma_instr_r.mem_active & lsma_leader_valid_r) begin
-                assert (lsma_msel_r[lsma_leader_id_r] != MSEL_TLOCAL) 
+                assert (lsma_msel_r[lsma_leader_id_r] != MSEL_TLOCAL)
                     else $error("Leader cannot have MSEL_TLOCAL");
 
-                assert (lsma_instr_r.mem_loadstore != MEM_LOADSTORE_STORE || lsma_msel_r[lsma_leader_id_r] != MSEL_IROM) 
+                assert (lsma_instr_r.mem_loadstore != MEM_LOADSTORE_STORE || lsma_msel_r[lsma_leader_id_r] != MSEL_IROM)
                     else $error("Leader cannot have MSEL_IROM during store operation");
             end
         end
@@ -569,8 +640,8 @@ module pipeline
             assign bank_addr = {lsma_warp_id_r, lsma_alu_result_r[I][W_TLOCAL_ADDR_PT-1:Z_ADDR]};
 
             logic wen_any_w;
-            assign wen_any_w = 
-                ma_write_en_w[I] & 
+            assign wen_any_w =
+                ma_write_en_w[I] &
                 (lsma_msel_r[I] == MSEL_TLOCAL) &
                 ~lsma_instr_r.is_sc;
 
@@ -587,7 +658,7 @@ module pipeline
                 .rdata_o(su_tlocal_rdata_w[I])
             );
         end
-    endgenerate    
+    endgenerate
 
     // - Branching Logic
 
@@ -607,10 +678,10 @@ module pipeline
             );
         end
     endgenerate
- 
-    assign ma_branch_mask_w = ma_branch_flag_w & lsma_mask_r; 
+
+    assign ma_branch_mask_w = ma_branch_flag_w & lsma_mask_r;
     assign ma_branching_w = |ma_branch_mask_w;
-    
+
     always_comb begin
         if (lsma_instr_r.is_jalr) begin
             ma_branch_target_w = lsma_leader_target_r[XLEN-1:Z_PC];
@@ -742,7 +813,7 @@ module pipeline
                 WB_SOURCE_PC_P4: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = wb_pc_p4_w;
                 WB_SOURCE_SC: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = {{(XLEN-1){1'b0}}, wb_sc_output_w[i]};
             endcase
-        end 
+        end
     end
 
     assign wb_write_en_mask_w = suwb_instr_r.wb_active ? suwb_mask_r : '0;
