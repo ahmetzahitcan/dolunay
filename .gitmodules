@@ -1,0 +1,3 @@
+[submodule "ext/cvfpu"]
+	path = ext/cvfpu
+	url = https://github.com/ahmetzahitcan/cvfpu
