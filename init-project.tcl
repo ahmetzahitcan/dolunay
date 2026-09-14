@@ -255,6 +255,9 @@ set files [list \
 ]
 add_files -norecurse -fileset $obj $files
 
+# Add CVFPU sources
+add_files -fileset sources_1 [glob -nocomplain $origin_dir/ext/cvfpu/src/*.sv]
+
 # Set 'sources_1' fileset file properties for remote files
 set file "$origin_dir/irom.mem"
 set file [file normalize $file]
