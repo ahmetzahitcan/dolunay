@@ -1,16 +1,13 @@
 .section .text
 .include "instructions.s"
 
-csrr x10, xwarpid
-csrr x11, xthrid
-slli x12, x10, 5
-sh2add x13, x11, x12
+csrr x13, mhartid
 lla x20, list_a
-add x21, x20, x13
+sh2add x21, x13, x20
 lla x22, list_b
-add x23, x22, x13
+sh2add x23, x13, x22
 lla x24, list_c
-add x25, x24, x13
+sh2add x25, x13, x24
 
 lw x1, 0(x21)
 lw x2, 0(x23)
