@@ -60,6 +60,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b000000000000000000100000000100: begin // WDONE
                 `ifndef SYNTHESIS
@@ -85,6 +86,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b1;
+                instr_o.fpu_active = 1'b0;
             end
             30'b00010??00000?????010?????01011: begin // LR
                 `ifndef SYNTHESIS
@@ -110,6 +112,7 @@ module control_unit
                 instr_o.is_lr = 1'b1;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b111100010100?????????????11100: begin // CSR_MHARTID
                 `ifndef SYNTHESIS
@@ -135,6 +138,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110011000000?????????????11100: begin // CSR_XWARPID
                 `ifndef SYNTHESIS
@@ -160,6 +164,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110011000001?????????????11100: begin // CSR_XTHRID
                 `ifndef SYNTHESIS
@@ -185,6 +190,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110011000010?????????????11100: begin // CSR_XROLE
                 `ifndef SYNTHESIS
@@ -210,6 +216,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110000000010?????????????11100: begin // CSR_INSTRET
                 `ifndef SYNTHESIS
@@ -235,6 +242,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110010000010?????????????11100: begin // CSR_INSTRETH
                 `ifndef SYNTHESIS
@@ -260,6 +268,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110000000011?????????????11100: begin // CSR_WUINSTRET
                 `ifndef SYNTHESIS
@@ -285,6 +294,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110010000011?????????????11100: begin // CSR_WUINSTRETH
                 `ifndef SYNTHESIS
@@ -310,6 +320,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110000000100?????????????11100: begin // CSR_WTINSTRET
                 `ifndef SYNTHESIS
@@ -335,6 +346,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b110010000100?????????????11100: begin // CSR_WTINSTRETH
                 `ifndef SYNTHESIS
@@ -360,6 +372,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b11000000000??????????????11100: begin // CSR_CYCLETIME
                 `ifndef SYNTHESIS
@@ -385,6 +398,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b11001000000??????????????11100: begin // CSR_CYCLETIMEH
                 `ifndef SYNTHESIS
@@ -410,6 +424,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????000?????01100: begin // ADD
                 `ifndef SYNTHESIS
@@ -435,6 +450,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0010000??????????010?????01100: begin // SH1ADD
                 `ifndef SYNTHESIS
@@ -460,6 +476,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0010000??????????100?????01100: begin // SH2ADD
                 `ifndef SYNTHESIS
@@ -485,6 +502,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0010000??????????110?????01100: begin // SH3ADD
                 `ifndef SYNTHESIS
@@ -510,6 +528,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0100000??????????000?????01100: begin // SUB
                 `ifndef SYNTHESIS
@@ -535,6 +554,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????001?????01100: begin // SLL
                 `ifndef SYNTHESIS
@@ -560,6 +580,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????010?????01100: begin // SLT
                 `ifndef SYNTHESIS
@@ -585,6 +606,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????011?????01100: begin // SLTU
                 `ifndef SYNTHESIS
@@ -610,6 +632,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????100?????01100: begin // XOR
                 `ifndef SYNTHESIS
@@ -635,6 +658,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????101?????01100: begin // SRL
                 `ifndef SYNTHESIS
@@ -660,6 +684,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0100000??????????101?????01100: begin // SRA
                 `ifndef SYNTHESIS
@@ -685,6 +710,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????110?????01100: begin // OR
                 `ifndef SYNTHESIS
@@ -710,6 +736,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????111?????01100: begin // AND
                 `ifndef SYNTHESIS
@@ -735,6 +762,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????001?????00100: begin // SLLI
                 `ifndef SYNTHESIS
@@ -760,6 +788,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000000??????????101?????00100: begin // SRLI
                 `ifndef SYNTHESIS
@@ -785,6 +814,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0100000??????????101?????00100: begin // SRAI
                 `ifndef SYNTHESIS
@@ -810,6 +840,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000111??????????101?????01100: begin // CZERO_EQZ
                 `ifndef SYNTHESIS
@@ -835,6 +866,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b0000111??????????111?????01100: begin // CZERO_NEZ
                 `ifndef SYNTHESIS
@@ -860,6 +892,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b00011????????????010?????01011: begin // SC
                 `ifndef SYNTHESIS
@@ -885,6 +918,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b1;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????0010000000010: begin // BINIT
                 `ifndef SYNTHESIS
@@ -910,6 +944,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????0100000000010: begin // BSYNC_0
                 `ifndef SYNTHESIS
@@ -935,6 +970,33 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
+            end
+            30'b0000000??????????????????10100: begin // FADD
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fadd.s $d, $1, $2";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_FPU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b1;
             end
             30'b?????????????????000?????00100: begin // ADDI
                 `ifndef SYNTHESIS
@@ -960,6 +1022,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????010?????00100: begin // SLTI
                 `ifndef SYNTHESIS
@@ -985,6 +1048,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????011?????00100: begin // SLTIU
                 `ifndef SYNTHESIS
@@ -1010,6 +1074,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????100?????00100: begin // XORI
                 `ifndef SYNTHESIS
@@ -1035,6 +1100,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????110?????00100: begin // ORI
                 `ifndef SYNTHESIS
@@ -1060,6 +1126,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????111?????00100: begin // ANDI
                 `ifndef SYNTHESIS
@@ -1085,6 +1152,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????000?????11000: begin // BEQ
                 `ifndef SYNTHESIS
@@ -1110,6 +1178,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????001?????11000: begin // BNE
                 `ifndef SYNTHESIS
@@ -1135,6 +1204,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????100?????11000: begin // BLT
                 `ifndef SYNTHESIS
@@ -1160,6 +1230,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????101?????11000: begin // BGE
                 `ifndef SYNTHESIS
@@ -1185,6 +1256,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????110?????11000: begin // BLTU
                 `ifndef SYNTHESIS
@@ -1210,6 +1282,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????111?????11000: begin // BGEU
                 `ifndef SYNTHESIS
@@ -1235,6 +1308,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????000?????11001: begin // JALR
                 `ifndef SYNTHESIS
@@ -1260,6 +1334,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????000?????00000: begin // LB
                 `ifndef SYNTHESIS
@@ -1285,6 +1360,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????001?????00000: begin // LH
                 `ifndef SYNTHESIS
@@ -1310,6 +1386,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????010?????00000: begin // LW
                 `ifndef SYNTHESIS
@@ -1335,6 +1412,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????100?????00000: begin // LBU
                 `ifndef SYNTHESIS
@@ -1360,6 +1438,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????101?????00000: begin // LHU
                 `ifndef SYNTHESIS
@@ -1385,6 +1464,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????000?????01000: begin // SB
                 `ifndef SYNTHESIS
@@ -1410,6 +1490,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????001?????01000: begin // SH
                 `ifndef SYNTHESIS
@@ -1435,6 +1516,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????010?????01000: begin // SW
                 `ifndef SYNTHESIS
@@ -1460,6 +1542,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????000?????00011: begin // FENCE
                 `ifndef SYNTHESIS
@@ -1485,6 +1568,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????????????11011: begin // JAL
                 `ifndef SYNTHESIS
@@ -1510,6 +1594,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????????????01101: begin // LUI
                 `ifndef SYNTHESIS
@@ -1535,6 +1620,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????????????00101: begin // AUIPC
                 `ifndef SYNTHESIS
@@ -1560,6 +1646,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             30'b?????????????????????????11100: begin // CSR_OTHER
                 `ifndef SYNTHESIS
@@ -1585,6 +1672,7 @@ module control_unit
                 instr_o.is_lr = 1'b0;
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
             end
             default: begin // INVALID
                 `ifndef SYNTHESIS
@@ -1613,6 +1701,7 @@ module control_unit
                 instr_o.is_lr = 'x;
                 instr_o.is_sc = 'x;
                 instr_o.is_wdone = 'x;
+                instr_o.fpu_active = 'x;
             end
         endcase
     end

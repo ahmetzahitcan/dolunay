@@ -71,10 +71,11 @@ package control_unit_pkg;
 		BRANCH_COND_UNDEFINED='x
 	} branch_cond_e;
 
-	typedef enum logic [1:0] {
+	typedef enum logic [2:0] {
 		WB_SOURCE_ALU,
 		WB_SOURCE_MEM,
 		WB_SOURCE_SC,
+		WB_SOURCE_FPU,
 		WB_SOURCE_PC_P4,
 		WB_SOURCE_UNDEFINED='x
 	} wb_source_e;
@@ -132,6 +133,7 @@ package control_unit_pkg;
 		logic is_lr;
 		logic is_sc;
 		logic is_wdone;
+		logic fpu_active;
 	} instr_s;
 
 endpackage

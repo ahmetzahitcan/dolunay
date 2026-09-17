@@ -283,7 +283,7 @@ def emit_sv_module(data, output_file, module_name, package_name):
         # Default (INVALID) case
         f.write("            default: begin // INVALID\n")
         f.write("                `ifndef SYNTHESIS\n")
-        f.write(f"                sim__disasm_format_w = \"INVALID\";\n")
+        f.write("                sim__disasm_format_w = \"INVALID\";\n")
         f.write("                if (valid_i) begin\n")
         f.write("                    $warning(\"Invalid instruction (%h) encountered at %d\", undec_instr32_i, pc_i);\n")
         f.write("                end\n")
@@ -353,7 +353,7 @@ def emit_sv_package(data, output_file, package_name):
 
     print(f"Successfully generated {output_file} from {args.input_csv}")
 
-        
+
 
 # ---------------------------------------------------------------------------
 # Entry point

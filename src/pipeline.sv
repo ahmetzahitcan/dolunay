@@ -369,6 +369,8 @@ module pipeline
     endgenerate
 
     // - FPU
+    // TODO: Maybe I need an FLEN?
+    // TODO: FPU REGISTER FILE???
 
     localparam FPU_WIDTH = N_THREADS * XLEN;
 
@@ -404,17 +406,48 @@ module pipeline
     logic [N_THREADS-1:0] fpu_simd_mask;
     assign fpu_simd_mask = '1;
 
+    logic [FPU_WIDTH-1:0] fpu_result;
+    fpnew_pkg::status_t[N_THREADS-1:0] fpu_status;
+
+    logic [N_THREADS-1:0][XLEN-1:0] wb_fpu_result_w;
+    always_comb begin
+        for (int i = 0; i < N_THREADS; i++) begin
+            wb_fpu_result_w[i] = fpu_result[i*XLEN+:XLEN];
+        end
+    end
+
+    logic fpu_out_valid;
+    logic fpu_early_valid; // TODO: Do I need this?
+    logic fpu_out_ready;
+    assign fpu_out_ready = 1'b1; // FIXME: Probably fine, right??
+
+    logic fpu_busy;
+
+    // -- FPU declaration
+
+    localparam fpnew_pkg::fpu_features_t FPU_FEATURES = '{
+        Width:           FPU_WIDTH,
+        EnableVectors:   1'b1,
+        EnableNanBox:    1'b1,
+        FpFmtMask:       5'b10000,
+        IntFmtMask:      4'b0010
+    };
+
+    localparam fpnew_pkg::fpu_implementation_t FPU_IMPLEMENTATION = '{
+        PipeRegs: '{default: 32'd4},
+        UnitTypes: '{
+            '{default: fpnew_pkg::PARALLEL}, // ADDMUL
+            '{default: fpnew_pkg::DISABLED},   // DIVSQRT
+            '{default: fpnew_pkg::DISABLED}, // NONCOMP
+            '{default: fpnew_pkg::DISABLED}    // CONV
+        },
+        PipeConfig: fpnew_pkg::BEFORE
+    };
+
     fpnew_top #(
-        .Features       (
-            '{
-                Width:           FPU_WIDTH,
-                EnableVectors:   1'b1,
-                EnableNanBox:    1'b1,
-                FpFmtMask:       5'b10000,
-                IntFmtMask:      4'b0010
-            }
-        ),
-        .Implementation ( fpnew_pkg::DEFAULT_SNITCH ) // FIXME: DIVSQRT is disabled!
+        .Features       (FPU_FEATURES),
+        .Implementation (FPU_IMPLEMENTATION),
+        .TagType        ( logic [31:0] ) // TODO: Counter for debug, empty for production
     ) fpu (
     	.clk_i         (clk),
     	.rst_ni        (rst_n),
@@ -427,16 +460,17 @@ module pipeline
     	.int_fmt_i     (fpu_int_fmt),
     	.vectorial_op_i(1'b1), // FIXME: This is probably safe to hardcode, right? Do check though.
     	.simd_mask_i   (fpu_simd_mask),
-    	.in_valid_i    (in_valid_i),
-    	.in_ready_o    (in_ready_o),
-    	.flush_i       (flush_i),
-    	.result_o      (result_o),
-    	.status_o      (status_o),
-    	.tag_o         (tag_o),
-    	.out_valid_o   (out_valid_o),
-    	.out_ready_i   (out_ready_i),
-    	.busy_o        (busy_o),
-    	.early_valid_o (early_valid_o)
+    	.tag_i         (), // TODO: Counter for debug, empty for production
+    	.in_valid_i    (idex_instr_r.fpu_active),
+    	.in_ready_o    (), //TODO: Not sure what to do with this.
+    	.flush_i       (1'b0), // FIXME: This is probably safe to hardcode too, right? Do check though.
+    	.result_o      (fpu_result),
+    	.status_o      (fpu_status),
+    	.tag_o         (), // TODO: Counter for debug, empty for production
+        .out_valid_o   (fpu_out_valid),
+    	.out_ready_i   (fpu_out_ready),
+    	.busy_o        (fpu_busy),
+    	.early_valid_o (fpu_early_valid)
     );
 
     // - Pipeline Registers
@@ -803,6 +837,7 @@ module pipeline
         if (wb_stage_valid_r & suwb_instr_r.wb_active) begin
             case (suwb_instr_r.wb_source) // FIXME: unique
                 WB_SOURCE_ALU: wb_write_data_w = suwb_alu_result_r;
+                WB_SOURCE_FPU: wb_write_data_w = wb_fpu_result_w;
                 WB_SOURCE_MEM: for (int i = 0; i < N_THREADS; i++) begin
                     case (suwb_msel_r[i]) // FIXME: unique
                         MSEL_IROM: wb_write_data_w[i] = suwb_irom_data_fmt_r;
