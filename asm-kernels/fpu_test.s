@@ -1,12 +1,221 @@
 .section .text
 .include "instructions.s"
 
-li x1, 0x40a00000
-li x2, 0x40200000
+csrr x10, xwarpid
+csrr x11, xthrid
+slli x12, x10, 5
+sh2add x13, x11, x12
+lla x20, list_a
+add x21, x20, x13
+lla x22, list_b
+add x23, x22, x13
+lla x24, list_c
+add x25, x24, x13
+
+lw x1, 0(x21)
+lw x2, 0(x23)
 fadd.s x3, x1, x2
-li x4, 0x40f00000
+lw x4, 0(x25)
 sub x5, x3, x4
 li x6, 1
 czero.nez x7, x6, x5
 wdone
 j .
+
+list_a: # List A
+.word 0xC29DEEE0
+.word 0x42569645
+.word 0xC0D5DC2D
+.word 0x428C6225
+.word 0x3FC78E1A
+.word 0x4291B98C
+.word 0xC0ACA111
+.word 0xC119016B
+.word 0x42A63FCF
+.word 0x4299605A
+.word 0xC0615DC4
+.word 0xC2A6A444
+.word 0x42A0FAF0
+.word 0xC1CA4039
+.word 0xC2058AD8
+.word 0x4272D62C
+.word 0x426A86D8
+.word 0xC2C29C3C
+.word 0xC0BB1956
+.word 0x41BA7DD9
+.word 0x429C19CA
+.word 0x41C21F7F
+.word 0xC2BDA19F
+.word 0x420F4759
+.word 0x420E16B8
+.word 0x419C0B8B
+.word 0x41775B09
+.word 0x42AED00A
+.word 0x42A5BC52
+.word 0xC2498821
+.word 0xC26E4CD3
+.word 0x40D49D7C
+.word 0xC219001C
+.word 0x424EB78D
+.word 0xC25C9BA0
+.word 0x42852AD4
+.word 0xC1C692DA
+.word 0x4140566B
+.word 0x422F44DA
+.word 0xC28A981F
+.word 0x4210C5B2
+.word 0xC1C3F755
+.word 0x4206EF9D
+.word 0xC292F26E
+.word 0x4137535A
+.word 0x42B2C62B
+.word 0x424F96A4
+.word 0x42281F64
+.word 0x42B53434
+.word 0x429D51B9
+.word 0xC2B1DC7B
+.word 0xC1F19D95
+.word 0xC229E210
+.word 0xC29B0B81
+.word 0xC2AD2456
+.word 0xC2869C87
+.word 0xC2B22B59
+.word 0x42C6BE6E
+.word 0xC282DE2B
+.word 0xC22E714A
+.word 0x4214422D
+.word 0x41B68C9C
+.word 0xC13C2D1E
+.word 0x3FAD9679
+
+list_b: # List B
+.word 0xC25839AA
+.word 0xC05786AC
+.word 0x402267D2
+.word 0xC1CF50F7
+.word 0xC29FEB68
+.word 0x42B4FE5C
+.word 0x42B76D50
+.word 0xC0F4319A
+.word 0xC1C880C1
+.word 0x42442E17
+.word 0x42472E0B
+.word 0xC1C4E207
+.word 0xC2861F52
+.word 0xC232CF81
+.word 0xC29D4B8F
+.word 0xC2BA4735
+.word 0x42359BF7
+.word 0x41977B56
+.word 0x4246B4F0
+.word 0xC2BAE83B
+.word 0xC2BA56B1
+.word 0x42C28CF1
+.word 0x413C7E40
+.word 0xC20B9E61
+.word 0x429CCCFA
+.word 0x42108F22
+.word 0xC290C159
+.word 0x42621FC7
+.word 0xC2104216
+.word 0xC22A9CE2
+.word 0xBF8CCCAB
+.word 0x4152A312
+.word 0x41281AF2
+.word 0x423E637E
+.word 0x414857F0
+.word 0x41CCCEA1
+.word 0xC1258BAC
+.word 0x41E414C2
+.word 0xC1818C36
+.word 0xC2544458
+.word 0xC227D5E9
+.word 0x4285074C
+.word 0x42C2AEFC
+.word 0xC22A9A50
+.word 0x421897FC
+.word 0x424129E1
+.word 0xC219FB07
+.word 0x41D9DD15
+.word 0x41FABCF9
+.word 0x41A209B7
+.word 0xC26C4E52
+.word 0x41B245D6
+.word 0xC1966DDE
+.word 0x41F213A1
+.word 0x42AABF27
+.word 0x42B972FE
+.word 0xC2852775
+.word 0x424C01C1
+.word 0xC214CCB2
+.word 0x42089D2C
+.word 0x41133BB0
+.word 0xC207BC58
+.word 0xC100170D
+.word 0x4126DC17
+
+list_c: # List C (A + B)
+.word 0xC30505DA
+.word 0x42491DDA
+.word 0xC084A844
+.word 0x42311BCE
+.word 0xC29CCD30
+.word 0x43235BF4
+.word 0x42ACA33F
+.word 0xC1898D1C
+.word 0x42683F3E
+.word 0x42FB7766
+.word 0x4239182F
+.word 0xC2D7DCC6
+.word 0x4156DCF0
+.word 0xC28BF7CF
+.word 0xC2E010FB
+.word 0xC201B83E
+.word 0x42D01168
+.word 0xC29CBD66
+.word 0x422F51C5
+.word 0xC28C48C5
+.word 0xC171E738
+.word 0x42F314D1
+.word 0xC2A611D7
+.word 0x3F6A3E00
+.word 0x42E3D856
+.word 0x425E94E8
+.word 0xC263ABF0
+.word 0x430FEFF7
+.word 0x423B368E
+.word 0xC2BA1282
+.word 0xC272B338
+.word 0x419E78E8
+.word 0xC1DDF2BF
+.word 0x42C68D86
+.word 0xC22A85A4
+.word 0x42B85E7C
+.word 0xC20CAC58
+.word 0x42221FFC
+.word 0x41DCFD7E
+.word 0xC2F4BA4B
+.word 0xC0B881B8
+.word 0x422812EE
+.word 0x43031365
+.word 0xC2E83F96
+.word 0x42466CD2
+.word 0x4309AD8E
+.word 0x41566E74
+.word 0x428A86F7
+.word 0x42F3E372
+.word 0x42C5D427
+.word 0xC31401D2
+.word 0xC0FD5EFC
+.word 0xC27518FF
+.word 0xC23D0D32
+.word 0xBF994BC0
+.word 0x41CB59DC
+.word 0xC31BA967
+.word 0x43165FA7
+.word 0xC2CD4484
+.word 0xC1175078
+.word 0x42391119
+.word 0xC131D828
+.word 0xC19E2216
+.word 0x413C8EE6

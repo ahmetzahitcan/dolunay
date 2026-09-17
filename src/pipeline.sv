@@ -59,10 +59,6 @@ module pipeline
     );
 
     // Stage valid registers -- indicating whether other pipeline registers are valid
-    logic [N_WARPS-1:0] wdone_r;
-    logic running_w;
-    assign running_w = ~&wdone_r;
-    assign ready_o = ~running_w & ~wb_stage_valid_r & rst_n;
 
     logic ws_stage_valid_r;
     logic if_stage_valid_r;
@@ -72,6 +68,14 @@ module pipeline
     logic ma_stage_valid_r;
     logic su_stage_valid_r;
     logic wb_stage_valid_r;
+
+    logic [N_WARPS-1:0] wdone_r;
+    logic running_w;
+    assign running_w = ~&wdone_r;
+    assign ready_o = ~running_w & ~wb_stage_valid_r & rst_n;
+
+    instr_s suwb_instr_r;
+    logic [W_WARPS-1:0] suwb_warp_id_r;
 
     always_ff @( posedge clk ) begin
         if (!rst_n) begin
@@ -180,11 +184,11 @@ module pipeline
     logic [N_WARPS-1:0][N_THREADS-1:0] barr_sync_parked_next_w;
 
     // - Writeback stage signals
-    instr_s suwb_instr_r;
+    //instr_s suwb_instr_r; // FIXME: Declared above
+    //logic [W_WARPS-1:0] suwb_warp_id_r;
     logic [N_THREADS-1:0][XLEN-1:0] suwb_alu_result_r;
     logic [XLEN-1:Z_PC] suwb_pc_r;
     logic [N_THREADS-1:0] suwb_mask_r;
-    logic [W_WARPS-1:0] suwb_warp_id_r;
     msel_e [N_THREADS-1:0] suwb_msel_r;
     logic [Z_ADDR-1:0] suwb_leader_alignment_r;
     logic [N_THREADS-1:0] suwb_leader_one_hot_r;

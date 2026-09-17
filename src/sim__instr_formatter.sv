@@ -14,7 +14,8 @@ module sim__instr_formatter
 );
 
     `ifdef SYNTHESIS
-        static assert(0) else $error("sim__instr_formatter cannot be synthesized");
+        // FIXME: This probably does nothing (synthesis may ignore initial block entirely)
+        initial $fatal(1, "sim__instr_formatter cannot be synthesized");
     `endif
 
     string s;

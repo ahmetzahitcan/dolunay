@@ -10,5 +10,5 @@ dependencies:
   fpnew: { git: "https://github.com/ahmetzahitcan/cvfpu.git", rev: "develop" }
 
 sources:
-  - src/
-  - tb/
+  - src/*.sv
+  - tb/*.sv

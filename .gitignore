@@ -5,3 +5,5 @@ tez-vivado
 .zed
 .bender/git
 Bender.lock
+bender.tcl
+.cxl/Dolunay/
