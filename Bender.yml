@@ -1,0 +1,14 @@
+# A more detailed description of the manifest format `Bender.yml` can be found here:
+# https://github.com/pulp-platform/bender#manifest-format-benderyml
+
+package:
+  name: dolunay
+  authors:
+    - "Ahmet Zahit Can <ahmetzahit.can@yildiz.edu.tr>"
+
+dependencies:
+  fpnew: { git: "https://github.com/ahmetzahitcan/cvfpu.git", rev: "develop" }
+
+sources:
+  - src/
+  - tb/

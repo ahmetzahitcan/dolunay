@@ -1,2 +1,7 @@
 __pycache__
 tez-vivado
+.svls.toml
+.svlint.toml
+.zed
+.bender/git
+Bender.lock
