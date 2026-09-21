@@ -8,3 +8,4 @@ Bender.lock
 bender.tcl
 .cxl/Dolunay/
 xvlog.pb
+.~lock*

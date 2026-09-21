@@ -24,6 +24,72 @@ def extract_base_name(filename, remove_path=True):
     return name
 
 
+def field_base_name(field):
+    """Return the bare signal name of a CSV header field.
+
+    Strips an optional bit range ("sig[2:0]") and/or external-enum
+    annotation ("sig{pkg::type}") suffix.
+    """
+    m = re.match(r'^([A-Za-z0-9_]+)', field.strip())
+    return m.group(1) if m else field.strip()
+
+
+class ExternalEnum:
+    """An enum type whose definition lives in another (third-party) package.
+
+    Such a column is declared in the CSV header by appending a brace-delimited
+    annotation to the column name (the name itself must stay snake_case):
+
+        sig{fpnew_pkg::operation_e}                       member -> fpnew_pkg::<VALUE>
+        sig{fpnew_pkg::operation_e|OP_}                   member -> fpnew_pkg::OP_<VALUE>
+        sig{fpnew_pkg::operation_e|OP_|fpnew_pkg::NONE}   explicit default member
+
+    The type is emitted verbatim, so it should be fully qualified.  When no
+    default/undefined member is given, don't-care values are rendered as a cast
+    to the type (``fpnew_pkg::operation_e'('x)``), which works for enums that do
+    not declare an ``_UNDEFINED`` member.
+    """
+
+    def __init__(self, col, type_ref, prefix="", undef_member=None):
+        self.col = col
+        self.type_ref = type_ref
+        self.prefix = prefix
+        self.undef_member = undef_member
+        # Package scope (e.g. "fpnew_pkg::") used to qualify enum members.
+        self.scope = type_ref[:type_ref.rfind('::') + 2] if '::' in type_ref else ''
+
+    def member(self, value):
+        """Return the (optionally qualified) enum member for a CSV value."""
+        pfx = f"{self.prefix}_" if self.prefix else ""
+        return f"{self.scope}{pfx}{value}"
+
+    def undefined(self):
+        """Return the expression used for don't-care / default values."""
+        if self.undef_member is not None:
+            return self.undef_member
+        return f"{self.type_ref}'('x)"
+
+
+def parse_external_enum(col, spec):
+    """Build an ExternalEnum from the brace annotation found in a CSV header."""
+    parts = [p.strip() for p in spec.split('|')]
+    if len(parts) > 3:
+        print(f"Error: column '{col}' external enum annotation has too many "
+              f"'|' separated fields: '{spec}'.")
+        sys.exit(1)
+    type_ref = parts[0]
+    if not type_ref:
+        print(f"Error: column '{col}' external enum annotation is missing a type.")
+        sys.exit(1)
+    prefix = parts[1] if len(parts) > 1 else ""
+    undef_member = parts[2] if len(parts) > 2 and parts[2] else None
+    if '::' not in type_ref:
+        print(f"Warning: external enum type '{type_ref}' (column '{col}') is not "
+              f"package-qualified; it must be visible where the generated files "
+              f"are compiled.")
+    return ExternalEnum(col, type_ref, prefix, undef_member)
+
+
 def parse_csv(csv_file):
     """Parse a control-unit CSV and return a validated data object.
 
@@ -37,6 +103,12 @@ def parse_csv(csv_file):
                            member names, for every column whose values are all
                            bare UPPER_CASE identifiers (e.g. ALU_ADD, ALU_BEQ).
                            Columns not detected as enums are absent from this dict.
+        external_enums   – dict mapping sig_name → ExternalEnum for columns whose
+                           enum type is defined outside this package.  Such a
+                           column is annotated in the CSV header, e.g.
+                           "fpu_op{fpnew_pkg::operation_e}"; it is not declared
+                           in the generated package but referenced by its
+                           qualified name instead.
     """
 
     try:
@@ -46,14 +118,15 @@ def parse_csv(csv_file):
             if not fields:
                 print("Error: Empty CSV file.")
                 sys.exit(1)
-            for i in range(len(fields)):
-                fields[i] = fields[i].strip()
+            fields = [f.strip() for f in fields]
+            reader.fieldnames = fields
             rows = list(reader)
     except FileNotFoundError:
         print(f"Error: Could not find file {csv_file}")
         sys.exit(1)
 
-    if 'instruction' not in fields or 'match_string' not in fields or 'imm_type' not in fields:
+    required = {'instruction', 'match_string', 'imm_type'}
+    if not required <= {field_base_name(fl) for fl in fields}:
         print("Error: CSV must contain 'instruction', 'match_string' and 'imm_type' columns.")
         sys.exit(1)
 
@@ -127,23 +200,36 @@ def parse_csv(csv_file):
     instructions.sort(key=lambda x: x['SpecificBits'], reverse=True)
 
     # Parse control-signal columns: handle optional bit-width in header (e.g. "alu_op[2:0]").
+    # A header may also carry an external-enum annotation (e.g. "fpu_op{fpnew_pkg::operation_e}").
     control_signals = []
+    external_enums = {}  # sig_name → ExternalEnum
     for field in fields:
         if field in ('instruction', 'match_string', 'sim__disasm_format'):
             continue
         if field.startswith("'"):  # commented-out column
             continue
-        m = re.match(r'^([A-Za-z0-9_]+)\s*(?:\[([^\]]+)\])?$', field)
+        m = re.match(r'^([A-Za-z0-9_]+)\s*(?:\[([^\]]+)\])?\s*(?:\{([^}]*)\})?$', field)
         if m:
             name = m.group(1)
             rng = m.group(2) if m.group(2) else ""
+            ext_spec = m.group(3)
         else:
+            if '{' in field or '}' in field:
+                print(f"Error: malformed external enum annotation in column '{field}' "
+                      f"(expected 'signal{{package::type}}').")
+                sys.exit(1)
             name = field.strip()
             rng = ""
+            ext_spec = None
         if not _SNAKE_CASE_RE.match(name):
             print(f"Warning: column '{name}' does not look like snake_case. "
                   f"Consider renaming it in the CSV.")
         control_signals.append((field, name, rng))
+        if ext_spec is not None:
+            if rng:
+                print(f"Warning: column '{field}' declares both a bit range and an "
+                      f"external enum; the bit range is ignored.")
+            external_enums[name] = parse_external_enum(field, ext_spec)
 
     # -----------------------------------------------------------------------
     # Enum auto-detection
@@ -153,6 +239,9 @@ def parse_csv(csv_file):
     # -----------------------------------------------------------------------
     enums = {}  # col_name → ordered list of unique enum member names
     for col, name, rng in control_signals:
+        if name in external_enums:
+            continue  # type is defined elsewhere; never auto-declare it
+
         seen = []          # preserves first-appearance order
         seen_set = set()
         all_enum = True    # optimistic: assume enum until proven otherwise
@@ -183,11 +272,29 @@ def parse_csv(csv_file):
         if all_enum and seen:
             enums[col] = seen
 
+    # Sanity-check values used with external enums: they must be bare enum
+    # member names (the generated code qualifies them with the enum's package).
+    for col, name, rng in control_signals:
+        ext = external_enums.get(name)
+        if ext is None:
+            continue
+        values = [default_values.get(col, "")]
+        values += [(row.get(col) or "") for row in instructions]
+        for val in values:
+            val = val.strip()
+            if not val or val.lower() in _DONT_CARE:
+                continue
+            if not _ENUM_VALUE_RE.match(val):
+                print(f"Warning: column '{name}' uses external enum "
+                      f"'{ext.type_ref}' but value '{val}' is not a valid enum "
+                      f"member name. Consider the '{{type|prefix}}' annotation form.")
+
     return {
         'control_signals': control_signals,
         'default_values': default_values,
         'instructions': instructions,
         'enums': enums,
+        'external_enums': external_enums,
     }
 
 
@@ -197,9 +304,15 @@ def emit_sv_module(data, output_file, module_name, package_name):
     default_values  = data['default_values']
     instructions    = data['instructions']
     enums           = data['enums']
+    external_enums  = data['external_enums']
 
     def _format_value(val, sig, rng):
         """Return a properly prefixed SV literal for a signal assignment."""
+        if sig in external_enums:
+            ext = external_enums[sig]
+            if val.lower() in ('x', '-', 'd', '?') or val == "":
+                return ext.undefined()
+            return ext.member(val)
         if sig in enums:
             prefix = sig.upper()
             if val.lower() in ('x', '-', 'd', '?') or val == "":
@@ -224,7 +337,10 @@ def emit_sv_module(data, output_file, module_name, package_name):
         f.write("    input  wire  valid_i,\n")
         f.write("    output instr_s instr_o\n")
         f.write(");\n\n")
-        f.write("    imm_type_e imm_type_w;\n\n")
+        # imm_type has no field in instr_s, so its type is declared here.
+        imm_type_t = ('imm_type_e' if 'imm_type' not in external_enums
+                      else external_enums['imm_type'].type_ref)
+        f.write(f"    {imm_type_t} imm_type_w;\n\n")
         f.write("    immediate_decoder u_imm(\n")
         f.write("        .undec_instr32_i(undec_instr32_i),\n")
         f.write("        .imm_type_i(imm_type_w),\n")
@@ -305,6 +421,7 @@ def emit_sv_module(data, output_file, module_name, package_name):
 def emit_sv_package(data, output_file, package_name):
     control_signals = data['control_signals']
     enums = data['enums']
+    external_enums = data['external_enums']
 
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write("`default_nettype none\n\n")
@@ -338,7 +455,11 @@ def emit_sv_package(data, output_file, package_name):
             if sig == 'imm_type':
                 continue
 
-            if sig in enums:
+            if sig in external_enums:
+                # Type is provided by another (third-party) package; reference it
+                # by its qualified name instead of declaring a local enum.
+                f.write(f"\t\t{external_enums[sig].type_ref} {sig};\n")
+            elif sig in enums:
                 f.write(f"\t\t{sig}_e {sig};\n")
             else:
                 if rng == "":

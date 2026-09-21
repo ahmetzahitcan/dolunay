@@ -134,6 +134,7 @@ package control_unit_pkg;
 		logic is_sc;
 		logic is_wdone;
 		logic fpu_active;
+		fpnew_pkg::operation_e fpu_opcode;
 	} instr_s;
 
 endpackage
