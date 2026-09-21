@@ -73,9 +73,9 @@ package control_unit_pkg;
 
 	typedef enum logic [2:0] {
 		WB_SOURCE_ALU,
+		WB_SOURCE_FPU,
 		WB_SOURCE_MEM,
 		WB_SOURCE_SC,
-		WB_SOURCE_FPU,
 		WB_SOURCE_PC_P4,
 		WB_SOURCE_UNDEFINED='x
 	} wb_source_e;
@@ -105,6 +105,22 @@ package control_unit_pkg;
 		MEM_EXTENDMODE_ZERO,
 		MEM_EXTENDMODE_UNDEFINED='x
 	} mem_extendmode_e;
+
+	typedef enum logic {
+		FPU_OP0_SEL_RS1,
+		FPU_OP0_SEL_UNDEFINED='x
+	} fpu_op0_sel_e;
+
+	typedef enum logic {
+		FPU_OP1_SEL_RS2,
+		FPU_OP1_SEL_RS1,
+		FPU_OP1_SEL_UNDEFINED='x
+	} fpu_op1_sel_e;
+
+	typedef enum logic {
+		FPU_OP2_SEL_RS2,
+		FPU_OP2_SEL_UNDEFINED='x
+	} fpu_op2_sel_e;
 
 	typedef struct packed {
 		`ifndef SYNTHESIS
@@ -137,6 +153,9 @@ package control_unit_pkg;
 		logic fpu_active;
 		fpnew_pkg::operation_e fpu_opcode;
 		logic fpu_op_modifier;
+		fpu_op0_sel_e fpu_op0_sel;
+		fpu_op1_sel_e fpu_op1_sel;
+		fpu_op2_sel_e fpu_op2_sel;
 	} instr_s;
 
 endpackage
