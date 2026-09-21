@@ -392,10 +392,8 @@ module pipeline
     fpnew_pkg::roundmode_e fpu_rnd_mode;
     assign fpu_rnd_mode = fpnew_pkg::RNE;
 
-    // FIXME: For simplicity, we hard core operation as addition. This won't backfire at all!
-    fpnew_pkg::operation_e fpu_op;
+    // FIXME: For simplicity, we hard core operation modifier as 0. This won't backfire at all!
     logic fpu_op_mod;
-    assign fpu_op = fpnew_pkg::ADD;
     assign fpu_op_mod = 0;
 
     // FIXME: For simplicity, we hard code formats too; but this time, this might make it into the final product!
@@ -457,7 +455,7 @@ module pipeline
     	.rst_ni        (rst_n),
     	.operands_i    (fpu_operands),
     	.rnd_mode_i    (fpu_rnd_mode),
-    	.op_i          (fpu_op),
+    	.op_i          (idex_instr_r.fpu_opcode),
     	.op_mod_i      (fpu_op_mod),
     	.src_fmt_i     (fpu_src_fmt),
     	.dst_fmt_i     (fpu_dst_fmt),

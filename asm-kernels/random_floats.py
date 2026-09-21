@@ -25,6 +25,13 @@ def main():
         for a, b in zip(list_a, list_b)
     ]
 
+    # Multiply and truncate to IEEE 754 single-precision
+    list_d = [
+        struct.unpack('>f', struct.pack('>f', a * b))[0]
+        for a, b in zip(list_a, list_b)
+    ]
+
+
     print("list_a: # List A")
     for val in list_a:
         print(f".word {float_to_hex32(val)}")
@@ -36,6 +43,11 @@ def main():
     print("\nlist_c: # List C (A + B)")
     for val in list_c:
         print(f".word {float_to_hex32(val)}")
+
+    print("\nlist_d: # List D (A * B)")
+    for val in list_d:
+        print(f".word {float_to_hex32(val)}")
+
 
 if __name__ == '__main__':
     main()
