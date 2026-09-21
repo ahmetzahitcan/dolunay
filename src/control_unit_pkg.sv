@@ -114,6 +114,7 @@ package control_unit_pkg;
 		logic [W_REGISTERS-1:0] rd_idx;
 		logic [W_REGISTERS-1:0] rs1_idx;
 		logic [W_REGISTERS-1:0] rs2_idx;
+		logic [2:0] fpu_roundmode;
 		alu_funct_e alu_funct;
 		alu_addy_funct_e alu_addy_funct;
 		alu_op1_sel_e alu_op1_sel;
@@ -135,6 +136,7 @@ package control_unit_pkg;
 		logic is_wdone;
 		logic fpu_active;
 		fpnew_pkg::operation_e fpu_opcode;
+		logic fpu_op_modifier;
 	} instr_s;
 
 endpackage

@@ -388,13 +388,9 @@ module pipeline
         end
     end
 
-    // FIXME: For simplicity, we hard code fpu_rounding_mode as round to nearest
+    // FIXME: For simplicity, we hard code dynamic to RNE
     fpnew_pkg::roundmode_e fpu_rnd_mode;
-    assign fpu_rnd_mode = fpnew_pkg::RNE;
-
-    // FIXME: For simplicity, we hard core operation modifier as 0. This won't backfire at all!
-    logic fpu_op_mod;
-    assign fpu_op_mod = 0;
+    assign fpu_rnd_mode = idex_instr_r.fpu_roundmode == 3'b111 ? fpnew_pkg::RNE : fpnew_pkg::roundmode_e'(idex_instr_r.fpu_roundmode);
 
     // FIXME: For simplicity, we hard code formats too; but this time, this might make it into the final product!
     fpnew_pkg::fp_format_e fpu_src_fmt;
@@ -438,10 +434,10 @@ module pipeline
     localparam fpnew_pkg::fpu_implementation_t FPU_IMPLEMENTATION = '{
         PipeRegs: '{default: 32'd4},
         UnitTypes: '{
-            '{default: fpnew_pkg::PARALLEL}, // ADDMUL
-            '{default: fpnew_pkg::DISABLED},   // DIVSQRT
-            '{default: fpnew_pkg::DISABLED}, // NONCOMP
-            '{default: fpnew_pkg::DISABLED}    // CONV
+            '{default: fpnew_pkg::PARALLEL}, // ADDMUL - Merged or Parallel
+            '{default: fpnew_pkg::DISABLED},   // DIVSQRT - Merged
+            '{default: fpnew_pkg::PARALLEL}, // NONCOMP - Parallel
+            '{default: fpnew_pkg::DISABLED}    // CONV - Merged
         },
         PipeConfig: fpnew_pkg::BEFORE
     };
@@ -456,7 +452,7 @@ module pipeline
     	.operands_i    (fpu_operands),
     	.rnd_mode_i    (fpu_rnd_mode),
     	.op_i          (idex_instr_r.fpu_opcode),
-    	.op_mod_i      (fpu_op_mod),
+    	.op_mod_i      (idex_instr_r.fpu_op_modifier),
     	.src_fmt_i     (fpu_src_fmt),
     	.dst_fmt_i     (fpu_dst_fmt),
     	.int_fmt_i     (fpu_int_fmt),
