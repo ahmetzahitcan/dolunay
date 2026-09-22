@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
-import csv
-import sys
-import os
 import argparse
-import re
+import csv
 import math
+import os
+import re
+import sys
 
 # Matches a valid snake_case identifier: lowercase letters, digits, underscores only.
 _SNAKE_CASE_RE = re.compile(r'^[a-z][a-z0-9_]*$')
@@ -442,10 +442,9 @@ def emit_sv_package(data, output_file, package_name):
             if bitcount > 1:
                 f.write(f"\ttypedef enum logic [{bitcount-1}:0] {{\n")
             else:
-                f.write(f"\ttypedef enum logic {{\n")
+                f.write("\ttypedef enum logic {\n")
 
-            for value in values:
-                f.write(f"\t\t{prefix}_{value},\n")
+            f.writelines(f"\t\t{prefix}_{value},\n" for value in values)
             f.write(f"\t\t{prefix}_UNDEFINED='x\n")
 
             f.write(f"\t}} {sig}_e;\n\n")
@@ -474,7 +473,7 @@ def emit_sv_package(data, output_file, package_name):
                     f.write(f"\t\tlogic {sig};\n")
                 else:
                     f.write(f"\t\tlogic [{rng}] {sig};\n")
-        f.write(f"\t}} instr_s;\n\n")
+        f.write("\t} instr_s;\n\n")
 
 
         f.write("endpackage\n\n")
