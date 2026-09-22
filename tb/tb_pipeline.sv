@@ -27,7 +27,7 @@ module tb_pipeline;
     // DUT
     // -----------------------------------------------------------------------
 
-    localparam int IROM_SIZE = 4096;
+    localparam int IROM_SIZE = 65536;
     localparam int WRAM_SIZE = 65536;
 
     pipeline #(.IROM_SIZE(IROM_SIZE), .WRAM_SIZE(WRAM_SIZE)) dut(

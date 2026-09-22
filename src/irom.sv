@@ -1,6 +1,6 @@
 `default_nettype none
 
-module irom 
+module irom
     import params_pkg::*;
     import control_unit_pkg::*;
 
@@ -36,22 +36,23 @@ module irom
     control_unit sim__u_cu(
         .undec_instr32_i(sim__undec_instr32_w),
         .pc_i(sim__pc_w),
-        .instr_o(sim__instr_w)
+        .instr_o(sim__instr_w),
+        .valid_i(1'b0)
     );
 
     int instr_count;
-    
+
     initial begin
         for (instr_count = 0; instr_count < $size(mem_r); instr_count++) begin
-            if (mem_r[instr_count] === 32'bx) begin 
+            if (mem_r[instr_count] === 32'bx) begin
                 break;
             end
         end
-        
+
         for (int i = 0; i < instr_count; i++) begin
             sim__undec_instr32_w = mem_r[i][31:2];
-            sim__pc_w = i;
-            repeat(10) #0;
+            sim__pc_w = unsigned'((XLEN-Z_PC)'(i));
+            #0;
             sim__disasm_w[i] = sim__instr_w.sim__disasm;
         end
 

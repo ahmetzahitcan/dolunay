@@ -378,13 +378,23 @@ module pipeline
 
     localparam FPU_WIDTH = N_THREADS * XLEN;
 
-    // FIXME: For simplicity, we hard code fpu_operands[0 and 2] = rs1; fpu_operands[1] = rs2
     logic [2:0][FPU_WIDTH-1:0] fpu_operands;
     always_comb begin
         for (integer I = 0; I < N_THREADS; I++) begin
-            fpu_operands[0][I*XLEN +: XLEN] = idex_rs1_data_w[I];
-            fpu_operands[1][I*XLEN +: XLEN] = idex_rs2_data_w[I];
-            fpu_operands[2][I*XLEN +: XLEN] = idex_rs1_data_w[I];
+            unique case(idex_instr_r.fpu_op0_sel)
+                FPU_OP0_SEL_RS1: fpu_operands[0][I*XLEN +: XLEN] = idex_rs1_data_w[I];
+                FPU_OP0_SEL_UNDEFINED: fpu_operands[0][I*XLEN +: XLEN] = 'x;
+            endcase
+            unique case(idex_instr_r.fpu_op1_sel)
+                FPU_OP1_SEL_RS1: fpu_operands[1][I*XLEN +: XLEN] = idex_rs1_data_w[I];
+                FPU_OP1_SEL_RS2: fpu_operands[1][I*XLEN +: XLEN] = idex_rs2_data_w[I];
+                FPU_OP1_SEL_UNDEFINED: fpu_operands[1][I*XLEN +: XLEN] = 'x;
+            endcase
+            unique case(idex_instr_r.fpu_op2_sel)
+                FPU_OP2_SEL_RS2: fpu_operands[2][I*XLEN +: XLEN] = idex_rs2_data_w[I];
+                // FPU_OP2_SEL_RS3: -- FIXME
+                FPU_OP2_SEL_UNDEFINED: fpu_operands[2][I*XLEN +: XLEN] = 'x;
+            endcase
         end
     end
 
