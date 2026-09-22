@@ -34,10 +34,12 @@ module irom
     logic [31:2] sim__undec_instr32_w;
     logic [XLEN-1:Z_PC] sim__pc_w;
     control_unit sim__u_cu(
+`ifndef SYNTHESIS
+        .sim__runasserts_i(1'b0),
+`endif
         .undec_instr32_i(sim__undec_instr32_w),
         .pc_i(sim__pc_w),
-        .instr_o(sim__instr_w),
-        .valid_i(1'b0)
+        .instr_o(sim__instr_w)
     );
 
     int instr_count;

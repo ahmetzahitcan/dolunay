@@ -310,9 +310,11 @@ module pipeline
 
     (* DONT_TOUCH = "true" *)
     control_unit_ext u_control_unit(
+`ifndef SYNTHESIS
+        .sim__runasserts_i(id_stage_valid_r),
+`endif
         .undec_instr32_i(ifid_undec_instr32_w),
         .pc_i(ifid_pc_r),
-        .valid_i(id_stage_valid_r),
         .bsync_1_i(bsync_1_r[ifid_warp_id_r]),
         .instr_o(id_instr_w)
     );

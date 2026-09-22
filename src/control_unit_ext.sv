@@ -4,19 +4,23 @@ module control_unit_ext
     import params_pkg::*;
     import control_unit_pkg::*;
 (
-    input  wire  [31:2] undec_instr32_i,
-    input  wire  [XLEN-1:Z_PC] pc_i,
-    input  wire  valid_i,
-    input  wire  bsync_1_i,
+`ifndef SYNTHESIS
+    input  wire logic sim__runasserts_i,
+`endif
+    input  wire logic [31:2] undec_instr32_i,
+    input  wire logic [XLEN-1:Z_PC] pc_i,
+    input  wire logic bsync_1_i,
     output instr_s instr_o
 );
 
     instr_s instr_w;
 
     control_unit u_control_unit(
+`ifndef SYNTHESIS
+        .sim__runasserts_i(sim__runasserts_i),
+`endif
         .undec_instr32_i(undec_instr32_i),
         .pc_i(pc_i),
-        .valid_i(valid_i),
         .instr_o(instr_w)
     );
 
