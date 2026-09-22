@@ -119,6 +119,7 @@ package control_unit_pkg;
 
 	typedef enum logic {
 		FPU_OP2_SEL_RS2,
+		FPU_OP2_SEL_RS3,
 		FPU_OP2_SEL_UNDEFINED='x
 	} fpu_op2_sel_e;
 
@@ -130,6 +131,7 @@ package control_unit_pkg;
 		logic [W_REGISTERS-1:0] rd_idx;
 		logic [W_REGISTERS-1:0] rs1_idx;
 		logic [W_REGISTERS-1:0] rs2_idx;
+		logic [W_REGISTERS-1:0] rs3_idx;
 		logic [2:0] fpu_roundmode;
 		alu_funct_e alu_funct;
 		alu_addy_funct_e alu_addy_funct;

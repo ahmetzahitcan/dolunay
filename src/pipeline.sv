@@ -123,6 +123,7 @@ module pipeline
     // - Execute stage signals
     logic [N_THREADS-1:0][XLEN-1:0] idex_rs1_data_w;
     logic [N_THREADS-1:0][XLEN-1:0] idex_rs2_data_w;
+    logic [N_THREADS-1:0][XLEN-1:0] idex_rs3_data_w;
     instr_s idex_instr_r;
     logic [W_WARPS-1:0] idex_warp_id_r;
     logic [XLEN-1:Z_PC] idex_pc_r;
@@ -332,6 +333,9 @@ module pipeline
         .rs2_idx_i(id_instr_w.rs2_idx),
         .rs2_data_o(idex_rs2_data_w),
 
+        .rs3_idx_i(id_instr_w.rs3_idx),
+        .rs3_data_o(idex_rs3_data_w),
+
         .write_warp_id_i(suwb_warp_id_r),
         .write_en_mask_i(wb_write_en_mask_w),
         .rd_idx_i(suwb_instr_r.rd_idx),
@@ -373,9 +377,6 @@ module pipeline
     endgenerate
 
     // - FPU
-    // TODO: Maybe I need an FLEN?
-    // TODO: FPU REGISTER FILE???
-
     localparam FPU_WIDTH = N_THREADS * XLEN;
 
     logic [2:0][FPU_WIDTH-1:0] fpu_operands;
@@ -392,7 +393,7 @@ module pipeline
             endcase
             unique case(idex_instr_r.fpu_op2_sel)
                 FPU_OP2_SEL_RS2: fpu_operands[2][I*XLEN +: XLEN] = idex_rs2_data_w[I];
-                // FPU_OP2_SEL_RS3: -- FIXME
+                FPU_OP2_SEL_RS3: fpu_operands[2][I*XLEN +: XLEN] = idex_rs3_data_w[I];
                 FPU_OP2_SEL_UNDEFINED: fpu_operands[2][I*XLEN +: XLEN] = 'x;
             endcase
         end

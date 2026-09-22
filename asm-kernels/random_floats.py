@@ -56,12 +56,14 @@ def main() -> None:
     # Float operands in [-100, 100), stored as binary32.
     list_a = [np.float32(rng.uniform(-100.0, 100.0)) for _ in range(COUNT)]
     list_b = [np.float32(rng.uniform(-100.0, 100.0)) for _ in range(COUNT)]
+    list_c = [np.float32(rng.uniform(-100.0, 100.0)) for _ in range(COUNT)]
     # Integer operands for the fcvt.s.w / fcvt.s.wu tests.
     list_ia = [rng.randint(-(2**31), 2**31 - 1) for _ in range(COUNT)]
     list_iu = [rng.randint(0, 2**32 - 1) for _ in range(COUNT)]
 
     fa = np.array(list_a, dtype=np.float32)
     fb = np.array(list_b, dtype=np.float32)
+    fc = np.array(list_c, dtype=np.float32)
     ia = np.array(list_ia, dtype=np.int32)
     iu = np.array(list_iu, dtype=np.uint32)
 
@@ -98,9 +100,16 @@ def main() -> None:
     list_cvt_sw = bits_of(ia.astype(np.float32))
     list_cvt_swu = bits_of(iu.astype(np.float32))
 
+    # Float FMA operations.
+    list_fmadd = bits_of((fa * fb) + fc)
+    list_fmsub = bits_of((fa * fb) - fc)
+    list_fnmsub = bits_of(-(fa * fb) + fc)
+    list_fnmadd = bits_of(-(fa + fb) - fc)
+
     lists = [
         ("list_a", "List A (float operand a)", list_a, "f"),
         ("list_b", "List B (float operand b)", list_b, "f"),
+        ("list_c", "List C (float operand c)", list_c, "f"),
         ("list_ia", "List IA (int32 operand for fcvt.s.w)", list_ia, "i"),
         ("list_iu", "List IU (uint32 operand for fcvt.s.wu)", list_iu, "u"),
         ("list_add", "List ADD (a + b)", list_add, "u"),
@@ -121,6 +130,10 @@ def main() -> None:
         ("list_cvt_wus", "List CVT_WUS (fcvt.wu.s a)", cvt_wus, "u"),
         ("list_cvt_sw", "List CVT_SW (fcvt.s.w ia)", list_cvt_sw, "u"),
         ("list_cvt_swu", "List CVT_SWU (fcvt.s.wu iu)", list_cvt_swu, "u"),
+        ("list_fmadd", "List FMADD (fa * fb + fc)", list_fmadd, "u"),
+        ("list_fmsub", "List FMSUB (fa * fb - fc)", list_fmsub, "u"),
+        ("list_fnmsub", "List FNMSUB (-fa * fb + fc)", list_fnmsub, "u"),
+        ("list_fnmadd", "List FNMADD (-fa * fb - fc)", list_fnmadd, "u"),
     ]
 
     for name, comment, values, kind in lists:

@@ -8,6 +8,7 @@ module sim__instr_formatter
     input wire logic [W_REGISTERS-1:0] rd_i,
     input wire logic [W_REGISTERS-1:0] rs1_i,
     input wire logic [W_REGISTERS-1:0] rs2_i,
+    input wire logic [W_REGISTERS-1:0] rs3_i,
     input wire logic [XLEN-1:0] imm_i,
     input wire logic [XLEN-1:Z_PC] pc_i,
     output sim__disasm_t disasm_o
@@ -42,6 +43,7 @@ module sim__instr_formatter
                     "d", "D": s = $sformatf("x%0d", rd_i);
                     "1": s = $sformatf("x%0d", rs1_i);
                     "2": s = $sformatf("x%0d", rs2_i);
+                    "3": s = $sformatf("x%0d", rs3_i);
                     "i", "I": s = $sformatf("0x%0x", imm_i);
                     "p", "P": s = $sformatf("%0d", pc_i + imm_i[XLEN-1:Z_PC]);
                     "$": s = "$";

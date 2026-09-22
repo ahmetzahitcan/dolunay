@@ -19,6 +19,10 @@ module register_file
     input wire  logic [W_REGISTERS-1:0]       rs2_idx_i,
     output logic [N_THREADS-1:0][XLEN-1:0]  rs2_data_o,
 
+    // Read port 3
+    input wire  logic [W_REGISTERS-1:0]       rs3_idx_i,
+    output logic [N_THREADS-1:0][XLEN-1:0]  rs3_data_o,
+
     // Write port
     input wire  logic [N_THREADS-1:0]          write_en_mask_i,
     input wire  logic [W_REGISTERS-1:0]        rd_idx_i,
@@ -26,31 +30,34 @@ module register_file
 );
 
     `ifndef SYNTHESIS
-        assert property 
-            (@(posedge clk) (read_warp_id_i != write_warp_id_i) || (write_en_mask_i == '0)) 
+        assert property
+            (@(posedge clk) (read_warp_id_i != write_warp_id_i) || (write_en_mask_i == '0))
             else $error("Register file read and write from same warp");
     `endif
 
     logic [N_THREADS-1:0][XLEN-1:0] rs1_data_r;
     logic [N_THREADS-1:0][XLEN-1:0] rs2_data_r;
+    logic [N_THREADS-1:0][XLEN-1:0] rs3_data_r;
 
     `ifndef SYNTHESIS
+    // slang lint_off unused-but-set-variable
         logic [XLEN-1:0] sim__regs_shadow_w [0:N_WARPS-1][0:N_THREADS-1][1:N_REGISTERS-1];
+    // slang lint_on unused-but-set-variable
     `endif
 
     generate
-        for (genvar T = 0; T < N_THREADS; T++) begin
-            (* ram_style = "block" *)    
+        for (genvar T = 0; T < N_THREADS; T++) begin : gen_threads
             logic [XLEN-1:0] regs_r [0:(N_WARPS * N_REGISTERS) - 1];
 
             `ifndef SYNTHESIS
-                for (genvar W = 0; W < N_WARPS; W++) begin
-                    for (genvar R = 1; R < N_REGISTERS; R++) begin
+                for (genvar W = 0; W < N_WARPS; W++) begin : gen_warps
+                    for (genvar R = 1; R < N_REGISTERS; R++) begin : gen_regs
                         assign sim__regs_shadow_w[W][T][R] = regs_r[W * N_REGISTERS + R];
                     end
                 end
             `endif
-            
+
+            // slang lint_off arith-op-mismatch
             always_ff @(posedge clk) begin
                 if (write_en_mask_i[T]) begin
                     regs_r[write_warp_id_i * N_REGISTERS + rd_idx_i] <= write_data_i[T];
@@ -60,18 +67,22 @@ module register_file
             always_ff @( posedge clk ) begin
                 rs1_data_r[T] <= regs_r[read_warp_id_i * N_REGISTERS + rs1_idx_i];
                 rs2_data_r[T] <= regs_r[read_warp_id_i * N_REGISTERS + rs2_idx_i];
+                rs3_data_r[T] <= regs_r[read_warp_id_i * N_REGISTERS + rs3_idx_i];
             end
+            // slang lint_on arith-op-mismatch
         end
     endgenerate
 
-    logic rs1_zero_r, rs2_zero_r;
+    logic rs1_zero_r, rs2_zero_r, rs3_zero_r;
     always_ff @( posedge clk ) begin
         rs1_zero_r <= (rs1_idx_i == 0);
         rs2_zero_r <= (rs2_idx_i == 0);
+        rs3_zero_r <= (rs3_idx_i == 0);
     end
 
-    assign rs1_data_o = rs1_zero_r ? '0 : rs1_data_r;
-    assign rs2_data_o = rs2_zero_r ? '0 : rs2_data_r;
+    assign rs1_data_o = rs1_zero_r ? '{default: '0} : rs1_data_r;
+    assign rs2_data_o = rs2_zero_r ? '{default: '0} : rs2_data_r;
+    assign rs3_data_o = rs3_zero_r ? '{default: '0} : rs3_data_r;
 
 endmodule
 

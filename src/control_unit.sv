@@ -31,6 +31,7 @@ module control_unit
         .rd_i(instr_o.rd_idx),
         .rs1_i(instr_o.rs1_idx),
         .rs2_i(instr_o.rs2_idx),
+        .rs3_i(instr_o.rs3_idx),
         .imm_i(instr_o.imm),
         .pc_i(pc_i),
         .disasm_o(instr_o.sim__disasm)
@@ -41,6 +42,7 @@ module control_unit
         instr_o.rd_idx = undec_instr32_i[W_REGISTERS+6:7];
         instr_o.rs1_idx = undec_instr32_i[W_REGISTERS+14:15];
         instr_o.rs2_idx = undec_instr32_i[W_REGISTERS+19:20];
+        instr_o.rs3_idx = undec_instr32_i[W_REGISTERS+26:27];
         instr_o.fpu_roundmode = undec_instr32_i[14:12];
         case (undec_instr32_i) inside
             30'b000000000000000001000000000010: begin // YIELD
@@ -2243,6 +2245,130 @@ module control_unit
                 instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
+            end
+            30'b?????00??????????????????10000: begin // FMADD_S
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fmadd.s $d, $1, $2, $3";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_FPU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b1;
+                instr_o.fpu_opcode = fpnew_pkg::FMADD;
+                instr_o.fpu_op_modifier = 1'b0;
+                instr_o.fpu_op0_sel = FPU_OP0_SEL_RS1;
+                instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
+                instr_o.fpu_op2_sel = FPU_OP2_SEL_RS3;
+            end
+            30'b?????00??????????????????10001: begin // FMSUB_S
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fmsub.s $d, $1, $2, $3";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_FPU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b1;
+                instr_o.fpu_opcode = fpnew_pkg::FMADD;
+                instr_o.fpu_op_modifier = 1'b1;
+                instr_o.fpu_op0_sel = FPU_OP0_SEL_RS1;
+                instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
+                instr_o.fpu_op2_sel = FPU_OP2_SEL_RS3;
+            end
+            30'b?????00??????????????????10010: begin // FNMSUB_S
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fnmsub.s $d, $1, $2, $3";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_FPU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b1;
+                instr_o.fpu_opcode = fpnew_pkg::FNMSUB;
+                instr_o.fpu_op_modifier = 1'b0;
+                instr_o.fpu_op0_sel = FPU_OP0_SEL_RS1;
+                instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
+                instr_o.fpu_op2_sel = FPU_OP2_SEL_RS3;
+            end
+            30'b?????00??????????????????10011: begin // FNMADD_S
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fnmadd.s $d, $1, $2, $3";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_FPU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b1;
+                instr_o.fpu_opcode = fpnew_pkg::FNMSUB;
+                instr_o.fpu_op_modifier = 1'b1;
+                instr_o.fpu_op0_sel = FPU_OP0_SEL_RS1;
+                instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
+                instr_o.fpu_op2_sel = FPU_OP2_SEL_RS3;
             end
             30'b?????????????????????????11011: begin // JAL
                 `ifndef SYNTHESIS
