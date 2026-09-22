@@ -32,6 +32,7 @@ module control_unit
         .rs1_i(instr_o.rs1_idx),
         .rs2_i(instr_o.rs2_idx),
         .rs3_i(instr_o.rs3_idx),
+        .roundmode_i(instr_o.fpu_roundmode),
         .imm_i(instr_o.imm),
         .pc_i(pc_i),
         .disasm_o(instr_o.sim__disasm)
@@ -481,7 +482,7 @@ module control_unit
             end
             30'b010110000000?????????????10100: begin // FSQRT_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fsqrt.s $d, $1";
+                sim__disasm_format_w = "fsqrt.s $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -512,7 +513,7 @@ module control_unit
             end
             30'b110000000000?????????????10100: begin // FCVT_W_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fcvt.w.s $d, $1";
+                sim__disasm_format_w = "fcvt.w.s $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -543,7 +544,7 @@ module control_unit
             end
             30'b110000000001?????????????10100: begin // FCVT_WU_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fcvt.wu.s $d, $1";
+                sim__disasm_format_w = "fcvt.wu.s $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -574,7 +575,7 @@ module control_unit
             end
             30'b110100000000?????????????10100: begin // FCVT_S_W
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fcvt.s.w $d, $1";
+                sim__disasm_format_w = "fcvt.s.w $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -605,7 +606,7 @@ module control_unit
             end
             30'b110100000001?????????????10100: begin // FCVT_S_WU
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fcvt.s.wu $d, $1";
+                sim__disasm_format_w = "fcvt.s.wu $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -1256,7 +1257,7 @@ module control_unit
             end
             30'b0010100??????????00??????10100: begin // FMINMAX_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fminmax.s $d, $1, $2";
+                sim__disasm_format_w = "fminmax.s $d, $1, $2, $m";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -1380,7 +1381,7 @@ module control_unit
             end
             30'b0010000??????????0???????10100: begin // FSGNJ_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fsgnj(n|x).s $d, $1, $2";
+                sim__disasm_format_w = "fsgnj(n|x).s $d, $1, $2, $s";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -1411,7 +1412,7 @@ module control_unit
             end
             30'b1010000??????????0???????10100: begin // FCMP_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fcmp.s $d, $1, $2";
+                sim__disasm_format_w = "fcmp.s $d, $1, $2, $c";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -1442,7 +1443,7 @@ module control_unit
             end
             30'b0000000??????????????????10100: begin // FADD_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fadd.s $d, $1, $2";
+                sim__disasm_format_w = "fadd.s $d, $1, $2, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -1473,7 +1474,7 @@ module control_unit
             end
             30'b0000100??????????????????10100: begin // FSUB_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fsub.s $d, $1, $2";
+                sim__disasm_format_w = "fsub.s $d, $1, $2, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -1504,7 +1505,7 @@ module control_unit
             end
             30'b0001000??????????????????10100: begin // FMUL_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fmul.s $d, $1, $2";
+                sim__disasm_format_w = "fmul.s $d, $1, $2, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -1535,7 +1536,7 @@ module control_unit
             end
             30'b0001100??????????????????10100: begin // FDIV_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fdiv.s $d, $1, $2";
+                sim__disasm_format_w = "fdiv.s $d, $1, $2. $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -2248,7 +2249,7 @@ module control_unit
             end
             30'b?????00??????????????????10000: begin // FMADD_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fmadd.s $d, $1, $2, $3";
+                sim__disasm_format_w = "fmadd.s $d, $1, $2, $3, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -2279,7 +2280,7 @@ module control_unit
             end
             30'b?????00??????????????????10001: begin // FMSUB_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fmsub.s $d, $1, $2, $3";
+                sim__disasm_format_w = "fmsub.s $d, $1, $2, $3, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -2310,7 +2311,7 @@ module control_unit
             end
             30'b?????00??????????????????10010: begin // FNMSUB_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fnmsub.s $d, $1, $2, $3";
+                sim__disasm_format_w = "fnmsub.s $d, $1, $2, $3, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -2341,7 +2342,7 @@ module control_unit
             end
             30'b?????00??????????????????10011: begin // FNMADD_S
                 `ifndef SYNTHESIS
-                sim__disasm_format_w = "fnmadd.s $d, $1, $2, $3";
+                sim__disasm_format_w = "fnmadd.s $d, $1, $2, $3, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;

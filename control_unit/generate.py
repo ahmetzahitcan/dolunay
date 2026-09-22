@@ -360,6 +360,7 @@ def emit_sv_module(data, output_file, module_name, package_name):
         f.write("        .rs1_i(instr_o.rs1_idx),\n")
         f.write("        .rs2_i(instr_o.rs2_idx),\n")
         f.write("        .rs3_i(instr_o.rs3_idx),\n")
+        f.write("        .roundmode_i(instr_o.fpu_roundmode),\n")
         f.write("        .imm_i(instr_o.imm),\n")
         f.write("        .pc_i(pc_i),\n")
         f.write("        .disasm_o(instr_o.sim__disasm)\n")

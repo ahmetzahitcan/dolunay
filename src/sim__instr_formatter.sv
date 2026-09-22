@@ -9,6 +9,7 @@ module sim__instr_formatter
     input wire logic [W_REGISTERS-1:0] rs1_i,
     input wire logic [W_REGISTERS-1:0] rs2_i,
     input wire logic [W_REGISTERS-1:0] rs3_i,
+    input wire logic [2:0] roundmode_i,
     input wire logic [XLEN-1:0] imm_i,
     input wire logic [XLEN-1:Z_PC] pc_i,
     output sim__disasm_t disasm_o
@@ -46,6 +47,32 @@ module sim__instr_formatter
                     "3": s = $sformatf("x%0d", rs3_i);
                     "i", "I": s = $sformatf("0x%0x", imm_i);
                     "p", "P": s = $sformatf("%0d", pc_i + imm_i[XLEN-1:Z_PC]);
+                    "r", "R": case (roundmode_i)
+                        3'b000: s = "rne";
+                        3'b001: s = "rtz";
+                        3'b010: s = "rdn";
+                        3'b011: s = "rup";
+                        3'b100: s = "rmm";
+                        3'b111: s = "dyn";
+                        default: s = "INVALID";
+                    endcase
+                    "m", "M": case (roundmode_i)
+                        3'b000: s = "min";
+                        3'b001: s = "max";
+                        default: s = "INVALID";
+                    endcase
+                    "s", "S": case (roundmode_i)
+                        3'b000: s = "mov";
+                        3'b001: s = "not";
+                        3'b010: s = "xor";
+                        default: s = "INVALID";
+                    endcase
+                    "c", "C": case (roundmode_i)
+                        3'b000: s = "le";
+                        3'b001: s = "lt";
+                        3'b010: s = "eq";
+                        default: s = "INVALID";
+                    endcase
                     "$": s = "$";
                     default: $error("Invalid format specifier: $%c", format_i[i]);
                 endcase

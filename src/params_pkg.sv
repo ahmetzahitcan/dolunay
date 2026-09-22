@@ -3,7 +3,7 @@
 package params_pkg;
 
     `ifndef SYNTHESIS
-        localparam int DISASM_LEN = 32;
+        localparam int DISASM_LEN = 64;
         typedef logic [DISASM_LEN*8-1:0] sim__disasm_t;
     `endif
 

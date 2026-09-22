@@ -54,7 +54,7 @@ module irom
         for (int i = 0; i < instr_count; i++) begin
             sim__undec_instr32_w = mem_r[i][31:2];
             sim__pc_w = unsigned'((XLEN-Z_PC)'(i));
-            #0;
+            repeat(2) #0;
             sim__disasm_w[i] = sim__instr_w.sim__disasm;
         end
 
