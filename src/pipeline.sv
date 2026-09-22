@@ -204,7 +204,7 @@ module pipeline
     // Warp Select
     logic [W_WARPS-1:0] ws_warp_id_w;
     logic [W_WARPS-1:0] ws_warp_id_r;
-    (* DONT_TOUCH = "true" *)
+
     warp_scheduler u_warp_scheduler(
         .clk(clk),
         .rst_n(rst_n),
@@ -255,7 +255,6 @@ module pipeline
             assign winst_retired_w[I] = instruction_retire_w;
             assign inst_retired_w[I] = instruction_retire_w ? masu_instr_retired_mask_r : '0;
 
-            (* DONT_TOUCH = "true" *)
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n & ~start_i),
@@ -310,7 +309,6 @@ module pipeline
 
     instr_s id_instr_w;
 
-    (* DONT_TOUCH = "true" *)
     control_unit_ext u_control_unit(
 `ifndef SYNTHESIS
         .sim__runasserts_i(id_stage_valid_r),
@@ -323,7 +321,6 @@ module pipeline
 
     // - Register File
 
-    (* DONT_TOUCH = "true" *)
     register_file u_register_file(
         .clk(clk),
 
@@ -358,7 +355,6 @@ module pipeline
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin : gen_alu
-            (* DONT_TOUCH = "true" *)
             alu #(
                 .THREAD_ID(I)
             ) u_alu (
@@ -716,7 +712,6 @@ module pipeline
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin : gen_bcu
-            (* DONT_TOUCH = "true" *)
             branch_cond_unit u_bcu(
                 .alu_result_i(lsma_alu_result_r[I]),
                 .coalesced_i(lsma_coalesced_r[I]),
