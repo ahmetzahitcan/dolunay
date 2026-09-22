@@ -1,6 +1,10 @@
 // =============================================================================
 // tb_shuffle_any.sv — Basic testbench for shuffle_any
 // =============================================================================
+//
+// slang lint_off unconnected-input-port
+// slang lint_off unconnected-output-port
+
 `timescale 1ns/1ps
 `default_nettype none
 

@@ -1,3 +1,5 @@
+// slang lint_off empty-output-connection
+
 `default_nettype none
 
 module pipeline
@@ -164,7 +166,7 @@ module pipeline
     logic [N_THREADS-1:0] masu_mask_r;
     logic [W_WARPS-1:0] masu_warp_id_r;
     msel_e [N_THREADS-1:0] masu_msel_r;
-    logic [XLEN-1:0] masu_branch_target_r;
+    logic [XLEN-1:Z_PC] masu_branch_target_r;
     logic [N_THREADS-1:0] masu_branch_flag_r;
     logic [N_THREADS-1:0] masu_branch_mask_r;
     logic masu_branching_r;
@@ -236,7 +238,7 @@ module pipeline
 
     // - Thread Schedulers
     generate
-        for (genvar I = 0; I < N_WARPS; I++) begin
+        for (genvar I = 0; I < N_WARPS; I++) begin : gen_thread_schedulers
             logic su_en_w;
             assign su_en_w = (masu_warp_id_r == I) & su_stage_valid_r;
 
@@ -355,7 +357,7 @@ module pipeline
     logic [N_THREADS-1:0][XLEN-1:0] ex_alu_result_w;
 
     generate
-        for (genvar I = 0; I < N_THREADS; I++) begin
+        for (genvar I = 0; I < N_THREADS; I++) begin : gen_alu
             (* DONT_TOUCH = "true" *)
             alu #(
                 .THREAD_ID(I)
@@ -540,7 +542,7 @@ module pipeline
     always_comb begin
         if (exls_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
-                case (ls_msel_w[i]) // FIXME: unique
+                unique case (ls_msel_w[i])
                     MSEL_IROM: ls_leader_candidates_w[i] = exls_mask_r[i] & (exls_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD); // FIXME: can this be just exls_mask_r[i]?
                     MSEL_WRAM: begin
                         if (exls_instr_r.is_sc) begin
@@ -550,6 +552,7 @@ module pipeline
                         end
                     end
                     MSEL_TLOCAL: ls_leader_candidates_w[i] = '0;
+                    MSEL_UNDEFINED: ls_leader_candidates_w[i] = 'x;
                 endcase
             end
         end else begin
@@ -575,7 +578,7 @@ module pipeline
     logic [N_THREADS-1:0][XLEN-1:0] ls_store_data_w;
 
     always_comb begin
-        case (exls_instr_r.mem_store_source) // FIXME: unique
+        unique case (exls_instr_r.mem_store_source)
             MEM_STORE_SOURCE_RS2: ls_store_data_w = exls_rs2_data_r;
             MEM_STORE_SOURCE_BINIT: for(int i = 0; i < N_THREADS; i++) begin
                 ls_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, exls_mask_r, {N_THREADS{1'b0}}};
@@ -583,7 +586,7 @@ module pipeline
             MEM_STORE_SOURCE_BSYNC: for(int i = 0; i < N_THREADS; i++) begin
                 ls_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, barr_sync_total_w[exls_warp_id_r], barr_sync_parked_next_w[exls_warp_id_r]};
             end
-            default: ls_store_data_w = 'x;
+            MEM_STORE_SOURCE_UNDEFINED: ls_store_data_w = 'x;
         endcase
     end
 
@@ -613,7 +616,7 @@ module pipeline
     logic [N_THREADS-1:0] ls_coalesced_w;
 
     generate
-        for(genvar I = 0; I < N_THREADS; I++) begin
+        for(genvar I = 0; I < N_THREADS; I++) begin : gen_ls_colaesced
             assign ls_coalesced_w[I] = exls_alu_result_r[I][XLEN-1:0] == ls_leader_target_w;
         end
     endgenerate
@@ -679,7 +682,7 @@ module pipeline
     // - Thread-local Memory
 
     generate
-        for (genvar I = 0; I < N_THREADS; I++) begin
+        for (genvar I = 0; I < N_THREADS; I++) begin : gen_tlocal
             logic [W_TLOCAL_BANK_ADDR-1:Z_ADDR] bank_addr;
             assign bank_addr = {lsma_warp_id_r, lsma_alu_result_r[I][W_TLOCAL_ADDR_PT-1:Z_ADDR]};
 
@@ -712,7 +715,7 @@ module pipeline
     logic [XLEN-1:Z_PC] ma_branch_target_w;
 
     generate
-        for (genvar I = 0; I < N_THREADS; I++) begin
+        for (genvar I = 0; I < N_THREADS; I++) begin : gen_bcu
             (* DONT_TOUCH = "true" *)
             branch_cond_unit u_bcu(
                 .alu_result_i(lsma_alu_result_r[I]),
@@ -741,10 +744,11 @@ module pipeline
             ma_instr_replay_mask_w = lsma_mask_r & ~lsma_coalesced_r;
         end else if (lsma_instr_r.mem_active) begin
             for (int i = 0; i < N_THREADS; i++) begin
-                case (lsma_msel_r[i]) // FIXME: unique
+                unique case (lsma_msel_r[i])
                     MSEL_IROM: ma_instr_replay_mask_w[i] = lsma_mask_r[i] & (~lsma_coalesced_r[i]) & lsma_instr_r.mem_loadstore == MEM_LOADSTORE_LOAD;
                     MSEL_WRAM: ma_instr_replay_mask_w[i] = lsma_mask_r[i] & (~lsma_coalesced_r[i]) & ~lsma_instr_r.is_sc;
                     MSEL_TLOCAL: ma_instr_replay_mask_w[i] = '0;
+                    MSEL_UNDEFINED: ma_instr_replay_mask_w[i] = 'x;
                 endcase
             end
         end else begin
@@ -845,18 +849,20 @@ module pipeline
         wb_write_data_w = 'x;
 
         if (wb_stage_valid_r & suwb_instr_r.wb_active) begin
-            case (suwb_instr_r.wb_source) // FIXME: unique
+            unique case (suwb_instr_r.wb_source)
                 WB_SOURCE_ALU: wb_write_data_w = suwb_alu_result_r;
                 WB_SOURCE_FPU: wb_write_data_w = wb_fpu_result_w;
                 WB_SOURCE_MEM: for (int i = 0; i < N_THREADS; i++) begin
-                    case (suwb_msel_r[i]) // FIXME: unique
+                    unique case (suwb_msel_r[i])
                         MSEL_IROM: wb_write_data_w[i] = suwb_irom_data_fmt_r;
                         MSEL_WRAM: wb_write_data_w[i] = suwb_wram_rdata_fmt_r;
                         MSEL_TLOCAL: wb_write_data_w[i] = suwb_tlocal_rdata_fmt_r[i];
+                        MSEL_UNDEFINED: wb_write_data_w[i] = 'x;
                     endcase
                 end
                 WB_SOURCE_PC_P4: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = wb_pc_p4_w;
                 WB_SOURCE_SC: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = {{(XLEN-1){1'b0}}, wb_sc_output_w[i]};
+                WB_SOURCE_UNDEFINED: wb_write_data_w = 'x;
             endcase
         end
     end
