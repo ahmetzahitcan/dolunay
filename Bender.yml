@@ -7,7 +7,7 @@ package:
     - "Ahmet Zahit Can <ahmetzahit.can@yildiz.edu.tr>"
 
 dependencies:
-  fpnew: { git: "https://github.com/ahmetzahitcan/cvfpu.git", rev: "develop" }
+  fpnew: { git: "https://github.com/ahmetzahitcan/cvfpu.git", rev: "master" }
 
 sources:
   - src/*.sv

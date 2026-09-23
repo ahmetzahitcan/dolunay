@@ -1,10 +1,11 @@
 `default_nettype none
 
-module warp_scheduler 
+module warp_scheduler
     import params_pkg::*;
 (
     input wire logic clk,
     input wire logic rst_n,
+    input wire logic stall_i,
     output logic [W_WARPS-1:0] warp_id_o
 );
 
@@ -16,7 +17,7 @@ module warp_scheduler
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             current_warp_r <= '0;
-        end else begin
+        end else if (!stall_i) begin
             current_warp_r <= next_warp_w;
         end
     end

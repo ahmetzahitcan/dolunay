@@ -8,7 +8,7 @@ module control_unit_ext
     input  wire logic sim__runasserts_i,
 `endif
     input  wire logic [31:2] undec_instr32_i,
-    input  wire logic [XLEN-1:Z_PC] pc_i,
+    input  wire logic [RLEN-1:Z_PC] pc_i,
     input  wire logic bsync_1_i,
     output instr_s instr_o
 );

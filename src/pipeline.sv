@@ -22,17 +22,17 @@ module pipeline
 
     // WRAM Interface
     output logic [W_WRAM_ADDR-1:Z_ADDR] wram_addr_o,
-    output logic [XLEN-1:0] wram_wdata_o,
+    output logic [RLEN-1:0] wram_wdata_o,
     output logic [ADDR_ALIGN-1:0] wram_wen_o,
-    input wire logic [XLEN-1:0] wram_rdata_i,
+    input wire logic [RLEN-1:0] wram_rdata_i,
 
     // IROM Interface A
     output logic [W_IROM_ADDR-1:Z_PC] irom_addr_a_o,
-    input wire logic [XLEN-1:0] irom_data_a_i,
+    input wire logic [RLEN-1:0] irom_data_a_i,
 
     // IROM Interface B
     output logic [W_IROM_ADDR-1:Z_PC] irom_addr_b_o,
-    input wire logic [XLEN-1:0] irom_data_b_i
+    input wire logic [RLEN-1:0] irom_data_b_i
 );
     // Typedefs
     typedef enum logic [1:0] {
@@ -60,6 +60,14 @@ module pipeline
         .wuinstret_o(wuinstret_w)
     );
 
+    // Pipeline control
+
+    logic pipeline_stall_fpu_in_w, pipeline_stall_fpu_out_w;
+
+    logic pipeline_stall_r;
+    logic pipeline_stall_w;
+    assign pipeline_stall_w = pipeline_stall_fpu_in_w | pipeline_stall_fpu_out_w;
+
     // Stage valid registers -- indicating whether other pipeline registers are valid
 
     logic ws_stage_valid_r;
@@ -79,6 +87,14 @@ module pipeline
     instr_s suwb_instr_r;
     logic [W_WARPS-1:0] suwb_warp_id_r;
 
+    always_ff @( negedge clk ) begin
+        if (!rst_n) begin
+            pipeline_stall_r <= '0;
+        end else begin
+            pipeline_stall_r <= pipeline_stall_w;
+        end
+    end
+
     always_ff @( posedge clk ) begin
         if (!rst_n) begin
             wdone_r <= '1;
@@ -91,21 +107,23 @@ module pipeline
             su_stage_valid_r <= '0;
             wb_stage_valid_r <= '0;
         end else begin
-            unique0 if (start_i & ready_o) begin
-                wdone_r <= '0;
-            end else if (running_w) begin
-                if (suwb_instr_r.is_wdone & wb_stage_valid_r) begin
-                    wdone_r[suwb_warp_id_r] <= 1'b1;
+            if (!pipeline_stall_r) begin
+                unique0 if (start_i & ready_o) begin
+                    wdone_r <= '0;
+                end else if (running_w) begin
+                    if (suwb_instr_r.is_wdone & wb_stage_valid_r) begin
+                        wdone_r[suwb_warp_id_r] <= 1'b1;
+                    end
                 end
+                ws_stage_valid_r <= running_w;
+                if_stage_valid_r <= ws_stage_valid_r;
+                id_stage_valid_r <= if_stage_valid_r;
+                ex_stage_valid_r <= id_stage_valid_r;
+                ls_stage_valid_r <= ex_stage_valid_r;
+                ma_stage_valid_r <= ls_stage_valid_r;
+                su_stage_valid_r <= ma_stage_valid_r;
+                wb_stage_valid_r <= su_stage_valid_r;
             end
-            ws_stage_valid_r <= running_w;
-            if_stage_valid_r <= ws_stage_valid_r;
-            id_stage_valid_r <= if_stage_valid_r;
-            ex_stage_valid_r <= id_stage_valid_r;
-            ls_stage_valid_r <= ex_stage_valid_r;
-            ma_stage_valid_r <= ls_stage_valid_r;
-            su_stage_valid_r <= ma_stage_valid_r;
-            wb_stage_valid_r <= su_stage_valid_r;
         end
     end
 
@@ -115,35 +133,35 @@ module pipeline
     logic [W_WARPS-1:0] wsif_warp_id_r;
 
     // - Decode stage signals
-    logic [XLEN-1:Z_PC] ifid_pc_r;
+    logic [RLEN-1:Z_PC] ifid_pc_r;
     logic [N_THREADS-1:0] ifid_mask_r;
     logic [31:2] ifid_undec_instr32_w;
     logic [W_WARPS-1:0] ifid_warp_id_r;
 
     // - Execute stage signals
-    logic [N_THREADS-1:0][XLEN-1:0] idex_rs1_data_w;
-    logic [N_THREADS-1:0][XLEN-1:0] idex_rs2_data_w;
-    logic [N_THREADS-1:0][XLEN-1:0] idex_rs3_data_w;
+    logic [N_THREADS-1:0][RLEN-1:0] idex_rs1_data_w;
+    logic [N_THREADS-1:0][RLEN-1:0] idex_rs2_data_w;
+    logic [N_THREADS-1:0][RLEN-1:0] idex_rs3_data_w;
     instr_s idex_instr_r;
     logic [W_WARPS-1:0] idex_warp_id_r;
-    logic [XLEN-1:Z_PC] idex_pc_r;
+    logic [RLEN-1:Z_PC] idex_pc_r;
     logic [N_THREADS-1:0] idex_mask_r;
 
     // - Leader Select stage signals
     instr_s exls_instr_r;
-    logic [N_THREADS-1:0][XLEN-1:0] exls_alu_result_r;
-    logic [N_THREADS-1:0][XLEN-1:0] exls_rs2_data_r;
-    logic [XLEN-1:Z_PC] exls_pc_r;
+    logic [N_THREADS-1:0][RLEN-1:0] exls_alu_result_r;
+    logic [N_THREADS-1:0][RLEN-1:0] exls_rs2_data_r;
+    logic [RLEN-1:Z_PC] exls_pc_r;
     logic [N_THREADS-1:0] exls_mask_r;
     logic [W_WARPS-1:0] exls_warp_id_r;
 
-    logic [N_THREADS-1:0][XLEN-1:0] ls_store_data_fmt_w;
+    logic [N_THREADS-1:0][RLEN-1:0] ls_store_data_fmt_w;
     logic [N_THREADS-1:0][ADDR_ALIGN-1:0] ls_store_wen_w;
 
     // - Memory Access stage signals
     instr_s lsma_instr_r;
-    logic [N_THREADS-1:0][XLEN-1:0] lsma_alu_result_r;
-    logic [XLEN-1:Z_PC] lsma_pc_r;
+    logic [N_THREADS-1:0][RLEN-1:0] lsma_alu_result_r;
+    logic [RLEN-1:Z_PC] lsma_pc_r;
     logic [N_THREADS-1:0] lsma_mask_r;
     logic [W_WARPS-1:0] lsma_warp_id_r;
     logic [W_THREADS-1:0] lsma_leader_id_r;
@@ -151,23 +169,23 @@ module pipeline
     logic lsma_leader_valid_r;
     logic [N_WARPS-1:0][N_THREADS-1:0] lsma_reservation_r;
     msel_e [N_THREADS-1:0] lsma_msel_r;
-    logic [N_THREADS-1:0][XLEN-1:0] lsma_store_data_fmt_r;
+    logic [N_THREADS-1:0][RLEN-1:0] lsma_store_data_fmt_r;
     logic [N_THREADS-1:0][ADDR_ALIGN-1:0] lsma_store_wen_r;
     logic [N_THREADS-1:0] lsma_coalesced_r;
-    logic [XLEN-1:0] lsma_leader_target_r;
-    logic [N_THREADS-1:0][XLEN-1:0] lsma_rs2_data_r;
+    logic [RLEN-1:0] lsma_leader_target_r;
+    logic [N_THREADS-1:0][RLEN-1:0] lsma_rs2_data_r;
 
     logic [N_THREADS-1:0] ma_instr_replay_mask_w;
     logic [N_THREADS-1:0] ma_instr_retired_mask_w;
 
     // - Scheduler Update stage signals
     instr_s masu_instr_r;
-    logic [N_THREADS-1:0][XLEN-1:0] masu_alu_result_r;
-    logic [XLEN-1:Z_PC] masu_pc_r;
+    logic [N_THREADS-1:0][RLEN-1:0] masu_alu_result_r;
+    logic [RLEN-1:Z_PC] masu_pc_r;
     logic [N_THREADS-1:0] masu_mask_r;
     logic [W_WARPS-1:0] masu_warp_id_r;
     msel_e [N_THREADS-1:0] masu_msel_r;
-    logic [XLEN-1:Z_PC] masu_branch_target_r;
+    logic [RLEN-1:Z_PC] masu_branch_target_r;
     logic [N_THREADS-1:0] masu_branch_flag_r;
     logic [N_THREADS-1:0] masu_branch_mask_r;
     logic masu_branching_r;
@@ -176,9 +194,9 @@ module pipeline
     logic [Z_ADDR-1:0] masu_leader_alignment_r;
     logic [N_THREADS-1:0] masu_leader_one_hot_r;
 
-    logic [XLEN-1:0] su_wram_rdata_w;
+    logic [RLEN-1:0] su_wram_rdata_w;
     logic [31:0] su_irom_data_w;
-    logic [N_THREADS-1:0][XLEN-1:0] su_tlocal_rdata_w;
+    logic [N_THREADS-1:0][RLEN-1:0] su_tlocal_rdata_w;
 
     // - Barrier signals
     logic [N_THREADS-1:0] barr_load_total_w;
@@ -189,18 +207,21 @@ module pipeline
     // - Writeback stage signals
     //instr_s suwb_instr_r; // FIXME: Declared above
     //logic [W_WARPS-1:0] suwb_warp_id_r;
-    logic [N_THREADS-1:0][XLEN-1:0] suwb_alu_result_r;
-    logic [XLEN-1:Z_PC] suwb_pc_r;
+    logic [N_THREADS-1:0][RLEN-1:0] suwb_alu_result_r;
+    logic [RLEN-1:Z_PC] suwb_pc_r;
     logic [N_THREADS-1:0] suwb_mask_r;
     msel_e [N_THREADS-1:0] suwb_msel_r;
     logic [Z_ADDR-1:0] suwb_leader_alignment_r;
     logic [N_THREADS-1:0] suwb_leader_one_hot_r;
-    logic [N_THREADS-1:0][XLEN-1:0] suwb_tlocal_rdata_fmt_r;
-    logic [XLEN-1:0] suwb_irom_data_fmt_r;
-    logic [XLEN-1:0] suwb_wram_rdata_fmt_r;
+    logic [N_THREADS-1:0][RLEN-1:0] suwb_tlocal_rdata_fmt_r;
+    logic [RLEN-1:0] suwb_irom_data_fmt_r;
+    logic [RLEN-1:0] suwb_wram_rdata_fmt_r;
 
     logic [N_THREADS-1:0] wb_write_en_mask_w;
-    logic [N_THREADS-1:0][XLEN-1:0] wb_write_data_w;
+    logic [N_THREADS-1:0][RLEN-1:0] wb_write_data_w;
+    logic [W_REGISTERS-1:0] wb_rd_idx_w;
+    logic [W_WARPS-1:0] wb_warp_id_w;
+    regfile_sel_e wb_rd_regfile_w;
 
     // Warp Select
     logic [W_WARPS-1:0] ws_warp_id_w;
@@ -209,12 +230,15 @@ module pipeline
     warp_scheduler u_warp_scheduler(
         .clk(clk),
         .rst_n(rst_n),
+        .stall_i(pipeline_stall_r),
         .warp_id_o(ws_warp_id_w)
     );
 
     always_ff @( posedge clk ) begin
-        ws_warp_id_r <= ws_warp_id_w;
-        wsif_warp_id_r <= ws_warp_id_r;
+        if (!pipeline_stall_r) begin
+            ws_warp_id_r <= ws_warp_id_w;
+            wsif_warp_id_r <= ws_warp_id_r;
+        end
     end
 
     // Fetch
@@ -223,15 +247,15 @@ module pipeline
     always_ff @( posedge clk ) begin
         if (~rst_n) begin
             bsync_1_r <= '0;
-        end else begin
+        end else if (!pipeline_stall_r) begin
             bsync_1_r <= bsync_1_w;
         end
     end
 
-    logic [N_WARPS-1:0][XLEN-1:Z_PC] u_thread_scheduler_pc_w;
+    logic [N_WARPS-1:0][RLEN-1:Z_PC] u_thread_scheduler_pc_w;
     logic [N_WARPS-1:0][N_THREADS-1:0] u_thread_scheduler_mask_w;
 
-    logic [XLEN-1:Z_PC] if_pc_w;
+    logic [RLEN-1:Z_PC] if_pc_w;
     logic [N_THREADS-1:0] if_mask_w;
 
     assign if_pc_w = u_thread_scheduler_pc_w[wsif_warp_id_r];
@@ -241,10 +265,10 @@ module pipeline
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin : gen_thread_schedulers
             logic su_en_w;
-            assign su_en_w = (masu_warp_id_r == I) & su_stage_valid_r;
+            assign su_en_w = (masu_warp_id_r == I) & su_stage_valid_r & !pipeline_stall_r;
 
             logic wb_en_w;
-            assign wb_en_w = (suwb_warp_id_r == I) & wb_stage_valid_r;
+            assign wb_en_w = (suwb_warp_id_r == I) & wb_stage_valid_r & !pipeline_stall_r;
 
             // FIXME: this is a hack
             assign bsync_1_w[I] = su_en_w ? (bsync_1_r[I] ^ (masu_instr_r.barr_load | masu_instr_r.barr_sync)) : bsync_1_r[I];
@@ -286,7 +310,7 @@ module pipeline
 
     // - Instruction Memory
 
-    logic [XLEN-1:0] if_irom_data_w;
+    logic [RLEN-1:0] if_irom_data_w;
 
     assign irom_addr_a_o = if_pc_w[W_IROM_ADDR-1:Z_PC];
     assign if_irom_data_w = irom_data_a_i;
@@ -299,9 +323,11 @@ module pipeline
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        ifid_pc_r <= if_pc_w;
-        ifid_mask_r <= if_mask_w;
-        ifid_warp_id_r <= wsif_warp_id_r;
+        if (!pipeline_stall_r) begin
+            ifid_pc_r <= if_pc_w;
+            ifid_mask_r <= if_mask_w;
+            ifid_warp_id_r <= wsif_warp_id_r;
+        end
     end
 
     // Decode
@@ -328,34 +354,40 @@ module pipeline
         .read_warp_id_i(ifid_warp_id_r),
 
         .rs1_idx_i(id_instr_w.rs1_idx),
+        .rs1_regfile_i(id_instr_w.rs1_regfile),
         .rs1_data_o(idex_rs1_data_w),
 
         .rs2_idx_i(id_instr_w.rs2_idx),
+        .rs2_regfile_i(id_instr_w.rs2_regfile),
         .rs2_data_o(idex_rs2_data_w),
 
         .rs3_idx_i(id_instr_w.rs3_idx),
+        .rs3_regfile_i(id_instr_w.rs3_regfile),
         .rs3_data_o(idex_rs3_data_w),
 
-        .write_warp_id_i(suwb_warp_id_r),
+        .write_warp_id_i(wb_warp_id_w),
         .write_en_mask_i(wb_write_en_mask_w),
-        .rd_idx_i(suwb_instr_r.rd_idx),
+        .rd_idx_i(wb_rd_idx_w),
+        .rd_regfile_i(wb_rd_regfile_w),
         .write_data_i(wb_write_data_w)
     );
 
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        idex_instr_r <= id_instr_w;
-        idex_warp_id_r <= ifid_warp_id_r;
-        idex_pc_r <= ifid_pc_r;
-        idex_mask_r <= ifid_mask_r;
+        if (!pipeline_stall_r) begin
+            idex_instr_r <= id_instr_w;
+            idex_warp_id_r <= ifid_warp_id_r;
+            idex_pc_r <= ifid_pc_r;
+            idex_mask_r <= ifid_mask_r;
+        end
     end
 
     // Execute
 
     // - ALU Lanes
 
-    logic [N_THREADS-1:0][XLEN-1:0] ex_alu_result_w;
+    logic [N_THREADS-1:0][RLEN-1:0] ex_alu_result_w;
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin : gen_alu
@@ -377,24 +409,24 @@ module pipeline
     endgenerate
 
     // - FPU
-    localparam FPU_WIDTH = N_THREADS * XLEN;
+    localparam FPU_WIDTH = N_THREADS * RLEN;
 
     logic [2:0][FPU_WIDTH-1:0] fpu_operands;
     always_comb begin
         for (integer I = 0; I < N_THREADS; I++) begin
             unique case(idex_instr_r.fpu_op0_sel)
-                FPU_OP0_SEL_RS1: fpu_operands[0][I*XLEN +: XLEN] = idex_rs1_data_w[I];
-                FPU_OP0_SEL_UNDEFINED: fpu_operands[0][I*XLEN +: XLEN] = 'x;
+                FPU_OP0_SEL_RS1: fpu_operands[0][I*RLEN +: RLEN] = idex_rs1_data_w[I];
+                FPU_OP0_SEL_UNDEFINED: fpu_operands[0][I*RLEN +: RLEN] = 'x;
             endcase
             unique case(idex_instr_r.fpu_op1_sel)
-                FPU_OP1_SEL_RS1: fpu_operands[1][I*XLEN +: XLEN] = idex_rs1_data_w[I];
-                FPU_OP1_SEL_RS2: fpu_operands[1][I*XLEN +: XLEN] = idex_rs2_data_w[I];
-                FPU_OP1_SEL_UNDEFINED: fpu_operands[1][I*XLEN +: XLEN] = 'x;
+                FPU_OP1_SEL_RS1: fpu_operands[1][I*RLEN +: RLEN] = idex_rs1_data_w[I];
+                FPU_OP1_SEL_RS2: fpu_operands[1][I*RLEN +: RLEN] = idex_rs2_data_w[I];
+                FPU_OP1_SEL_UNDEFINED: fpu_operands[1][I*RLEN +: RLEN] = 'x;
             endcase
             unique case(idex_instr_r.fpu_op2_sel)
-                FPU_OP2_SEL_RS2: fpu_operands[2][I*XLEN +: XLEN] = idex_rs2_data_w[I];
-                FPU_OP2_SEL_RS3: fpu_operands[2][I*XLEN +: XLEN] = idex_rs3_data_w[I];
-                FPU_OP2_SEL_UNDEFINED: fpu_operands[2][I*XLEN +: XLEN] = 'x;
+                FPU_OP2_SEL_RS2: fpu_operands[2][I*RLEN +: RLEN] = idex_rs2_data_w[I];
+                FPU_OP2_SEL_RS3: fpu_operands[2][I*RLEN +: RLEN] = idex_rs3_data_w[I];
+                FPU_OP2_SEL_UNDEFINED: fpu_operands[2][I*RLEN +: RLEN] = 'x;
             endcase
         end
     end
@@ -413,24 +445,52 @@ module pipeline
 
     // FIXME: I am unsure if SIMD mask should be all ones, or match the thread mask.
     logic [N_THREADS-1:0] fpu_simd_mask;
-    assign fpu_simd_mask = '1;
+    assign fpu_simd_mask = idex_mask_r;
 
     logic [FPU_WIDTH-1:0] fpu_result;
     fpnew_pkg::status_t[N_THREADS-1:0] fpu_status;
 
-    logic [N_THREADS-1:0][XLEN-1:0] wb_fpu_result_w;
-    always_comb begin
+    logic [N_THREADS-1:0][RLEN-1:0] wb_fpu_result_r;
+    always_ff @(posedge clk) begin
         for (int i = 0; i < N_THREADS; i++) begin
-            wb_fpu_result_w[i] = fpu_result[i*XLEN+:XLEN];
+            wb_fpu_result_r[i] <= fpu_result[i*RLEN+:RLEN];
         end
     end
 
-    logic fpu_out_valid;
-    logic fpu_early_valid; // TODO: Do I need this?
-    logic fpu_out_ready;
-    assign fpu_out_ready = 1'b1; // FIXME: Probably fine, right??
+    logic fpu_in_valid;
+    assign fpu_in_valid = ex_stage_valid_r & idex_instr_r.fpu_active & !pipeline_stall_r;
 
-    logic fpu_busy;
+    logic fpu_in_ready;
+    logic fpu_out_valid;
+    logic fpu_out_ready;
+    assign fpu_out_ready = '1;
+
+    assign pipeline_stall_fpu_out_w = ma_stage_valid_r & lsma_instr_r.fpu_active & !fpu_out_valid;
+    assign pipeline_stall_fpu_in_w = fpu_in_valid & !fpu_in_ready;
+
+    // -- Tags
+
+    typedef struct packed {
+        `ifndef SYNTHESIS
+        sim__disasm_t sim__disasm;
+        `endif
+        logic [W_WARPS-1:0] rd_warp_id;
+        regfile_sel_e rd_regfile;
+        logic [W_REGISTERS-1:0] rd_idx;
+        logic [N_THREADS-1:0] mask;
+    } fpu_tag_t;
+
+    fpu_tag_t fpu_tag_in, fpu_tag_out;
+
+    assign fpu_tag_in = '{
+        `ifndef SYNTHESIS
+        sim__disasm: idex_instr_r.sim__disasm,
+        `endif
+        rd_warp_id: idex_warp_id_r,
+        rd_regfile: idex_instr_r.rd_regfile,
+        rd_idx:     idex_instr_r.rd_idx,
+        mask:       idex_mask_r
+    };
 
     // -- FPU declaration
 
@@ -443,20 +503,21 @@ module pipeline
     };
 
     localparam fpnew_pkg::fpu_implementation_t FPU_IMPLEMENTATION = '{
-        PipeRegs: '{default: 32'd4},
+        PipeRegs: '{default: 32'd3},
         UnitTypes: '{
             '{default: fpnew_pkg::PARALLEL}, // ADDMUL - Merged or Parallel
-            '{default: fpnew_pkg::DISABLED},   // DIVSQRT - Merged
+            '{default: fpnew_pkg::MERGED},   // DIVSQRT - Merged
             '{default: fpnew_pkg::PARALLEL}, // NONCOMP - Parallel
-            '{default: fpnew_pkg::DISABLED}    // CONV - Merged
+            '{default: fpnew_pkg::MERGED}    // CONV - Merged
         },
-        PipeConfig: fpnew_pkg::BEFORE
+        PipeConfig: fpnew_pkg::DISTRIBUTED
     };
 
     fpnew_top #(
         .Features       (FPU_FEATURES),
         .Implementation (FPU_IMPLEMENTATION),
-        .TagType        ( logic [31:0] ) // TODO: Counter for debug, empty for production
+        .TagType        ( fpu_tag_t ),
+        .PulpDivsqrt    ( 1'b0 )
     ) fpu (
     	.clk_i         (clk),
     	.rst_ni        (rst_n),
@@ -469,28 +530,29 @@ module pipeline
     	.int_fmt_i     (fpu_int_fmt),
     	.vectorial_op_i(1'b1), // FIXME: This is probably safe to hardcode, right? Do check though.
     	.simd_mask_i   (fpu_simd_mask),
-    	.tag_i         (), // TODO: Counter for debug, empty for production
-    	.in_valid_i    (idex_instr_r.fpu_active),
-    	.in_ready_o    (), //TODO: Not sure what to do with this.
+    	.tag_i         (fpu_tag_in),
+    	.in_valid_i    (fpu_in_valid),
+    	.in_ready_o    (fpu_in_ready),
     	.flush_i       (1'b0), // FIXME: This is probably safe to hardcode too, right? Do check though.
     	.result_o      (fpu_result),
     	.status_o      (fpu_status),
-    	.tag_o         (), // TODO: Counter for debug, empty for production
+    	.tag_o         (fpu_tag_out),
         .out_valid_o   (fpu_out_valid),
     	.out_ready_i   (fpu_out_ready),
-    	.busy_o        (fpu_busy),
-    	.early_valid_o (fpu_early_valid)
+    	.busy_o        ()
     );
 
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        exls_instr_r <= idex_instr_r;
-        exls_alu_result_r <= ex_alu_result_w;
-        exls_rs2_data_r <= idex_rs2_data_w;
-        exls_mask_r <= idex_mask_r;
-        exls_pc_r <= idex_pc_r;
-        exls_warp_id_r <= idex_warp_id_r;
+        if (!pipeline_stall_r) begin
+            exls_instr_r <= idex_instr_r;
+            exls_alu_result_r <= ex_alu_result_w;
+            exls_rs2_data_r <= idex_rs2_data_w;
+            exls_mask_r <= idex_mask_r;
+            exls_pc_r <= idex_pc_r;
+            exls_warp_id_r <= idex_warp_id_r;
+        end
     end
 
     // Leader Select Stage
@@ -503,7 +565,7 @@ module pipeline
     always_ff @( posedge clk ) begin
         if (!rst_n) begin
             ls_reservation_r <= '0;
-        end else if (ls_stage_valid_r) begin
+        end else if (ls_stage_valid_r & !pipeline_stall_r) begin
             ls_reservation_r <= ls_reservation_next_w;
         end
     end
@@ -523,12 +585,14 @@ module pipeline
 
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
-            case (exls_alu_result_r[i][XLEN-1:XLEN-2]) inside // FIXME: unique
+            // slang lint_off casez-with-x
+            unique casez (exls_alu_result_r[i][RLEN-1:RLEN-2])
                 2'b00: ls_msel_w[i] = MSEL_IROM;
                 2'b01: ls_msel_w[i] = MSEL_WRAM;
                 2'b1?: ls_msel_w[i] = MSEL_TLOCAL;
-                default: ls_msel_w[i] = MSEL_UNDEFINED;
+                2'bxx: ls_msel_w[i] = MSEL_UNDEFINED;
             endcase
+            // slang lint_on casez-with-x
         end
     end
 
@@ -572,16 +636,16 @@ module pipeline
 
     // - Formatting
 
-    logic [N_THREADS-1:0][XLEN-1:0] ls_store_data_w;
+    logic [N_THREADS-1:0][RLEN-1:0] ls_store_data_w;
 
     always_comb begin
         unique case (exls_instr_r.mem_store_source)
             MEM_STORE_SOURCE_RS2: ls_store_data_w = exls_rs2_data_r;
             MEM_STORE_SOURCE_BINIT: for(int i = 0; i < N_THREADS; i++) begin
-                ls_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, exls_mask_r, {N_THREADS{1'b0}}};
+                ls_store_data_w[i] = {{(RLEN-N_THREADS*2){1'b0}}, exls_mask_r, {N_THREADS{1'b0}}};
             end
             MEM_STORE_SOURCE_BSYNC: for(int i = 0; i < N_THREADS; i++) begin
-                ls_store_data_w[i] = {{(XLEN-N_THREADS*2){1'b0}}, barr_sync_total_w[exls_warp_id_r], barr_sync_parked_next_w[exls_warp_id_r]};
+                ls_store_data_w[i] = {{(RLEN-N_THREADS*2){1'b0}}, barr_sync_total_w[exls_warp_id_r], barr_sync_parked_next_w[exls_warp_id_r]};
             end
             MEM_STORE_SOURCE_UNDEFINED: ls_store_data_w = 'x;
         endcase
@@ -607,35 +671,37 @@ module pipeline
 
     // - Coalescing Logic
 
-    logic [XLEN-1:0] ls_leader_target_w;
-    assign ls_leader_target_w = exls_alu_result_r[ls_leader_id_w][XLEN-1:0];
+    logic [RLEN-1:0] ls_leader_target_w;
+    assign ls_leader_target_w = exls_alu_result_r[ls_leader_id_w][RLEN-1:0];
 
     logic [N_THREADS-1:0] ls_coalesced_w;
 
     generate
         for(genvar I = 0; I < N_THREADS; I++) begin : gen_ls_colaesced
-            assign ls_coalesced_w[I] = exls_alu_result_r[I][XLEN-1:0] == ls_leader_target_w;
+            assign ls_coalesced_w[I] = exls_alu_result_r[I][RLEN-1:0] == ls_leader_target_w;
         end
     endgenerate
 
     // - Pipeline Registers - FIXME: Declare this!
 
     always_ff @( posedge clk ) begin
-        lsma_instr_r <= exls_instr_r;
-        lsma_alu_result_r <= exls_alu_result_r;
-        lsma_rs2_data_r <= exls_rs2_data_r;
-        lsma_mask_r <= exls_mask_r;
-        lsma_pc_r <= exls_pc_r;
-        lsma_warp_id_r <= exls_warp_id_r;
-        lsma_leader_id_r <= ls_leader_id_w;
-        lsma_leader_one_hot_r <= ls_leader_one_hot_w;
-        lsma_leader_valid_r <= ls_leader_valid_w;
-        lsma_reservation_r <= ls_reservation_r;
-        lsma_msel_r <= ls_msel_w;
-        lsma_store_data_fmt_r <= ls_store_data_fmt_w;
-        lsma_store_wen_r <= ls_store_wen_w;
-        lsma_coalesced_r <= ls_coalesced_w;
-        lsma_leader_target_r <= ls_leader_target_w;
+        if (!pipeline_stall_r) begin
+            lsma_instr_r <= exls_instr_r;
+            lsma_alu_result_r <= exls_alu_result_r;
+            lsma_rs2_data_r <= exls_rs2_data_r;
+            lsma_mask_r <= exls_mask_r;
+            lsma_pc_r <= exls_pc_r;
+            lsma_warp_id_r <= exls_warp_id_r;
+            lsma_leader_id_r <= ls_leader_id_w;
+            lsma_leader_one_hot_r <= ls_leader_one_hot_w;
+            lsma_leader_valid_r <= ls_leader_valid_w;
+            lsma_reservation_r <= ls_reservation_r;
+            lsma_msel_r <= ls_msel_w;
+            lsma_store_data_fmt_r <= ls_store_data_fmt_w;
+            lsma_store_wen_r <= ls_store_wen_w;
+            lsma_coalesced_r <= ls_coalesced_w;
+            lsma_leader_target_r <= ls_leader_target_w;
+        end
     end
 
     // Memory Access Stage
@@ -663,12 +729,14 @@ module pipeline
 
     `ifndef SYNTHESIS
         always_ff @(negedge clk) begin
-            if (ma_stage_valid_r & lsma_instr_r.mem_active & lsma_leader_valid_r) begin
-                assert (lsma_msel_r[lsma_leader_id_r] != MSEL_TLOCAL)
-                    else $error("Leader cannot have MSEL_TLOCAL");
+            if (!pipeline_stall_r) begin
+                if (ma_stage_valid_r & lsma_instr_r.mem_active & lsma_leader_valid_r) begin
+                    assert (lsma_msel_r[lsma_leader_id_r] != MSEL_TLOCAL)
+                        else $error("Leader cannot have MSEL_TLOCAL");
 
-                assert (lsma_instr_r.mem_loadstore != MEM_LOADSTORE_STORE || lsma_msel_r[lsma_leader_id_r] != MSEL_IROM)
-                    else $error("Leader cannot have MSEL_IROM during store operation");
+                    assert (lsma_instr_r.mem_loadstore != MEM_LOADSTORE_STORE || lsma_msel_r[lsma_leader_id_r] != MSEL_IROM)
+                        else $error("Leader cannot have MSEL_IROM during store operation");
+                end
             end
         end
     `endif
@@ -709,7 +777,7 @@ module pipeline
     logic [N_THREADS-1:0] ma_branch_flag_w;
     logic [N_THREADS-1:0] ma_branch_mask_w;
     logic ma_branching_w;
-    logic [XLEN-1:Z_PC] ma_branch_target_w;
+    logic [RLEN-1:Z_PC] ma_branch_target_w;
 
     generate
         for (genvar I = 0; I < N_THREADS; I++) begin : gen_bcu
@@ -727,7 +795,7 @@ module pipeline
 
     always_comb begin
         if (lsma_instr_r.is_jalr) begin
-            ma_branch_target_w = lsma_leader_target_r[XLEN-1:Z_PC];
+            ma_branch_target_w = lsma_leader_target_r[RLEN-1:Z_PC];
         end else begin
             ma_branch_target_w = lsma_pc_r + lsma_instr_r.imm[31:2];
         end
@@ -757,29 +825,31 @@ module pipeline
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        masu_pc_r <= lsma_pc_r;
-        masu_instr_r <= lsma_instr_r;
-        masu_alu_result_r <= lsma_alu_result_r;
-        masu_mask_r <= lsma_mask_r;
-        masu_warp_id_r <= lsma_warp_id_r;
-        masu_msel_r <= lsma_msel_r;
-        masu_branch_target_r <= ma_branch_target_w;
-        masu_branch_flag_r <= ma_branch_flag_w;
-        masu_branch_mask_r <= ma_branch_mask_w;
-        masu_branching_r <= ma_branching_w;
-        masu_instr_replay_mask_r <= ma_instr_replay_mask_w;
-        masu_instr_retired_mask_r <= ma_instr_retired_mask_w;
-        masu_leader_alignment_r <= ma_leader_alignment_w;
-        masu_leader_one_hot_r <= lsma_leader_one_hot_r;
+        if (!pipeline_stall_r) begin
+            masu_pc_r <= lsma_pc_r;
+            masu_instr_r <= lsma_instr_r;
+            masu_alu_result_r <= lsma_alu_result_r;
+            masu_mask_r <= lsma_mask_r;
+            masu_warp_id_r <= lsma_warp_id_r;
+            masu_msel_r <= lsma_msel_r;
+            masu_branch_target_r <= ma_branch_target_w;
+            masu_branch_flag_r <= ma_branch_flag_w;
+            masu_branch_mask_r <= ma_branch_mask_w;
+            masu_branching_r <= ma_branching_w;
+            masu_instr_replay_mask_r <= ma_instr_replay_mask_w;
+            masu_instr_retired_mask_r <= ma_instr_retired_mask_w;
+            masu_leader_alignment_r <= ma_leader_alignment_w;
+            masu_leader_one_hot_r <= lsma_leader_one_hot_r;
+        end
     end
 
     // Scheduler Update Stage
 
-    logic [XLEN-1:0] su_wram_rdata_fmt_w;
-    logic [XLEN-1:0] su_irom_data_fmt_w;
-    logic [N_THREADS-1:0][XLEN-1:0] su_tlocal_rdata_fmt_w;
+    logic [RLEN-1:0] su_wram_rdata_fmt_w;
+    logic [RLEN-1:0] su_irom_data_fmt_w;
+    logic [N_THREADS-1:0][RLEN-1:0] su_tlocal_rdata_fmt_w;
 
-    logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_in_w;
+    logic [N_THREADS+1:0][RLEN-1:0] su_rfmt_in_w;
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
             su_rfmt_in_w[i] = su_tlocal_rdata_w[i];
@@ -788,7 +858,7 @@ module pipeline
         su_rfmt_in_w[N_THREADS+1] = su_irom_data_w;
     end
 
-    logic [N_THREADS+1:0][XLEN-1:0] su_rfmt_out_w;
+    logic [N_THREADS+1:0][RLEN-1:0] su_rfmt_out_w;
     always_comb begin
         for (int i = 0; i < N_THREADS; i++) begin
             su_tlocal_rdata_fmt_w[i] = su_rfmt_out_w[i];
@@ -838,16 +908,20 @@ module pipeline
     logic [N_THREADS-1:0] wb_sc_output_w;
     assign wb_sc_output_w = ~suwb_leader_one_hot_r;
 
-    logic [XLEN-1:0] wb_pc_p4_w;
+    logic [RLEN-1:0] wb_pc_p4_w;
     assign wb_pc_p4_w = {suwb_pc_r + 1'b1, 2'b00};
 
     always_comb begin
+        wb_warp_id_w = 'x;
         wb_write_data_w = 'x;
+        wb_write_en_mask_w = '0;
+        wb_rd_idx_w = 'x;
+        wb_rd_regfile_w = REGFILE_SEL_UNDEFINED;
 
-        if (wb_stage_valid_r & suwb_instr_r.wb_active) begin
+        if (wb_stage_valid_r & suwb_instr_r.wb_active & !pipeline_stall_r) begin
             unique case (suwb_instr_r.wb_source)
                 WB_SOURCE_ALU: wb_write_data_w = suwb_alu_result_r;
-                WB_SOURCE_FPU: wb_write_data_w = wb_fpu_result_w;
+                WB_SOURCE_FPU: wb_write_data_w = wb_fpu_result_r;
                 WB_SOURCE_MEM: for (int i = 0; i < N_THREADS; i++) begin
                     unique case (suwb_msel_r[i])
                         MSEL_IROM: wb_write_data_w[i] = suwb_irom_data_fmt_r;
@@ -857,13 +931,16 @@ module pipeline
                     endcase
                 end
                 WB_SOURCE_PC_P4: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = wb_pc_p4_w;
-                WB_SOURCE_SC: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = {{(XLEN-1){1'b0}}, wb_sc_output_w[i]};
+                WB_SOURCE_SC: for (int i = 0; i < N_THREADS; i++) wb_write_data_w[i] = {{(RLEN-1){1'b0}}, wb_sc_output_w[i]};
                 WB_SOURCE_UNDEFINED: wb_write_data_w = 'x;
             endcase
+
+            wb_write_en_mask_w = suwb_mask_r;
+            wb_warp_id_w = suwb_warp_id_r;
+            wb_rd_idx_w = suwb_instr_r.rd_idx;
+            wb_rd_regfile_w = suwb_instr_r.rd_regfile;
         end
     end
-
-    assign wb_write_en_mask_w = suwb_instr_r.wb_active ? suwb_mask_r : '0;
 
     // - Barrier Load Logic
     assign barr_load_total_w = suwb_wram_rdata_fmt_r[N_THREADS*2-1:N_THREADS];

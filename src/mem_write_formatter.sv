@@ -6,10 +6,10 @@ module mem_write_formatter
 #(
     parameter int DATA_LEN = N_THREADS
 )(
-    input wire logic [DATA_LEN-1:0][XLEN-1:0] p_data_i,
+    input wire logic [DATA_LEN-1:0][RLEN-1:0] p_data_i,
     input wire mem_opsize_e opsize_i,
     input wire logic [DATA_LEN-1:0][Z_ADDR-1:0] alignment_i,
-    output logic [DATA_LEN-1:0][XLEN-1:0] m_data_o,
+    output logic [DATA_LEN-1:0][RLEN-1:0] m_data_o,
     output logic [DATA_LEN-1:0][ADDR_ALIGN-1:0] m_wen_o
 );
 
@@ -19,7 +19,7 @@ module mem_write_formatter
         end
     `endif
 
-    logic [DATA_LEN-1:0][XLEN-1:0] m_data_w;
+    logic [DATA_LEN-1:0][RLEN-1:0] m_data_w;
 
     always_comb begin
         for (int i = 0; i < DATA_LEN; i++) begin

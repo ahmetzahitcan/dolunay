@@ -7,7 +7,14 @@ package params_pkg;
         typedef logic [DISASM_LEN*8-1:0] sim__disasm_t;
     `endif
 
-    localparam int XLEN = 32;
+    localparam int RLEN = 32; // INFO: Forced XLEN = FLEN
+    localparam int N_REGFILES = 2;
+    localparam int W_REGFILES = $clog2(N_REGFILES);
+    typedef enum logic [W_REGFILES-1:0] {
+        REGFILE_SEL_I, // I'm using I instead of X, because X looks like x in control_unit.csv
+        REGFILE_SEL_F,
+        REGFILE_SEL_UNDEFINED = 'x
+    } regfile_sel_e;
 
     localparam int ADDR_ALIGN = 4;
     localparam int Z_ADDR = $clog2(ADDR_ALIGN);

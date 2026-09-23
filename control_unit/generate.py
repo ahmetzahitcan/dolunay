@@ -54,14 +54,13 @@ class ExternalEnum:
         self.col = col
         self.type_ref = type_ref
         self.prefix = prefix
-        self.undef_member = undef_member
         # Package scope (e.g. "fpnew_pkg::") used to qualify enum members.
         self.scope = type_ref[:type_ref.rfind('::') + 2] if '::' in type_ref else ''
+        self.undef_member = f"{self.scope}{self.prefix}{undef_member}" if undef_member else None
 
     def member(self, value):
         """Return the (optionally qualified) enum member for a CSV value."""
-        pfx = f"{self.prefix}_" if self.prefix else ""
-        return f"{self.scope}{pfx}{value}"
+        return f"{self.scope}{self.prefix}{value}"
 
     def undefined(self):
         """Return the expression used for don't-care / default values."""
@@ -336,7 +335,7 @@ def emit_sv_module(data, output_file, module_name, package_name):
         f.write("    input  wire logic sim__runasserts_i,\n")
         f.write("`endif\n")
         f.write("    input  wire logic [31:2] undec_instr32_i,\n")
-        f.write("    input  wire logic [XLEN-1:Z_PC] pc_i,\n")
+        f.write("    input  wire logic [RLEN-1:Z_PC] pc_i,\n")
         f.write("    output instr_s instr_o\n")
         f.write(");\n\n")
         # imm_type has no field in instr_s, so its type is declared here.
@@ -456,7 +455,7 @@ def emit_sv_package(data, output_file, package_name):
         f.write("\t\t`ifndef SYNTHESIS\n")
         f.write("\t\tsim__disasm_t sim__disasm;\n")
         f.write("\t\t`endif\n")
-        f.write("\t\tlogic [XLEN-1:0] imm;\n")
+        f.write("\t\tlogic [RLEN-1:0] imm;\n")
         f.write("\t\tlogic [W_REGISTERS-1:0] rd_idx;\n")
         f.write("\t\tlogic [W_REGISTERS-1:0] rs1_idx;\n")
         f.write("\t\tlogic [W_REGISTERS-1:0] rs2_idx;\n")

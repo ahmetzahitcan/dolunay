@@ -8,15 +8,15 @@ module ram
 )(
     input wire logic clk,
     input wire logic [W_ADDR-1:Z_ADDR] addr_i,
-    input wire logic [XLEN-1:0] wdata_i,
+    input wire logic [RLEN-1:0] wdata_i,
     input wire logic [ADDR_ALIGN-1:0] wen_i,
-    output logic [XLEN-1:0] rdata_o
+    output logic [RLEN-1:0] rdata_o
 );
 
     (* ram_style = "block" *)
-    logic [XLEN-1:0] mem_r [DEPTH-1:0];
+    logic [RLEN-1:0] mem_r [DEPTH-1:0];
 
-    logic [XLEN-1:0] rdata_r;
+    logic [RLEN-1:0] rdata_r;
 
     always_ff @(posedge clk) begin
         for (int i = 0; i < ADDR_ALIGN; i++) begin

@@ -4,7 +4,7 @@ module branch_cond_unit
     import params_pkg::*;
     import control_unit_pkg::*;
 (
-    input wire logic [XLEN-1:0] alu_result_i,
+    input wire logic [RLEN-1:0] alu_result_i,
     input wire logic coalesced_i,
     input wire branch_cond_e branch_cond_i,
     output logic branch_flag_o
@@ -23,7 +23,7 @@ module branch_cond_unit
     end
 
     assign branch_flag_o = branch_flag_w;
-    
+
 endmodule
 
 `default_nettype wire

@@ -32,13 +32,25 @@
 
 # Compare \result against the \list entry of this hart and OR the matching error bit
 # into x1.  Clobbers x20-x23; x1 (mask), x2-x5 and x13 (mhartid) are preserved.
-.macro CHECK result, list, bit
+.macro CHECKF result, list, bit
+    lla       x20, \list
+    sh2add    x20, x13, x20
+    flw       f21, 0(x20)
+    feq.s     x22, \result, f21
+    li        x23, (1 << \bit)
+    czero.nez x23, x23, x22
+    or        x1, x1, x23
+.endm
+
+# Compare \result against the \list entry of this hart and OR the matching error bit
+# into x1.  Clobbers x20-x23; x1 (mask), x2-x5 and x13 (mhartid) are preserved.
+.macro CHECKX result, list, bit
     lla       x20, \list
     sh2add    x20, x13, x20
     lw        x21, 0(x20)
     xor       x22, \result, x21
     li        x23, (1 << \bit)
-    czero.nez x23, x22, x23
+    czero.eqz x23, x23, x22
     or        x1, x1, x23
 .endm
 
@@ -48,85 +60,85 @@ li   x1, 0                  # error mask
 # Operands for this hart.
 lla    x20, list_a
 sh2add x20, x13, x20
-lw     x2, 0(x20)           # a
+flw    f2, 0(x20)           # a
 lla    x21, list_b
 sh2add x21, x13, x21
-lw     x3, 0(x21)           # b
+flw    f3, 0(x21)           # b
 lla    x22, list_c
 sh2add x22, x13, x22
-lw     x5, 0(x22)           # c
+flw    f5, 0(x22)           # c
 
-fadd.s x4, x2, x3
-CHECK x4, list_add, T_FADD
+fadd.s f4, f2, f3
+CHECKF f4, list_add, T_FADD
 
-fsub.s x4, x2, x3
-CHECK x4, list_sub, T_FSUB
+fsub.s f4, f2, f3
+CHECKF f4, list_sub, T_FSUB
 
-fmul.s x4, x2, x3
-CHECK x4, list_mul, T_FMUL
+fmul.s f4, f2, f3
+CHECKF f4, list_mul, T_FMUL
 
-fdiv.s x4, x2, x3
-CHECK x4, list_div, T_FDIV
+fdiv.s f4, f2, f3
+CHECKF f4, list_div, T_FDIV
 
-fsqrt.s x4, x2
-CHECK x4, list_sqrt, T_FSQRT
+fsqrt.s f4, f2
+CHECKF f4, list_sqrt, T_FSQRT
 
-fmin.s x4, x2, x3
-CHECK x4, list_min, T_FMIN
+fmin.s f4, f2, f3
+CHECKF f4, list_min, T_FMIN
 
-fmax.s x4, x2, x3
-CHECK x4, list_max, T_FMAX
+fmax.s f4, f2, f3
+CHECKF f4, list_max, T_FMAX
 
-fsgnj.s x4, x2, x3
-CHECK x4, list_sgnj, T_FSGNJ
+fsgnj.s f4, f2, f3
+CHECKF f4, list_sgnj, T_FSGNJ
 
-fsgnjn.s x4, x2, x3
-CHECK x4, list_sgnjn, T_FSGNJN
+fsgnjn.s f4, f2, f3
+CHECKF f4, list_sgnjn, T_FSGNJN
 
-fsgnjx.s x4, x2, x3
-CHECK x4, list_sgnjx, T_FSGNJX
+fsgnjx.s f4, f2, f3
+CHECKF f4, list_sgnjx, T_FSGNJX
 
-flt.s x4, x2, x3
-CHECK x4, list_lt, T_FLT
+flt.s x4, f2, f3
+CHECKX x4, list_lt, T_FLT
 
-fle.s x4, x2, x3
-CHECK x4, list_le, T_FLE
+fle.s x4, f2, f3
+CHECKX x4, list_le, T_FLE
 
-feq.s x4, x2, x3
-CHECK x4, list_eq, T_FEQ
+feq.s x4, f2, f3
+CHECKX x4, list_eq, T_FEQ
 
-fclass.s x4, x2
-CHECK x4, list_fclass, T_FCLASS
+fclass.s x4, f2
+CHECKX x4, list_fclass, T_FCLASS
 
-fcvt.w.s x4, x2
-CHECK x4, list_cvt_ws, T_FCVT_W_S
+fcvt.w.s x4, f2
+CHECKX x4, list_cvt_ws, T_FCVT_W_S
 
-fcvt.wu.s x4, x2
-CHECK x4, list_cvt_wus, T_FCVT_WU_S
+fcvt.wu.s x4, f2
+CHECKX x4, list_cvt_wus, T_FCVT_WU_S
 
-fmadd.s x4, x2, x3, x5
-CHECK x4, list_fmadd, T_FMADD
+fmadd.s f4, f2, f3, f5
+CHECKF f4, list_fmadd, T_FMADD
 
-fmsub.s x4, x2, x3, x5
-CHECK x4, list_fmsub, T_FMSUB
+fmsub.s f4, f2, f3, f5
+CHECKF f4, list_fmsub, T_FMSUB
 
-fnmsub.s x4, x2, x3, x5
-CHECK x4, list_fnmsub, T_FNMSUB
+fnmsub.s f4, f2, f3, f5
+CHECKF f4, list_fnmsub, T_FNMSUB
 
-fnmadd.s x4, x2, x3, x5
-CHECK x4, list_fnmadd, T_FNMADD
+fnmadd.s f4, f2, f3, f5
+CHECKF f4, list_fnmadd, T_FNMADD
 
 lla    x20, list_ia
 sh2add x20, x13, x20
 lw     x5, 0(x20)           # ia
-fcvt.s.w x4, x5
-CHECK x4, list_cvt_sw, T_FCVT_S_W
+fcvt.s.w f4, x5
+CHECKF f4, list_cvt_sw, T_FCVT_S_W
 
 lla    x20, list_iu
 sh2add x20, x13, x20
 lw     x5, 0(x20)           # iu
-fcvt.s.wu x4, x5
-CHECK x4, list_cvt_swu, T_FCVT_S_WU
+fcvt.s.wu f4, x5
+CHECKF f4, list_cvt_swu, T_FCVT_S_WU
 
 wdone
 j .

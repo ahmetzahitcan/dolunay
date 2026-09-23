@@ -1,6 +1,6 @@
 `default_nettype none
 
-module thread_scheduler 
+module thread_scheduler
     import params_pkg::*;
 (
     input wire logic clk,
@@ -21,13 +21,13 @@ module thread_scheduler
     output logic barr_sync_release_o,
 
     input wire logic branch_i,
-    input wire logic [XLEN-1:Z_PC] pc_branch_i,
+    input wire logic [RLEN-1:Z_PC] pc_branch_i,
     input wire logic [N_THREADS-1:0] mask_branch_i,
 
-    output logic [XLEN-1:Z_PC] pc_o,
+    output logic [RLEN-1:Z_PC] pc_o,
     output logic [N_THREADS-1:0] mask_o
 );
-    logic [N_THREADS-1:0][XLEN-1:Z_PC] pc_list_r;
+    logic [N_THREADS-1:0][RLEN-1:Z_PC] pc_list_r;
     logic [N_THREADS-1:0][N_THREADS-1:0] mask_list_r;
     logic [W_THREADS-1:0] path_id_r;
 
@@ -90,10 +90,10 @@ module thread_scheduler
         end
     end
 
-    logic [XLEN-1:Z_PC] pc_w;
+    logic [RLEN-1:Z_PC] pc_w;
     assign pc_w = pc_list_r[path_id_r];
 
-    logic [XLEN-1:Z_PC] pc_p1_w;
+    logic [RLEN-1:Z_PC] pc_p1_w;
     assign pc_p1_w = pc_w + 1;
 
     logic [N_THREADS-1:0] mask_w;
@@ -144,8 +144,8 @@ module thread_scheduler
                     pc_list_r[path_id_r] <= pc_p1_w;
                     play_mask_r <= mask_w;
                 end
-            end 
-            
+            end
+
             unique0 if (yield_i) begin
                 assert (mask_w == mask_active_and_playing_w) else $error("yield_i raised during partial replay.");
                 path_id_r <= path_id_next_w;
@@ -158,7 +158,7 @@ module thread_scheduler
                 assert (mask_w == mask_active_and_playing_w) else $error("barr_sync_i raised during partial replay.");
                 if (barr_release_w) begin
                     // Warp Reconvergence: The last arriving path absorbs the entire aggregate mask.
-                    
+
                     mask_list_r[path_id_r] <= barr_total_r;
                     play_mask_r <= barr_total_r;
                 end else begin
@@ -197,7 +197,7 @@ module thread_scheduler
 
     assign pc_o   = pc_w;
     assign mask_o = mask_active_and_playing_w;
-    
+
     assign barr_sync_total_o = barr_total_r;
     assign barr_sync_parked_next_o = barr_parked_next_w;
     assign barr_sync_release_o = barr_release_w;

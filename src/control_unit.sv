@@ -8,7 +8,7 @@ module control_unit
     input  wire logic sim__runasserts_i,
 `endif
     input  wire logic [31:2] undec_instr32_i,
-    input  wire logic [XLEN-1:Z_PC] pc_i,
+    input  wire logic [RLEN-1:Z_PC] pc_i,
     output instr_s instr_o
 );
 
@@ -51,6 +51,10 @@ module control_unit
                 sim__disasm_format_w = "yield";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -82,6 +86,10 @@ module control_unit
                 sim__disasm_format_w = "wdone";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -113,6 +121,10 @@ module control_unit
                 sim__disasm_format_w = "fclass.s $d, $1";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -139,11 +151,85 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
             end
+            30'b111100000000?????000?????10100: begin // FMV_W_X
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fmv.w.x $d, $1";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_ADDY;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
+                instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
+                instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
+            end
+            30'b111000000000?????000?????10100: begin // FMV_X_W
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fmv.x.w $d, $1";
+                `endif
+                imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_ADDY;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_ALU;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = MEM_LOADSTORE_UNDEFINED;
+                instr_o.mem_opsize = MEM_OPSIZE_UNDEFINED;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
+                instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
+                instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
+            end
             30'b00010??00000?????010?????01011: begin // LR
                 `ifndef SYNTHESIS
                 sim__disasm_format_w = "lr.w $d, ($1)";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_OP1;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -175,6 +261,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, mhartid";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_HARTID;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -206,6 +296,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, xwarpid";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_WARPID;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -237,6 +331,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, xthrid";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_THRID;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -268,6 +366,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, xrole";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -299,6 +401,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, instret";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_INSTRET;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -330,6 +436,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, instreth";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_INSTRETH;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -361,6 +471,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, wuinstret";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_WUINSTRET;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -392,6 +506,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, wuinstreth";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_WUINSTRETH;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -423,6 +541,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, wtinstret";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_WTINSTRET;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -454,6 +576,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, wtinstreth";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_WTINSTRETH;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -485,6 +611,10 @@ module control_unit
                 sim__disasm_format_w = "fsqrt.s $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -516,6 +646,10 @@ module control_unit
                 sim__disasm_format_w = "fcvt.w.s $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -547,6 +681,10 @@ module control_unit
                 sim__disasm_format_w = "fcvt.wu.s $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -578,6 +716,10 @@ module control_unit
                 sim__disasm_format_w = "fcvt.s.w $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -609,6 +751,10 @@ module control_unit
                 sim__disasm_format_w = "fcvt.s.wu $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -640,6 +786,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, cycle|time";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_CYCLETIME;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -671,6 +821,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, cycleh|timeh";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_CYCLETIMEH;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -702,6 +856,10 @@ module control_unit
                 sim__disasm_format_w = "add $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -733,6 +891,10 @@ module control_unit
                 sim__disasm_format_w = "sh1add $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH1ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -764,6 +926,10 @@ module control_unit
                 sim__disasm_format_w = "sh2add $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH2ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -795,6 +961,10 @@ module control_unit
                 sim__disasm_format_w = "sh3add $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH3ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -826,6 +996,10 @@ module control_unit
                 sim__disasm_format_w = "sub $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SUB;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -857,6 +1031,10 @@ module control_unit
                 sim__disasm_format_w = "sll $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLL;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -888,6 +1066,10 @@ module control_unit
                 sim__disasm_format_w = "slt $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -919,6 +1101,10 @@ module control_unit
                 sim__disasm_format_w = "sltu $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -950,6 +1136,10 @@ module control_unit
                 sim__disasm_format_w = "xor $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_XOR;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -981,6 +1171,10 @@ module control_unit
                 sim__disasm_format_w = "srl $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SRL;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1012,6 +1206,10 @@ module control_unit
                 sim__disasm_format_w = "sra $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SRA;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1043,6 +1241,10 @@ module control_unit
                 sim__disasm_format_w = "or $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_OR;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1074,6 +1276,10 @@ module control_unit
                 sim__disasm_format_w = "and $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_AND;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1105,6 +1311,10 @@ module control_unit
                 sim__disasm_format_w = "slli $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLL;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1136,6 +1346,10 @@ module control_unit
                 sim__disasm_format_w = "srli $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SRL;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1167,6 +1381,10 @@ module control_unit
                 sim__disasm_format_w = "srai $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SRA;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1198,6 +1416,10 @@ module control_unit
                 sim__disasm_format_w = "czero.eqz $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_CZERO_EQZ;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1229,6 +1451,10 @@ module control_unit
                 sim__disasm_format_w = "czero.nez $d, $1, $2";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_CZERO_NEZ;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1260,6 +1486,10 @@ module control_unit
                 sim__disasm_format_w = "fminmax.s $d, $1, $2, $m";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -1291,6 +1521,10 @@ module control_unit
                 sim__disasm_format_w = "sc.w $d, $2, ($1)";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_OP1;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1322,6 +1556,10 @@ module control_unit
                 sim__disasm_format_w = "binit $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1353,6 +1591,10 @@ module control_unit
                 sim__disasm_format_w = "bsync $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1384,6 +1626,10 @@ module control_unit
                 sim__disasm_format_w = "fsgnj(n|x).s $d, $1, $2, $s";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -1415,6 +1661,10 @@ module control_unit
                 sim__disasm_format_w = "fcmp.s $d, $1, $2, $c";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -1446,6 +1696,10 @@ module control_unit
                 sim__disasm_format_w = "fadd.s $d, $1, $2, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -1466,7 +1720,7 @@ module control_unit
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
                 instr_o.fpu_active = 1'b1;
-                instr_o.fpu_opcode = fpnew_pkg::ADDS;
+                instr_o.fpu_opcode = fpnew_pkg::ADD;
                 instr_o.fpu_op_modifier = 1'b0;
                 instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS1;
@@ -1477,6 +1731,10 @@ module control_unit
                 sim__disasm_format_w = "fsub.s $d, $1, $2, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -1497,7 +1755,7 @@ module control_unit
                 instr_o.is_sc = 1'b0;
                 instr_o.is_wdone = 1'b0;
                 instr_o.fpu_active = 1'b1;
-                instr_o.fpu_opcode = fpnew_pkg::ADDS;
+                instr_o.fpu_opcode = fpnew_pkg::ADD;
                 instr_o.fpu_op_modifier = 1'b1;
                 instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS1;
@@ -1508,6 +1766,10 @@ module control_unit
                 sim__disasm_format_w = "fmul.s $d, $1, $2, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -1539,6 +1801,10 @@ module control_unit
                 sim__disasm_format_w = "fdiv.s $d, $1, $2. $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -1570,6 +1836,10 @@ module control_unit
                 sim__disasm_format_w = "addi $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1601,6 +1871,10 @@ module control_unit
                 sim__disasm_format_w = "slti $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1632,6 +1906,10 @@ module control_unit
                 sim__disasm_format_w = "sltiu $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1663,6 +1941,10 @@ module control_unit
                 sim__disasm_format_w = "xori $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_XOR;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1694,6 +1976,10 @@ module control_unit
                 sim__disasm_format_w = "ori $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_OR;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1725,6 +2011,10 @@ module control_unit
                 sim__disasm_format_w = "andi $d, $1, $i";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_AND;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1756,6 +2046,10 @@ module control_unit
                 sim__disasm_format_w = "beq $1, $2, $p";
                 `endif
                 imm_type_w = IMM_TYPE_B;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SUB;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1787,6 +2081,10 @@ module control_unit
                 sim__disasm_format_w = "bne $1, $2, $p";
                 `endif
                 imm_type_w = IMM_TYPE_B;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SUB;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1818,6 +2116,10 @@ module control_unit
                 sim__disasm_format_w = "blt $1, $2, $p";
                 `endif
                 imm_type_w = IMM_TYPE_B;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1849,6 +2151,10 @@ module control_unit
                 sim__disasm_format_w = "bge $1, $2, $p";
                 `endif
                 imm_type_w = IMM_TYPE_B;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1880,6 +2186,10 @@ module control_unit
                 sim__disasm_format_w = "bltu $1, $2, $p";
                 `endif
                 imm_type_w = IMM_TYPE_B;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1911,6 +2221,10 @@ module control_unit
                 sim__disasm_format_w = "bgeu $1, $2, $p";
                 `endif
                 imm_type_w = IMM_TYPE_B;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1942,6 +2256,10 @@ module control_unit
                 sim__disasm_format_w = "jalr $d, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1973,6 +2291,10 @@ module control_unit
                 sim__disasm_format_w = "lb $d, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -2004,6 +2326,10 @@ module control_unit
                 sim__disasm_format_w = "lh $d, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -2035,6 +2361,45 @@ module control_unit
                 sim__disasm_format_w = "lw $d, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_ADDY;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b1;
+                instr_o.wb_source = WB_SOURCE_MEM;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
+                instr_o.mem_opsize = MEM_OPSIZE_WORD;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
+                instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
+                instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
+            end
+            30'b?????????????????010?????00001: begin // FLW
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "flw $d, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -2066,6 +2431,10 @@ module control_unit
                 sim__disasm_format_w = "lbu $d, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -2097,6 +2466,10 @@ module control_unit
                 sim__disasm_format_w = "lhu $d, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_I;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -2128,6 +2501,10 @@ module control_unit
                 sim__disasm_format_w = "sb $2, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_S;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -2159,6 +2536,10 @@ module control_unit
                 sim__disasm_format_w = "sh $2, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_S;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -2190,6 +2571,45 @@ module control_unit
                 sim__disasm_format_w = "sw $2, $i($1)";
                 `endif
                 imm_type_w = IMM_TYPE_S;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.alu_funct = ALU_FUNCT_ADDY;
+                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
+                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
+                instr_o.alu_op2_sel = ALU_OP2_SEL_IMM;
+                instr_o.branch_cond = BRANCH_COND_NEVER;
+                instr_o.wb_active = 1'b0;
+                instr_o.wb_source = WB_SOURCE_UNDEFINED;
+                instr_o.barr_load = 1'b0;
+                instr_o.barr_sync = 1'b0;
+                instr_o.yield = 1'b0;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
+                instr_o.mem_opsize = MEM_OPSIZE_WORD;
+                instr_o.mem_store_source = MEM_STORE_SOURCE_RS2;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
+                instr_o.is_jalr = 1'b0;
+                instr_o.is_lr = 1'b0;
+                instr_o.is_sc = 1'b0;
+                instr_o.is_wdone = 1'b0;
+                instr_o.fpu_active = 1'b0;
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
+                instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
+                instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
+            end
+            30'b?????????????????010?????01001: begin // FSW
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fsw $2, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_S;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -2221,6 +2641,10 @@ module control_unit
                 sim__disasm_format_w = "fence";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -2252,6 +2676,10 @@ module control_unit
                 sim__disasm_format_w = "fmadd.s $d, $1, $2, $3, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -2283,6 +2711,10 @@ module control_unit
                 sim__disasm_format_w = "fmsub.s $d, $1, $2, $3, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -2314,6 +2746,10 @@ module control_unit
                 sim__disasm_format_w = "fnmsub.s $d, $1, $2, $3, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -2345,6 +2781,10 @@ module control_unit
                 sim__disasm_format_w = "fnmadd.s $d, $1, $2, $3, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -2376,6 +2816,10 @@ module control_unit
                 sim__disasm_format_w = "jal $d, $p";
                 `endif
                 imm_type_w = IMM_TYPE_J;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -2407,6 +2851,10 @@ module control_unit
                 sim__disasm_format_w = "lui $d, $i";
                 `endif
                 imm_type_w = IMM_TYPE_U;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_OP2;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -2438,6 +2886,10 @@ module control_unit
                 sim__disasm_format_w = "auipc $d, $i";
                 `endif
                 imm_type_w = IMM_TYPE_U;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_PC;
@@ -2469,6 +2921,10 @@ module control_unit
                 sim__disasm_format_w = "csrr $d, $i";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_ZERO;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;
@@ -2503,6 +2959,10 @@ module control_unit
                 end
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_UNDEFINED;

@@ -1,6 +1,6 @@
 `default_nettype none
 
-module mem_read_formatter 
+module mem_read_formatter
     import params_pkg::*;
     import control_unit_pkg::*;
 #(
@@ -8,9 +8,9 @@ module mem_read_formatter
 )(
     input wire  mem_opsize_e opsize_i,
     input wire  mem_extendmode_e extendmode_i,
-    input wire  logic [DATA_LEN-1:0][XLEN-1:0] m_data_i,
+    input wire  logic [DATA_LEN-1:0][RLEN-1:0] m_data_i,
     input wire  logic [DATA_LEN-1:0][Z_ADDR-1:0] alignment_i,
-    output logic [DATA_LEN-1:0][XLEN-1:0] p_data_o
+    output logic [DATA_LEN-1:0][RLEN-1:0] p_data_o
 ) ;
 
     `ifndef SYNTHESIS
@@ -72,14 +72,14 @@ module mem_read_formatter
         end
     end
 
-    logic [DATA_LEN-1:0][XLEN-1:0] reg_data_w;
+    logic [DATA_LEN-1:0][RLEN-1:0] reg_data_w;
 
     always_comb begin
         for (int i = 0; i < DATA_LEN; i++) begin
             case (opsize_i)
-                MEM_OPSIZE_BYTE: reg_data_w[i] = {{XLEN-8{extend_w[i]}}, byte_w[i]};
-                MEM_OPSIZE_HALF: reg_data_w[i] = {{XLEN-16{extend_w[i]}}, half_w[i]};
-                MEM_OPSIZE_WORD: reg_data_w[i] = {{XLEN-32{extend_w[i]}}, word_w[i]};
+                MEM_OPSIZE_BYTE: reg_data_w[i] = {{RLEN-8{extend_w[i]}}, byte_w[i]};
+                MEM_OPSIZE_HALF: reg_data_w[i] = {{RLEN-16{extend_w[i]}}, half_w[i]};
+                MEM_OPSIZE_WORD: reg_data_w[i] = {{RLEN-32{extend_w[i]}}, word_w[i]};
                 default: reg_data_w[i] = 'x;
             endcase
         end

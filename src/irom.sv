@@ -11,14 +11,14 @@ module irom
 ) (
     input wire  logic clk,
     input wire  logic [W_IROM_ADDR-1:Z_PC]   port_a_addr_i,
-    output logic [XLEN-1:0]   port_a_data_o,
+    output logic [RLEN-1:0]   port_a_data_o,
     input wire  logic [W_IROM_ADDR-1:Z_PC]   port_b_addr_i,
-    output logic [XLEN-1:0]   port_b_data_o
+    output logic [RLEN-1:0]   port_b_data_o
 );
     // -------------------------------------------------------------------------
     // Instruction ROM
     // -------------------------------------------------------------------------
-    logic [XLEN-1:0] mem_r [0:IROM_DEPTH-1];
+    logic [RLEN-1:0] mem_r [0:IROM_DEPTH-1];
 
     initial begin
         $readmemh("irom.mem", mem_r);
@@ -32,7 +32,7 @@ module irom
 
     instr_s sim__instr_w;
     logic [31:2] sim__undec_instr32_w;
-    logic [XLEN-1:Z_PC] sim__pc_w;
+    logic [RLEN-1:Z_PC] sim__pc_w;
     control_unit sim__u_cu(
 `ifndef SYNTHESIS
         .sim__runasserts_i(1'b0),
@@ -53,7 +53,7 @@ module irom
 
         for (int i = 0; i < instr_count; i++) begin
             sim__undec_instr32_w = mem_r[i][31:2];
-            sim__pc_w = unsigned'((XLEN-Z_PC)'(i));
+            sim__pc_w = unsigned'((RLEN-Z_PC)'(i));
             repeat(2) #0;
             sim__disasm_w[i] = sim__instr_w.sim__disasm;
         end
@@ -68,10 +68,10 @@ module irom
     // -------------------------------------------------------------------------
     // Synchronous read
     // -------------------------------------------------------------------------
-    logic [XLEN-1:0] port_a_data_r;
+    logic [RLEN-1:0] port_a_data_r;
     assign port_a_data_o = port_a_data_r;
 
-    logic [XLEN-1:0] port_b_data_r;
+    logic [RLEN-1:0] port_b_data_r;
     assign port_b_data_o = port_b_data_r;
 
     always_ff @(posedge clk) begin
