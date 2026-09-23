@@ -35,6 +35,13 @@ package params_pkg;
     localparam int W_TLOCAL_ADDR_PT = $clog2(TLOCAL_SIZE_PT);
     localparam int W_TLOCAL_BANK_ADDR = $clog2(TLOCAL_BANK_SIZE);
 
+    localparam int W_OP_ID = 32; // FIXME: This is a very high number for testing. Something around 3 to 5 should be enough in real use.
+    typedef struct packed {
+        logic [W_OP_ID-1:0] op_id;
+        logic [W_WARPS-1:0] warp_id;
+        control_unit_pkg::instr_s instr;
+    } op_tag_s;
+
 endpackage
 
 `default_nettype wire
