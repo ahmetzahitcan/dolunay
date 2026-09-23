@@ -89,7 +89,12 @@ module multialu
             fifo_empty_r <= 1;
             fifo_full_r <= 0;
         end else begin
-            if (out_handshake_w) begin
+            if (out_handshake_w & in_handshake_w) begin
+                // This can only happen when the FIFO is neither full nor empty
+                // So keep both flags the same
+                fifo_empty_r <= 0;
+                fifo_full_r <= 0;
+            end else if (out_handshake_w) begin
                 fifo_empty_r <= fifo_almost_empty_w;
                 fifo_full_r <= 0;
             end else if (in_handshake_w) begin

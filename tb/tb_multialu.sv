@@ -287,7 +287,12 @@ module tb_multialu;
     op_tag_s bp_tag_r;
 
     always @(posedge clk) begin
-        if (rst_n === 1'b1) begin
+        if (!rst_n) begin
+            bp_valid_r <= 1'b0;
+            bp_ready_r <= 1'b0;
+            bp_res_r   <= '0;
+            bp_tag_r   <= '0;
+        end else begin
             if (bp_valid_r && !bp_ready_r) begin
                 if (out_valid !== 1'b1)
                     report_error("out_valid_o dropped while stalled (out_ready_i low)");
@@ -304,10 +309,66 @@ module tb_multialu;
     end
 
     // -----------------------------------------------------------------------
+    // Reference occupancy model + per-occupancy bookkeeping (used by TEST 10)
+    //
+    // The DUT flags must always agree with the true occupancy: out_valid_o is
+    // exactly "non-empty" and in_ready_o is exactly "not full".
+    // -----------------------------------------------------------------------
+    int occ_ref;
+    int occ_checks[FIFO_DEPTH+1];
+    int occ_errors[FIFO_DEPTH+1];
+    int burst;
+    string failing_occs;
+
+    task automatic check_occupancy_flags;
+        if (occ_ref < 0 || occ_ref > FIFO_DEPTH) return;
+        occ_checks[occ_ref]++;
+        if (occ_ref == 0 && out_valid !== 1'b0) begin
+            occ_errors[occ_ref]++;
+            report_error($sformatf("occupancy %0d: out_valid_o high but FIFO is empty", occ_ref));
+        end
+        if (occ_ref > 0 && out_valid !== 1'b1) begin
+            occ_errors[occ_ref]++;
+            report_error($sformatf("occupancy %0d: out_valid_o low but FIFO is non-empty (spurious empty)", occ_ref));
+        end
+        if (occ_ref == FIFO_DEPTH && in_ready !== 1'b0) begin
+            occ_errors[occ_ref]++;
+            report_error($sformatf("occupancy %0d: in_ready_o high but FIFO is full", occ_ref));
+        end
+        if (occ_ref < FIFO_DEPTH && in_ready !== 1'b1) begin
+            occ_errors[occ_ref]++;
+            report_error($sformatf("occupancy %0d: in_ready_o low but FIFO has free space (spurious full)", occ_ref));
+        end
+    endtask
+
+    // Drive one input/output cycle. Checks the flags against the reference
+    // occupancy before the edge, then updates the reference from the handshakes
+    // that actually occur at the edge.
+    task automatic sweep_cycle(input bit din, input bit dout, input op_desc_t o);
+        logic push, pop;
+        check_occupancy_flags();
+        in_valid  = din;
+        out_ready = dout;
+        apply_op(o);
+        #1;
+        push = din & in_ready;
+        pop  = dout & out_valid;
+        if (push) begin
+            exp_res_q.push_back(ref_result);
+            exp_tag_q.push_back(o.tag);
+        end
+        occ_ref = occ_ref + (push ? 1 : 0) - (pop ? 1 : 0);
+        @(posedge clk);
+        #1;
+        @(negedge clk);
+    endtask
+
+    // -----------------------------------------------------------------------
     // Stimulus
     // -----------------------------------------------------------------------
     op_desc_t op;
     int accepted;
+    int drain_count;
 
     initial begin
         // Defaults
@@ -513,6 +574,69 @@ module tb_multialu;
                 report_error($sformatf("%0d CSR results not drained",
                                        exp_res_q.size()));
         end
+
+        // -------------------------------------------------------------------
+        // TEST 8: randomized simultaneous-handshake sweep over every occupancy
+        //          level (1 .. FIFO_DEPTH-1)
+        //
+        // For each occupancy level the FIFO is filled to exactly that occupancy
+        // and then hammered with simultaneous push+pop cycles. Keeping both
+        // handshakes asserted holds the occupancy fixed, so every flag check is
+        // attributable to the level under test. The operand/tag data and the
+        // burst length are randomized. Failures are tallied per occupancy level
+        // and reported at the end.
+        // -------------------------------------------------------------------
+        $display("[TEST 8] Simultaneous-handshake sweep across occupancy 1..%0d", FIFO_DEPTH - 1);
+        for (int c = 0; c <= FIFO_DEPTH; c++) begin
+            occ_checks[c] = 0;
+            occ_errors[c] = 0;
+        end
+
+        for (int occ = 1; occ < FIFO_DEPTH; occ++) begin
+            // Deterministic, empty FIFO for this occupancy level.
+            in_valid  = 1'b0;
+            out_ready = 1'b0;
+            rst_n = 1'b0;
+            repeat (RST_CYCLES) @(posedge clk);
+            @(negedge clk);
+            rst_n = 1'b1;
+            exp_res_q.delete();
+            exp_tag_q.delete();
+            occ_ref = 0;
+
+            // Fill to exactly `occ` entries.
+            for (int n = 0; n < occ; n++)
+                sweep_cycle(1'b1, 1'b0, make_op(7000 + 100 * occ + n));
+
+            // Hammer simultaneous push+pop at this occupancy.
+            burst = int'($urandom_range(6, 12));
+            for (int n = 0; n < burst; n++)
+                sweep_cycle(1'b1, 1'b1, make_op(8000 + 100 * occ + n));
+
+            // Also validate the flags left behind by the final burst edge.
+            check_occupancy_flags();
+        end
+
+        in_valid  = 1'b0;
+        out_ready = 1'b0;
+
+        // Report the sweep, calling out the failing occupancy levels.
+        $display("  occupancy : checks : errors");
+        failing_occs = "";
+        for (int occ = 1; occ < FIFO_DEPTH; occ++) begin
+            $display("      %0d     :   %0d    :   %0d%s",
+                     occ, occ_checks[occ], occ_errors[occ],
+                     (occ_errors[occ] != 0) ? "   <-- FAIL" : "");
+            if (occ_errors[occ] != 0) begin
+                if (failing_occs != "")
+                    failing_occs = {failing_occs, ", "};
+                failing_occs = {failing_occs, $sformatf("%0d", occ)};
+            end
+        end
+        if (failing_occs == "")
+            $display("  sweep result: PASS (all occupancy levels clean)");
+        else
+            $display("  sweep result: FAIL at occupancy level(s) %s", failing_occs);
 
         // -------------------------------------------------------------------
         // Summary
