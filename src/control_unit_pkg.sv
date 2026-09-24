@@ -9,9 +9,9 @@ package control_unit_pkg;
 	} imm_type_e;
 
 	typedef enum logic [3:0] {
-		ALU_FUNCT_SLT,
 		ALU_FUNCT_ADDY,
 		ALU_FUNCT_SLL,
+		ALU_FUNCT_SLT,
 		ALU_FUNCT_SLTU,
 		ALU_FUNCT_XOR,
 		ALU_FUNCT_SRL,
@@ -37,18 +37,9 @@ package control_unit_pkg;
 	} alu_op1_sel_e;
 
 	typedef enum logic {
-		ALU_OP2_SEL_IMM,
-		ALU_OP2_SEL_RS2
+		ALU_OP2_SEL_RS2,
+		ALU_OP2_SEL_IMM
 	} alu_op2_sel_e;
-
-	typedef enum logic {
-		BRANCH_COND_NEVER
-	} branch_cond_e;
-
-	typedef enum logic {
-		WB_SOURCE_ALU,
-		WB_SOURCE_FPU
-	} wb_source_e;
 
 	typedef enum logic {
 		FPU_OP0_SEL_RS1
@@ -74,31 +65,19 @@ package control_unit_pkg;
 		logic [W_REGISTERS-1:0] rs2_idx;
 		logic [W_REGISTERS-1:0] rs3_idx;
 		logic [2:0] fpu_roundmode;
+		logic rd_used;
 		params_pkg::regfile_sel_e rd_regfile;
+		logic rs1_used;
 		params_pkg::regfile_sel_e rs1_regfile;
+		logic rs2_used;
 		params_pkg::regfile_sel_e rs2_regfile;
+		logic rs3_used;
 		params_pkg::regfile_sel_e rs3_regfile;
-		params_pkg::function_unit_e fu_sel;
+		fu_pkg::function_unit_e fu_sel;
 		alu_funct_e alu_funct;
 		alu_addy_funct_e alu_addy_funct;
 		alu_op1_sel_e alu_op1_sel;
 		alu_op2_sel_e alu_op2_sel;
-		branch_cond_e branch_cond;
-		logic wb_active;
-		wb_source_e wb_source;
-		logic barr_load;
-		logic barr_sync;
-		logic yield;
-		logic mem_active;
-		logic mem_loadstore;
-		logic mem_opsize;
-		logic mem_store_source;
-		logic mem_extendmode;
-		logic is_jalr;
-		logic is_lr;
-		logic is_sc;
-		logic is_wdone;
-		logic fpu_active;
 		fpnew_pkg::operation_e fpu_opcode;
 		logic fpu_op_modifier;
 		fpu_op0_sel_e fpu_op0_sel;
