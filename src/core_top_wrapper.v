@@ -1,6 +1,6 @@
 `default_nettype none
 
-module core_top
+module core_top_wrapper
 #(
     parameter W_WRAM_ADDR = 16,
     parameter W_IROM_ADDR = 12
@@ -32,16 +32,16 @@ module core_top
     assign irom_clk_a_o = clk;
     assign irom_clk_b_o = clk;
 
-    pipeline #(
+    core_top #(
         .WRAM_SIZE(1 << W_WRAM_ADDR),
         .IROM_SIZE(1 << W_IROM_ADDR)
-    ) u_pipeline (
+    ) core_top (
         .clk(clk),
         .rst_n(rst_n),
 
         .start_i(start_i),
         .ready_o(ready_o),
-        
+
         // WRAM Interface
         .wram_addr_o(wram_addr_o),
         .wram_wdata_o(wram_wdata_o),
