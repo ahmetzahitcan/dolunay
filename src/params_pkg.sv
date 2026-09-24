@@ -12,8 +12,7 @@ package params_pkg;
     localparam int W_REGFILES = $clog2(N_REGFILES);
     typedef enum logic [W_REGFILES-1:0] {
         REGFILE_SEL_I, // I'm using I instead of X, because X looks like x in control_unit.csv
-        REGFILE_SEL_F,
-        REGFILE_SEL_UNDEFINED = 'x
+        REGFILE_SEL_F
     } regfile_sel_e;
 
     localparam int ADDR_ALIGN = 4;
@@ -35,12 +34,11 @@ package params_pkg;
     localparam int W_TLOCAL_ADDR_PT = $clog2(TLOCAL_SIZE_PT);
     localparam int W_TLOCAL_BANK_ADDR = $clog2(TLOCAL_BANK_SIZE);
 
-    localparam int W_OP_ID = 32; // FIXME: This is a very high number for testing. Something around 3 to 5 should be enough in real use.
-    typedef struct packed {
-        logic [W_OP_ID-1:0] op_id;
-        logic [W_WARPS-1:0] warp_id;
-        control_unit_pkg::instr_s instr;
-    } op_tag_s;
+    typedef logic [N_THREADS-1:0] simd_mask_t;
+    typedef logic [W_WARPS-1:0] warp_id_t;
+    typedef logic [W_REGISTERS-1:0] reg_id_t;
+    typedef logic [N_THREADS-1:0][RLEN-1:0] simd_data_t;
+    typedef logic [RLEN-1:Z_PC] pc_t;
 
 endpackage
 
