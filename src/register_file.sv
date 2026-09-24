@@ -8,29 +8,29 @@ module register_file
 (
     input wire logic clk,
 
-    input wire logic [W_WARPS-1:0] read_warp_id_i,
-    input wire logic [W_WARPS-1:0] write_warp_id_i,
+    input wire warp_id_t read_warp_id_i,
+    input wire warp_id_t write_warp_id_i,
 
     // Read port 1
-    input wire  logic [W_REGISTERS-1:0]       rs1_idx_i,
+    input wire  reg_id_t       rs1_idx_i,
     input wire  regfile_sel_e rs1_regfile_i,
-    output logic [N_THREADS-1:0][RLEN-1:0]  rs1_data_o,
+    output simd_data_t  rs1_data_o,
 
     // Read port 2
-    input wire  logic [W_REGISTERS-1:0]       rs2_idx_i,
+    input wire  reg_id_t       rs2_idx_i,
     input wire  regfile_sel_e rs2_regfile_i,
-    output logic [N_THREADS-1:0][RLEN-1:0]  rs2_data_o,
+    output simd_data_t  rs2_data_o,
 
     // Read port 3
-    input wire  logic [W_REGISTERS-1:0]       rs3_idx_i,
+    input wire  reg_id_t       rs3_idx_i,
     input wire  regfile_sel_e rs3_regfile_i,
-    output logic [N_THREADS-1:0][RLEN-1:0]  rs3_data_o,
+    output simd_data_t  rs3_data_o,
 
     // Write port
-    input wire  logic [N_THREADS-1:0]          write_en_mask_i,
-    input wire  logic [W_REGISTERS-1:0]        rd_idx_i,
+    input wire  simd_mask_t         write_en_mask_i,
+    input wire  reg_id_t        rd_idx_i,
     input wire  regfile_sel_e rd_regfile_i,
-    input wire  logic [N_THREADS-1:0][RLEN-1:0]   write_data_i
+    input wire  simd_data_t  write_data_i
 );
 
     `ifndef SYNTHESIS
@@ -39,9 +39,9 @@ module register_file
             else $error("Register file read and write from same warp");
     `endif
 
-    logic [N_THREADS-1:0][RLEN-1:0] rs1_data_r;
-    logic [N_THREADS-1:0][RLEN-1:0] rs2_data_r;
-    logic [N_THREADS-1:0][RLEN-1:0] rs3_data_r;
+    simd_data_t rs1_data_r;
+    simd_data_t rs2_data_r;
+    simd_data_t rs3_data_r;
 
     `ifndef SYNTHESIS
     // slang lint_off unused-but-set-variable
