@@ -46,17 +46,16 @@ class ExternalEnum:
 
     The type is emitted verbatim, so it should be fully qualified.  When no
     default/undefined member is given, don't-care values are rendered as a cast
-    to the type (``fpnew_pkg::operation_e'('x)``), which works for enums that do
-    not declare an ``_UNDEFINED`` member.
+    to the type (``fpnew_pkg::operation_e'('x)``)
     """
 
-    def __init__(self, col, type_ref, prefix="", undef_member=None):
+    def __init__(self, col, type_ref, prefix="", def_member=None):
         self.col = col
         self.type_ref = type_ref
         self.prefix = prefix
         # Package scope (e.g. "fpnew_pkg::") used to qualify enum members.
         self.scope = type_ref[:type_ref.rfind('::') + 2] if '::' in type_ref else ''
-        self.undef_member = f"{self.scope}{self.prefix}{undef_member}" if undef_member else None
+        self.def_member = f"{self.scope}{self.prefix}{def_member}" if def_member else None
 
     def member(self, value):
         """Return the (optionally qualified) enum member for a CSV value."""
@@ -64,8 +63,8 @@ class ExternalEnum:
 
     def undefined(self):
         """Return the expression used for don't-care / default values."""
-        if self.undef_member is not None:
-            return self.undef_member
+        if self.def_member is not None:
+            return self.def_member
         return f"{self.type_ref}'('x)"
 
 
@@ -315,7 +314,7 @@ def emit_sv_module(data, output_file, module_name, package_name):
         if sig in enums:
             prefix = sig.upper()
             if val.lower() in ('x', '-', 'd', '?') or val == "":
-                return f"{prefix}_UNDEFINED"
+                return f"{sig}_e'('x)"
             else:
                 return f"{prefix}_{val}"
         else:
@@ -446,9 +445,7 @@ def emit_sv_package(data, output_file, package_name):
             else:
                 f.write("\ttypedef enum logic {\n")
 
-            f.writelines(f"\t\t{prefix}_{value},\n" for value in values)
-            f.write(f"\t\t{prefix}_UNDEFINED='x\n")
-
+            f.write(",\n".join(f"\t\t{prefix}_{value}" for value in values) + "\n")
             f.write(f"\t}} {sig}_e;\n\n")
 
         f.write("\ttypedef struct packed {\n")
