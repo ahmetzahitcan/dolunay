@@ -4,8 +4,10 @@ package fu_pkg;
     import params_pkg::*;
 
     typedef struct packed {
+        seq_t seq;
         warp_id_t warp_id;
         control_unit_pkg::instr_s instr;
+        simd_mask_t mask;
         simd_data_t rs1_data;
         simd_data_t rs2_data;
         simd_data_t rs3_data;

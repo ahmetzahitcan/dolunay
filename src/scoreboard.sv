@@ -17,9 +17,7 @@
 
 module scoreboard
     import params_pkg::*;
-#(
-    parameter type Tag
-)(
+(
     input wire logic clk,
     input wire logic rst_n,
 
@@ -48,19 +46,19 @@ module scoreboard
     // Issue-acquire port
     input wire  reg_id_t        acq_idx_i,
     input wire  regfile_sel_e acq_regfile_i,
-    input wire  Tag   acq_tag_i,
+    input wire  seq_t   acq_seq_i,
     input wire  logic acq_en_i,
 
     // Commit-release port
     input wire  reg_id_t        rel_idx_i,
     input wire  regfile_sel_e rel_regfile_i,
-    input wire  Tag   rel_tag_i,
+    input wire  seq_t   rel_seq_i,
     input wire  logic rel_en_i,
     output wire logic rel_success_o
 );
 
     logic [N_WARPS-1:0][N_REGFILES-1:0][N_REGISTERS-1:0] busy_r;
-    Tag tag_r [0:N_WARPS-1][0:N_REGFILES-1][0:N_REGISTERS-1];
+    seq_t seq_r [0:N_WARPS-1][0:N_REGFILES-1][0:N_REGISTERS-1];
 
     logic chk1_busy_w, chk2_busy_w, chk3_busy_w;
     logic rel_success_r;
@@ -93,7 +91,7 @@ module scoreboard
             ) else $error("Cannot acquire and release the same entry! Entry: %d-%d", acq_regfile_i, acq_idx_i);
 
             if (acq_en_i && !(acq_idx_i == 0 && acq_regfile_i == REGFILE_SEL_I)) begin
-                tag_r[issue_warp_id_i][acq_regfile_i][acq_idx_i] <= acq_tag_i;
+                seq_r[issue_warp_id_i][acq_regfile_i][acq_idx_i] <= acq_seq_i;
                 busy_r[issue_warp_id_i][acq_regfile_i][acq_idx_i] <= 1;
             end
 
@@ -103,10 +101,10 @@ module scoreboard
                 end else begin
                     assert (busy_r[commit_warp_id_i][rel_regfile_i][rel_idx_i])
                         else $warning("Release operation on non-busy entry! Entry: %d-%d", rel_regfile_i, rel_idx_i);
-                    assert (!$isunknown(tag_r[commit_warp_id_i][rel_regfile_i][rel_idx_i]))
-                        else $error("Release operation on unknown tag! Entry: %d-%d", rel_regfile_i, rel_idx_i);
+                    assert (!$isunknown(seq_r[commit_warp_id_i][rel_regfile_i][rel_idx_i]))
+                        else $error("Release operation on invalid seq! Entry: %d-%d", rel_regfile_i, rel_idx_i);
 
-                    if (rel_tag_i == tag_r[commit_warp_id_i][rel_regfile_i][rel_idx_i]) begin
+                    if (rel_seq_i == seq_r[commit_warp_id_i][rel_regfile_i][rel_idx_i]) begin
                         rel_success_r <= busy_r[commit_warp_id_i][rel_regfile_i][rel_idx_i];
                         busy_r[commit_warp_id_i][rel_regfile_i][rel_idx_i] <= 0;
                     end else begin

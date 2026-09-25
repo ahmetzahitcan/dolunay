@@ -60,6 +60,7 @@ module core_top
     // - Scoreboard
 
     warp_id_t sb_issue_warp_id_w;
+    warp_id_t sb_commit_warp_id_w;
 
     reg_id_t sb_chk1_idx_w;
     regfile_sel_e sb_chk1_regfile_w;
@@ -76,14 +77,23 @@ module core_top
     logic sb_chk3_en_w;
     logic sb_chk3_busy_w;
 
-    scoreboard #(
-        .Tag( logic ) // FIXME
-    ) u_scoreboard (
+    reg_id_t sb_acq_idx_w;
+    regfile_sel_e sb_acq_regfile_w;
+    seq_t sb_acq_seq_w;
+    logic sb_acq_en_w;
+
+    reg_id_t sb_rel_idx_w;
+    regfile_sel_e sb_rel_regfile_w;
+    seq_t sb_rel_seq_w;
+    logic sb_rel_en_w;
+    logic sb_rel_success_w;
+
+    scoreboard u_scoreboard (
         .clk(clk),
         .rst_n(rst_n),
 
         .issue_warp_id_i(sb_issue_warp_id_w),
-        .commit_warp_id_i(),
+        .commit_warp_id_i(sb_commit_warp_id_w),
 
         .chk1_idx_i(sb_chk1_idx_w),
         .chk1_regfile_i(sb_chk1_regfile_w),
@@ -100,16 +110,16 @@ module core_top
         .chk3_en_i(sb_chk3_en_w),
         .chk3_busy_o(sb_chk3_busy_w),
 
-        .acq_idx_i(),
-        .acq_regfile_i(),
-        .acq_tag_i(),
-        .acq_en_i(),
+        .acq_idx_i(sb_acq_idx_w),
+        .acq_regfile_i(sb_acq_regfile_w),
+        .acq_seq_i(sb_acq_seq_w),
+        .acq_en_i(sb_acq_en_w),
 
-        .rel_idx_i(),
-        .rel_regfile_i(),
-        .rel_tag_i(),
-        .rel_en_i(),
-        .rel_success_o()
+        .rel_idx_i(sb_rel_idx_w),
+        .rel_regfile_i(sb_rel_regfile_w),
+        .rel_seq_i(sb_rel_seq_w),
+        .rel_en_i(sb_rel_en_w),
+        .rel_success_o(sb_rel_success_w)
     );
 
     // - Register File
@@ -177,6 +187,7 @@ module core_top
         .rf_rs3_data_i(rf_rs3_data_w),
 
         .sb_warp_id_o(sb_issue_warp_id_w),
+
         .sb_chk1_idx_o(sb_chk1_idx_w),
         .sb_chk1_regfile_o(sb_chk1_regfile_w),
         .sb_chk1_en_o(sb_chk1_en_w),
@@ -188,7 +199,12 @@ module core_top
         .sb_chk3_idx_o(sb_chk3_idx_w),
         .sb_chk3_regfile_o(sb_chk3_regfile_w),
         .sb_chk3_en_o(sb_chk3_en_w),
-        .sb_chk3_busy_i(sb_chk3_busy_w)
+        .sb_chk3_busy_i(sb_chk3_busy_w),
+
+        .sb_acq_idx_o(sb_acq_idx_w),
+        .sb_acq_regfile_o(sb_acq_regfile_w),
+        .sb_acq_seq_o(sb_acq_seq_w),
+        .sb_acq_en_o(sb_acq_en_w)
     );
 
     // -- Function Units

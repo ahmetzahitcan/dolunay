@@ -5,10 +5,9 @@ module thread_scheduler
 (
     input wire logic clk,
     input wire logic rst_n,
+    input wire logic en,
 
-    input wire logic instr_completed_i,
-    input wire logic [N_THREADS-1:0] instr_replay_mask_i,
-
+    input wire logic pc_inc_i,
     input wire logic yield_i,
 
     input wire logic barr_load_i,
@@ -21,6 +20,7 @@ module thread_scheduler
     output logic barr_sync_release_o,
 
     input wire logic branch_i,
+    // INFO: Don't hastily delete. These are used by the currently disabled branching logic.
     input wire logic [RLEN-1:Z_PC] pc_branch_i,
     input wire logic [N_THREADS-1:0] mask_branch_i,
 
@@ -42,9 +42,6 @@ module thread_scheduler
     logic [W_THREADS-1:0] path_id_next_w;
     logic next_found_w;
 
-    logic [N_THREADS-1:0] path_id_next_mask_w;
-    assign path_id_next_mask_w = mask_list_r[path_id_next_w];
-
     always_comb begin
         // Round-Robin Arbiter: Scans all path slots to seamlessly route around parked or dead paths.
         path_id_next_w = '0;
@@ -52,7 +49,7 @@ module thread_scheduler
 
         // Pass 1: Scan for the next valid path ID strictly greater than the current path
         for (int i = 0; i < N_THREADS; i++) begin
-            if (!next_found_w && (i > path_id_r) && path_valid_w[i]) begin
+            if (!next_found_w && (i > int'(path_id_r)) && path_valid_w[i]) begin
                 path_id_next_w = i[W_THREADS-1:0];
                 next_found_w   = 1'b1;
             end
@@ -61,7 +58,7 @@ module thread_scheduler
         if (!next_found_w) begin
             // Pass 2: Wrap around and scan from 0 up to the current path
             for (int i = 0; i < N_THREADS; i++) begin
-                if (!next_found_w && (i <= path_id_r) && path_valid_w[i]) begin
+                if (!next_found_w && (i <= int'(path_id_r)) && path_valid_w[i]) begin
                     path_id_next_w = i[W_THREADS-1:0];
                     next_found_w   = 1'b1;
                 end
@@ -75,6 +72,7 @@ module thread_scheduler
     `endif
     end
 
+    // INFO: Don't hastily delete. This is used by the currently disabled branching logic.
     logic [W_THREADS-1:0] path_id_empty_w;
     logic empty_found_w;
 
@@ -108,59 +106,33 @@ module thread_scheduler
     logic barr_release_w;
     assign barr_release_w = (barr_total_r == barr_parked_next_w);
 
-    logic replay_any_w;
-    assign replay_any_w = |instr_replay_mask_i;
-
-    logic [N_THREADS-1:0] play_mask_r;
-
-    logic [N_THREADS-1:0] mask_active_and_playing_w;
-    assign mask_active_and_playing_w = mask_w & play_mask_r;
-
-    logic [N_THREADS-1:0] mask_remain_w;
-    assign mask_remain_w = mask_w & ~mask_branch_i;
-
-    logic mask_remain_valid_w;
-    assign mask_remain_valid_w = |mask_remain_w;
-
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             path_id_r <= '0;
             pc_list_r[0] <= '0;
             mask_list_r[0] <= '1;
-            play_mask_r <= '1;
             for (int i = 1; i < N_THREADS; i++) begin
                 pc_list_r[i] <= '0;
                 mask_list_r[i] <= '0;
             end
             barr_total_r <= '0;
             barr_parked_r <= '0;
-        end else begin
-            if (instr_completed_i) begin
-                assert ((instr_replay_mask_i & ~mask_w) == '0) else $error("Instruction replay mask is not a subset of the active thread mask.");
+        end else if (en) begin
+            if (pc_inc_i) begin
+                pc_list_r[path_id_r] <= pc_p1_w;
 
-                if (replay_any_w) begin
-                    play_mask_r <= play_mask_r & instr_replay_mask_i;
-                end else begin
-                    pc_list_r[path_id_r] <= pc_p1_w;
-                    play_mask_r <= mask_w;
-                end
             end
 
             unique0 if (yield_i) begin
-                assert (mask_w == mask_active_and_playing_w) else $error("yield_i raised during partial replay.");
                 path_id_r <= path_id_next_w;
-                play_mask_r <= path_id_next_mask_w;
             end else if (barr_load_i) begin
-                assert (mask_w == mask_active_and_playing_w) else $error("barr_load_i raised during partial replay.");
                 barr_total_r <= barr_load_total_i;
                 barr_parked_r <= barr_load_parked_i;
             end else if (barr_sync_i) begin
-                assert (mask_w == mask_active_and_playing_w) else $error("barr_sync_i raised during partial replay.");
                 if (barr_release_w) begin
                     // Warp Reconvergence: The last arriving path absorbs the entire aggregate mask.
 
                     mask_list_r[path_id_r] <= barr_total_r;
-                    play_mask_r <= barr_total_r;
                 end else begin
                     // Warp is yet to reconverge. Disable this path.
                     // The last arriving path will absorb the entire mask.
@@ -169,12 +141,13 @@ module thread_scheduler
 
                     // auto-yield
                     path_id_r <= path_id_next_w;
-                    play_mask_r <= path_id_next_mask_w;
 
                     assert (path_id_next_w != path_id_r) else $error("Path ID did not change during barrier sync park.");
                 end
             end else if (branch_i) begin
-                assert ((mask_branch_i & instr_replay_mask_i) == '0) else $error("Some threads are trying to replay and branch at the same time.");
+                $error("Branch not implemented!");
+
+                /*
                 assert ((mask_branch_i & ~mask_w) == '0) else $error("Branch mask is not a subset of the active thread mask.");
                 assert (mask_branch_i != '0) else $error("Branch fired with empty taken mask.");
 
@@ -191,12 +164,13 @@ module thread_scheduler
                     pc_list_r[path_id_r] <= pc_branch_i;
                     // mask_list_r[path_id_r] <= mask_branch_i; // Not needed since this only happens when mask_w == mask_branch_i
                 end
+                */
             end
         end
     end
 
     assign pc_o   = pc_w;
-    assign mask_o = mask_active_and_playing_w;
+    assign mask_o = mask_w;
 
     assign barr_sync_total_o = barr_total_r;
     assign barr_sync_parked_next_o = barr_parked_next_w;

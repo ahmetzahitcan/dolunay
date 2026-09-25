@@ -2,8 +2,6 @@
 // tb_scoreboard.sv — Self-checking testbench for src/scoreboard.sv
 // =============================================================================
 //
-// The scoreboard is parameterised on a `Tag` type. This TB instantiates it with
-// an 8-bit tag.
 //
 // Timing convention of the DUT:
 //   - Check ports are COMBINATIONAL (chk*_busy_o == f(busy_r, inputs, same cycle)).
@@ -23,12 +21,6 @@
 module tb_scoreboard;
     import params_pkg::*;
     import tb_config_pkg::RST_CYCLES;
-
-    // -----------------------------------------------------------------------
-    // Tag type used to instantiate the DUT
-    // -----------------------------------------------------------------------
-    localparam int TAG_WIDTH = 8;
-    typedef logic [TAG_WIDTH-1:0] tag_t;
 
     // -----------------------------------------------------------------------
     // Clock / reset
@@ -60,16 +52,16 @@ module tb_scoreboard;
 
     reg_id_t      acq_idx_i;
     regfile_sel_e acq_regfile_i;
-    tag_t         acq_tag_i;
+    seq_t         acq_seq_i;
     logic         acq_en_i;
 
     reg_id_t      rel_idx_i;
     regfile_sel_e rel_regfile_i;
-    tag_t         rel_tag_i;
+    seq_t         rel_seq_i;
     logic         rel_en_i;
     logic         rel_success_o;
 
-    scoreboard #(.Tag(tag_t)) dut (
+    scoreboard dut (
         .clk            (clk),
         .rst_n          (rst_n),
 
@@ -93,12 +85,12 @@ module tb_scoreboard;
 
         .acq_idx_i      (acq_idx_i),
         .acq_regfile_i  (acq_regfile_i),
-        .acq_tag_i      (acq_tag_i),
+        .acq_seq_i      (acq_seq_i),
         .acq_en_i       (acq_en_i),
 
         .rel_idx_i      (rel_idx_i),
         .rel_regfile_i  (rel_regfile_i),
-        .rel_tag_i      (rel_tag_i),
+        .rel_seq_i      (rel_seq_i),
         .rel_en_i       (rel_en_i),
         .rel_success_o  (rel_success_o)
     );
@@ -140,8 +132,8 @@ module tb_scoreboard;
         chk1_idx_i = '0; chk1_regfile_i = REGFILE_SEL_I; chk1_en_i = 1'b0;
         chk2_idx_i = '0; chk2_regfile_i = REGFILE_SEL_I; chk2_en_i = 1'b0;
         chk3_idx_i = '0; chk3_regfile_i = REGFILE_SEL_I; chk3_en_i = 1'b0;
-        acq_idx_i  = '0; acq_regfile_i  = REGFILE_SEL_I; acq_tag_i  = '0; acq_en_i = 1'b0;
-        rel_idx_i  = '0; rel_regfile_i  = REGFILE_SEL_I; rel_tag_i  = '0; rel_en_i = 1'b0;
+        acq_idx_i  = '0; acq_regfile_i  = REGFILE_SEL_I; acq_seq_i  = '0; acq_en_i = 1'b0;
+        rel_idx_i  = '0; rel_regfile_i  = REGFILE_SEL_I; rel_seq_i  = '0; rel_en_i = 1'b0;
     endtask
 
     // Combinational check reads (one cycle each).
@@ -176,10 +168,10 @@ module tb_scoreboard;
     endtask
 
     task automatic do_acq(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                          input tag_t tag);
+                          input seq_t seq);
         @(negedge clk);
         issue_warp_id_i = w;
-        acq_idx_i = idx; acq_regfile_i = rf; acq_tag_i = tag; acq_en_i = 1'b1;
+        acq_idx_i = idx; acq_regfile_i = rf; acq_seq_i = seq; acq_en_i = 1'b1;
         rel_en_i = 1'b0;
         @(posedge clk);
         @(negedge clk) acq_en_i = 1'b0;
@@ -187,10 +179,10 @@ module tb_scoreboard;
 
     // Returns rel_success_o for this release (registered, sampled after posedge).
     task automatic do_rel(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                          input tag_t tag, output logic success);
+                          input seq_t seq, output logic success);
         @(negedge clk);
         commit_warp_id_i = w;
-        rel_idx_i = idx; rel_regfile_i = rf; rel_tag_i = tag; rel_en_i = 1'b1;
+        rel_idx_i = idx; rel_regfile_i = rf; rel_seq_i = seq; rel_en_i = 1'b1;
         acq_en_i = 1'b0;
         @(posedge clk);
         #1 success = rel_success_o;
@@ -236,15 +228,15 @@ module tb_scoreboard;
         read_chk1(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x5 busy on all 3 check ports (1)");
         read_chk2(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x5 busy on all 3 check ports (2)");
         read_chk3(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x5 busy on all 3 check ports (3)");
-        do_rel(0, 5, REGFILE_SEL_I, 8'h02, got); expect_ok(got, 1'b0, "release with wrong tag fails");
+        do_rel(0, 5, REGFILE_SEL_I, 8'h02, got); expect_ok(got, 1'b0, "release with wrong seq fails");
         read_chk1(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x5 still busy after failed release");
-        do_rel(0, 5, REGFILE_SEL_I, 8'h01, got); expect_ok(got, 1'b1, "release with matching tag succeeds");
+        do_rel(0, 5, REGFILE_SEL_I, 8'h01, got); expect_ok(got, 1'b1, "release with matching seq succeeds");
         read_chk1(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b0, "x5 free after release");
 
         // ---------------- Acquire drop (superseding acquire) ----------------
         $display("\n== D. Earlier acquire is dropped ==");
         do_acq(0, 6, REGFILE_SEL_I, 8'h10);
-        do_acq(0, 6, REGFILE_SEL_I, 8'h20);       // drops tag 0x10
+        do_acq(0, 6, REGFILE_SEL_I, 8'h20);       // drops seq 0x10
         read_chk1(0, 6, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x6 still busy after re-acquire");
         do_rel(0, 6, REGFILE_SEL_I, 8'h10, got); expect_ok(got, 1'b0, "dropped acquire release fails");
         read_chk1(0, 6, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x6 still busy after dropped release");
@@ -289,8 +281,8 @@ module tb_scoreboard;
 
         // H1: duplicate release on an already-released entry.
         // Correct behaviour: a second release of the same entry must NOT report
-        // success (the entry is free). Actual: tag_r is not cleared on release,
-        // so the stale tag still matches and rel_success_o returns 1.
+        // success (the entry is free). Actual: seq_r is not cleared on release,
+        // so the stale seq still matches and rel_success_o returns 1.
         do_acq(3, 10, REGFILE_SEL_I, 8'h60);
         do_rel(3, 10, REGFILE_SEL_I, 8'h60, got); expect_ok(got, 1'b1, "H1 first release succeeds");
         do_rel(3, 10, REGFILE_SEL_I, 8'h60, got); bug_probe(got, 1'b0, "H1 duplicate release must fail");

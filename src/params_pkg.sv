@@ -21,7 +21,7 @@ package params_pkg;
     localparam int PC_ALIGN = 4;
     localparam int Z_PC = $clog2(PC_ALIGN);
 
-    localparam int N_WARPS = 8; // Min 8?
+    localparam int N_WARPS = 64; // FIXME: An absurdly large number of warps for safety.
     localparam int N_THREADS = 8;
     localparam int N_REGISTERS = 32; // RV32I
     localparam int W_WARPS = $clog2(N_WARPS);
@@ -39,6 +39,11 @@ package params_pkg;
     typedef logic [W_REGISTERS-1:0] reg_id_t;
     typedef logic [N_THREADS-1:0][RLEN-1:0] simd_data_t;
     typedef logic [RLEN-1:Z_PC] pc_t;
+
+    localparam int ROB_SIZE = 65536; // FIXME: An absurdly large value for safety. Check how long this should be later.
+    localparam int W_ROB_ADDR = $clog2(ROB_SIZE);
+
+    typedef logic [W_ROB_ADDR-1:0] seq_t;
 
 endpackage
 
