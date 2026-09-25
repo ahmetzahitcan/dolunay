@@ -2,7 +2,7 @@
 
 This repository contains the source code and software toolchain for **Dolunay**, a RISC-V-based SIMT accelerator featuring Independent Thread Scheduling (ITS). 
 
-This is the variant submitted and accepted to DSD 2026 WiP Track. It is published in #(WiPiEC Journal)[https://wipiec.digitalheritage.me/index.php/wipiecjournal/article/view/137]. This branch is **frozen**.
+This is the variant submitted and accepted to DSD 2026 WiP Track. It is published in [WiPiEC Journal](https://wipiec.digitalheritage.me/index.php/wipiecjournal/article/view/137). This branch is **frozen**.
 
 If you use Dolunay in an academic work, please cite:
 
