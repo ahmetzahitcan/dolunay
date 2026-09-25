@@ -2,6 +2,46 @@
 
 This repository contains the source code and software toolchain for **Dolunay**, a RISC-V-based SIMT accelerator featuring Independent Thread Scheduling (ITS).
 
+If you use Dolunay in an academic work, please cite:
+
+- BibTeX:
+```
+@article{
+  Can_Uslu_2026,
+  title={Dolunay: Architectural Support for Independent Thread Scheduling in a RISC-V SIMT Accelerator},
+  volume={12},
+  url={https://wipiec.digitalheritage.me/index.php/wipiecjournal/article/view/137},
+  DOI={10.64552/wipiec.v12i2.137},
+  abstractNote={&amp;lt;p&amp;gt;Single-Instruction Multiple-Thread (SIMT) architectures have revolutionized data-parallel computing by providing a high-throughput abstraction that simplifies vector management. However, traditional stack-based SIMT models do not support intra-warp synchronization primitives such as mutexes and spin-locks. This work introduces Dolunay, a RISC-V-based Independent Thread Scheduling (ITS) SIMT accelerator. By only adding three custom instructions, Dolunay employs a cooperative multitasking model and explicit synchronization barriers at the hardware-level, and provides the forward-progress guarantees necessary to implement starvation-free algorithms. We evaluate Dolunay on the Cmod A7-35T FPGA module and demonstrate its ability to correctly execute kernels that deadlock on traditional stack-based architectures while still achieving parallel execution for conventional compute-heavy kernels.&amp;lt;/p&amp;gt;},
+  number={2},
+  journal={WiPiEC Journal - Works in Progress in Embedded Computing Journal},
+  author={Can, Ahmet Zahit and Uslu, Erkan},
+  year={2026},
+  month={Aug.},
+  pages={8}
+}
+```
+- RIS:
+```
+TY  - JOUR
+AU  - Can, Ahmet Zahit
+AU  - Uslu, Erkan
+PY  - 2026/08/25
+Y2  - 2026/09/25
+TI  - Dolunay: Architectural Support for Independent Thread Scheduling in a RISC-V SIMT Accelerator
+JF  - WiPiEC Journal - Works in Progress in Embedded Computing Journal
+JA  - wipiec
+VL  - 12
+IS  - 2
+SE  - Full Paper
+DO  - 10.64552/wipiec.v12i2.137
+UR  - https://wipiec.digitalheritage.me/index.php/wipiecjournal/article/view/137
+SP  - 8
+AB  - &lt;p&gt;Single-Instruction Multiple-Thread (SIMT) architectures have revolutionized data-parallel computing by providing a high-throughput abstraction that simplifies vector management. However, traditional stack-based SIMT models do not support intra-warp synchronization primitives such as mutexes and spin-locks. This work introduces Dolunay, a RISC-V-based Independent Thread Scheduling (ITS) SIMT accelerator. By only adding three custom instructions, Dolunay employs a cooperative multitasking model and explicit synchronization barriers at the hardware-level, and provides the forward-progress guarantees necessary to implement starvation-free algorithms. We evaluate Dolunay on the Cmod A7-35T FPGA module and demonstrate its ability to correctly execute kernels that deadlock on traditional stack-based architectures while still achieving parallel execution for conventional compute-heavy kernels.&lt;/p&gt;
+ER  -
+```
+
+
 ## Single Instruction Multiple Threads
 
 SIMT (Single Instruction Multiple Threads) is a term first used by Nvidia to describe their Tesla architecture; and it was used to unify vertex, texture and compute kernels in their GPU architectures. Today, SIMT architectures form the backbone of modern GPUs. Informally, they are architectures that are SPMD-like in their ISAs, but SIMD-like in their implementation. This allows SIMD efficiency in highly parallelizable kernels, while maintaining ease-of-development for software engineers.
