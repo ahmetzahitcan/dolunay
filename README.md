@@ -2,7 +2,7 @@
 
 This repository contains the source code and software toolchain for **Dolunay**, a RISC-V-based SIMT accelerator featuring Independent Thread Scheduling (ITS).
 
-**Note:** This is the *development* branch of Dolunay.
+**Note:** This is the *development* branch of Dolunay. You may want to check out `arch__dsd2026` branch instead.
 
 If you use Dolunay in an academic work, please cite:
 
