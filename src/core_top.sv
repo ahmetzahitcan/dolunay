@@ -59,10 +59,41 @@ module core_top
     );
     */
 
-    // - Scoreboard
+    // - Special Hazards Scoreboard
 
-    warp_id_t sb_issue_warp_id_w;
-    warp_id_t sb_commit_warp_id_w;
+    typedef logic [1:0] hazard_mask_t; // FIXME: Put this somewhere else!
+
+    warp_id_t hsb_frontend_warp_id_w;
+    warp_id_t hsb_backend_warp_id_w;
+
+    hazard_mask_t hsb_busy_w;
+
+    hazard_mask_t hsb_acq_mask_w;
+    seq_t hsb_acq_seq_w;
+
+    hazard_mask_t hsb_rel_mask_w;
+    seq_t hsb_rel_seq_w;
+    hazard_mask_t hsb_rel_valid_w;
+
+    scoreboard_mask #(
+        .N_ENTRIES(2) // FIXME: Magic number!
+     ) u_haz_scoreboard (
+    	.clk               (clk),
+    	.rst_n             (rst_n),
+    	.frontend_warp_id_i(hsb_frontend_warp_id_w),
+    	.backend_warp_id_i (hsb_backend_warp_id_w),
+    	.busy_o            (hsb_busy_w),
+    	.acq_mask_i        (hsb_acq_mask_w),
+    	.acq_seq_i         (hsb_acq_seq_w),
+    	.rel_mask_i        (hsb_rel_mask_w),
+    	.rel_seq_i         (hsb_rel_seq_w),
+    	.rel_valid_o       (hsb_rel_valid_w)
+    );
+
+    // - Registers Scoreboard
+
+    warp_id_t sb_frontend_warp_id_w;
+    warp_id_t sb_backend_warp_id_w;
 
     reg_id_t sb_chk1_idx_w;
     regfile_sel_e sb_chk1_regfile_w;
@@ -98,12 +129,12 @@ module core_top
     scoreboard #(
         .N_ENTRIES(N_REGISTERS * N_REGFILES),
         .N_CHECK_PORTS(3)
-    ) u_gpr_scoreboard (
+    ) u_reg_scoreboard (
         .clk(clk),
         .rst_n(rst_n),
 
-        .issue_warp_id_i(sb_issue_warp_id_w),
-        .commit_warp_id_i(sb_commit_warp_id_w),
+        .frontend_warp_id_i(sb_frontend_warp_id_w),
+        .backend_warp_id_i(sb_backend_warp_id_w),
 
         .chk_id_i({
             {sb_chk1_idx_w, sb_chk1_regfile_w},
@@ -193,7 +224,7 @@ module core_top
         .rf_rs3_regfile_o(rf_rs3_regfile_w),
         .rf_rs3_data_i(rf_rs3_data_w),
 
-        .sb_warp_id_o(sb_issue_warp_id_w),
+        .sb_warp_id_o(sb_frontend_warp_id_w),
 
         .sb_chk1_idx_o(sb_chk1_idx_w),
         .sb_chk1_regfile_o(sb_chk1_regfile_w),
@@ -248,7 +279,7 @@ module core_top
     	.fu_out_valid_i    (fu_out_valid_w),
     	.fu_out_ready_o    (fu_out_ready_w),
     	.fu_out_result_i   (fu_result_w),
-    	.sb_warp_id_o      (sb_commit_warp_id_w),
+    	.sb_warp_id_o      (sb_backend_warp_id_w),
     	.sb_rel_idx_o      (sb_rel_idx_w),
     	.sb_rel_regfile_o  (sb_rel_regfile_w),
     	.sb_rel_seq_o      (sb_rel_seq_w),
