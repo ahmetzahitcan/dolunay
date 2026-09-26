@@ -90,35 +90,34 @@ module core_top
     logic sb_rel_en_w;
     logic sb_rel_valid_w;
 
-    scoreboard u_scoreboard (
+    logic sb_chk_busy_w [0:2];
+    assign sb_chk1_busy_w = sb_chk_busy_w[0];
+    assign sb_chk2_busy_w = sb_chk_busy_w[1];
+    assign sb_chk3_busy_w = sb_chk_busy_w[2];
+
+    scoreboard #(
+        .N_ENTRIES(N_REGISTERS * N_REGFILES),
+        .N_CHECK_PORTS(3)
+    ) u_gpr_scoreboard (
         .clk(clk),
         .rst_n(rst_n),
 
         .issue_warp_id_i(sb_issue_warp_id_w),
         .commit_warp_id_i(sb_commit_warp_id_w),
 
-        .chk1_idx_i(sb_chk1_idx_w),
-        .chk1_regfile_i(sb_chk1_regfile_w),
-        .chk1_en_i(sb_chk1_en_w),
-        .chk1_busy_o(sb_chk1_busy_w),
+        .chk_id_i({
+            {sb_chk1_idx_w, sb_chk1_regfile_w},
+            {sb_chk2_idx_w, sb_chk2_regfile_w},
+            {sb_chk3_idx_w, sb_chk3_regfile_w}
+        }),
+        .chk_en_i({sb_chk1_en_w, sb_chk2_en_w, sb_chk3_en_w}),
+        .chk_busy_o(sb_chk_busy_w),
 
-        .chk2_idx_i(sb_chk2_idx_w),
-        .chk2_regfile_i(sb_chk2_regfile_w),
-        .chk2_en_i(sb_chk2_en_w),
-        .chk2_busy_o(sb_chk2_busy_w),
-
-        .chk3_idx_i(sb_chk3_idx_w),
-        .chk3_regfile_i(sb_chk3_regfile_w),
-        .chk3_en_i(sb_chk3_en_w),
-        .chk3_busy_o(sb_chk3_busy_w),
-
-        .acq_idx_i(sb_acq_idx_w),
-        .acq_regfile_i(sb_acq_regfile_w),
+        .acq_id_i({sb_acq_idx_w, sb_acq_regfile_w}),
         .acq_seq_i(sb_acq_seq_w),
         .acq_en_i(sb_acq_en_w),
 
-        .rel_idx_i(sb_rel_idx_w),
-        .rel_regfile_i(sb_rel_regfile_w),
+        .rel_id_i({sb_rel_idx_w, sb_rel_regfile_w}),
         .rel_seq_i(sb_rel_seq_w),
         .rel_en_i(sb_rel_en_w),
         .rel_valid_o(sb_rel_valid_w)

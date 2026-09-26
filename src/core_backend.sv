@@ -80,7 +80,9 @@ module core_backend
     assign sb_rel_idx_o = wb_fu_result_r.instr.rd_idx;
     assign sb_rel_regfile_o = wb_fu_result_r.instr.rd_regfile;
     assign sb_rel_seq_o = wb_fu_result_r.seq;
-    assign sb_rel_en_o = wb_stage_valid_r && wb_fu_result_r.instr.rd_used;
+    assign sb_rel_en_o = wb_stage_valid_r &&
+        wb_fu_result_r.instr.rd_used &&
+        !(wb_fu_result_r.instr.rd_idx == 0 && wb_fu_result_r.instr.rd_regfile == REGFILE_SEL_I);
 
     logic rf_writeback_w;
     assign rf_writeback_w = wb_stage_valid_r && wb_fu_result_r.instr.rd_used && sb_rel_valid_i;

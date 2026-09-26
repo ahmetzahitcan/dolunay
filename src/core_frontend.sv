@@ -299,15 +299,21 @@ module core_frontend
 
     assign sb_chk1_idx_o = ra_instr_r.rs1_idx;
     assign sb_chk1_regfile_o = ra_instr_r.rs1_regfile;
-    assign sb_chk1_en_o = ra_stage_valid_r && ra_instr_r.rs1_used;
+    assign sb_chk1_en_o = ra_stage_valid_r &&
+        ra_instr_r.rs1_used &&
+        !(ra_instr_r.rs1_idx == 0 && ra_instr_r.rs1_regfile == REGFILE_SEL_I);
 
     assign sb_chk2_idx_o = ra_instr_r.rs2_idx;
     assign sb_chk2_regfile_o = ra_instr_r.rs2_regfile;
-    assign sb_chk2_en_o = ra_stage_valid_r && ra_instr_r.rs2_used;
+    assign sb_chk2_en_o = ra_stage_valid_r &&
+        ra_instr_r.rs2_used &&
+        !(ra_instr_r.rs2_idx == 0 && ra_instr_r.rs2_regfile == REGFILE_SEL_I);
 
     assign sb_chk3_idx_o = ra_instr_r.rs3_idx;
     assign sb_chk3_regfile_o = ra_instr_r.rs3_regfile;
-    assign sb_chk3_en_o = ra_stage_valid_r && ra_instr_r.rs3_used;
+    assign sb_chk3_en_o = ra_stage_valid_r &&
+        ra_instr_r.rs3_used &&
+        !(ra_instr_r.rs3_idx == 0 && ra_instr_r.rs3_regfile == REGFILE_SEL_I);
 
     assign ra_sb_busy_w = sb_chk1_busy_i || sb_chk2_busy_i || sb_chk3_busy_i;
 
@@ -316,7 +322,10 @@ module core_frontend
     assign sb_acq_idx_o = ra_instr_r.rd_idx;
     assign sb_acq_regfile_o = ra_instr_r.rd_regfile;
     assign sb_acq_seq_o = ra_seq_w;
-    assign sb_acq_en_o = ra_stage_valid_r && !ra_sb_busy_w && ra_instr_r.rd_used;
+    assign sb_acq_en_o = ra_stage_valid_r &&
+        !ra_sb_busy_w &&
+        ra_instr_r.rd_used &&
+        !(ra_instr_r.rd_idx == 0 && ra_instr_r.rd_regfile == REGFILE_SEL_I);
 
     // - Pipeline Registers
 

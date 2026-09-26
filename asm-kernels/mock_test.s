@@ -14,3 +14,6 @@ li x5, 0xbe000000
 sub x5, x5, x4
 li x6, 1
 czero.nez x7, x6, x5
+.rept 100
+nop
+.endr
