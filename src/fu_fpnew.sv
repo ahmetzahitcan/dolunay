@@ -108,7 +108,7 @@ module fu_fpnew
         .Features       (FPU_FEATURES),
         .Implementation (FPU_IMPLEMENTATION),
         .TagType        ( tag_s ) // FIXME
-    ) fpu (
+    ) u_fpu (
     	.clk_i         (clk),
     	.rst_ni        (rst_n),
     	.operands_i    (fpu_operands),
