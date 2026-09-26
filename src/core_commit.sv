@@ -12,6 +12,7 @@ module core_commit
     input wire fu_result_s [N_FUNCTION_UNITS-1:0] fu_out_result_i
 );
     // Writeback signals
+    fu_result_s wb_fu_result_r;
 
     // Reorder
 
@@ -45,7 +46,17 @@ module core_commit
 
             for (int i = 0; i < N_WARPS; i++) begin
                 if (rob_valid_r[i][rob_head_r[i]]) begin
-                    // TODO: Writeback!
+                    wb_fu_result_r <= rob_r[i][rob_head_r[i]];
+
+                    // INFO:    These are the same values stored in the ROB.
+                    //          My hope is that if I add them like this,
+                    //          synthesizer optimizes ROB to eliminate these.
+                    //
+                    // TODO:    Check if the ROB is actually optimized.
+                    //          (If not, instr_s might be a problem in general)
+                    wb_fu_result_r.warp_id <= i[W_WARPS-1:0];
+                    wb_fu_result_r.seq <= rob_head_r[i];
+
                     rob_valid_r[i][rob_head_r[i]] <= 0;
                     rob_head_r[i] <= rob_head_r[i] + 1;
                     break;
@@ -54,7 +65,7 @@ module core_commit
         end
     end
 
-    // Writeback
+    // Writeback -- TODO
 
 endmodule
 
