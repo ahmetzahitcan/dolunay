@@ -40,6 +40,7 @@ module core_top
     logic [N_FUNCTION_UNITS-1:0] fu_out_valid_w;
 
     // HPMs
+    /*
     logic [N_WARPS-1:0] winst_retired_w;
     logic [N_WARPS-1:0][N_THREADS-1:0] inst_retired_w;
     logic [63:0] cycletime_w;
@@ -56,6 +57,7 @@ module core_top
         .wtinstret_o(wtinstret_w),
         .wuinstret_o(wuinstret_w)
     );
+    */
 
     // - Scoreboard
 
@@ -241,7 +243,7 @@ module core_top
 
     // - Back-end Commit Unit
 
-    core_commit core_commit (
+    core_commit u_core_commit (
     	.clk               (clk),
     	.rst_n             (rst_n),
     	.fu_out_valid_i    (fu_out_valid_w),

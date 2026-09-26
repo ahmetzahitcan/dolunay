@@ -22,7 +22,11 @@ module warp_scheduler
         end
     end
 
+`ifdef SINGLE_WARP
+    assign warp_id_o = '0;
+`else
     assign warp_id_o = current_warp_r;
+`endif
 
 endmodule
 

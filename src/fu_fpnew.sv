@@ -66,7 +66,7 @@ module fu_fpnew
     };
 
     localparam fpnew_pkg::fpu_implementation_t FPU_IMPLEMENTATION = '{
-        PipeRegs: '{fpnew_pkg::DIVSQRT: 0, default: 32'd1},
+        PipeRegs: '{default: 32'd1},
         UnitTypes: '{
             '{default: fpnew_pkg::PARALLEL}, // ADDMUL - Merged or Parallel
             '{default: fpnew_pkg::MERGED},   // DIVSQRT - Merged

@@ -34,14 +34,13 @@ module irom
     logic [31:2] sim__undec_instr32_w;
     logic [RLEN-1:Z_PC] sim__pc_w;
     control_unit sim__u_cu(
-`ifndef SYNTHESIS
         .sim__runasserts_i(1'b0),
-`endif
         .undec_instr32_i(sim__undec_instr32_w),
         .pc_i(sim__pc_w),
         .instr_o(sim__instr_w)
     );
 
+    `ifdef VIVADO
     int instr_count;
 
     initial begin
@@ -62,6 +61,7 @@ module irom
             sim__disasm_w[i] = "INVALID";
         end
     end
+    `endif
 
     `endif
 

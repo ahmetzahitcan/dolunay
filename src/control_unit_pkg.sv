@@ -73,7 +73,7 @@ package control_unit_pkg;
 		params_pkg::regfile_sel_e rs2_regfile;
 		logic rs3_used;
 		params_pkg::regfile_sel_e rs3_regfile;
-		fu_pkg::function_unit_e fu_sel;
+		params_pkg::function_unit_e fu_sel;
 		alu_funct_e alu_funct;
 		alu_addy_funct_e alu_addy_funct;
 		alu_op1_sel_e alu_op1_sel;

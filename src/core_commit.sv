@@ -30,8 +30,8 @@ module core_commit
     // Reorder
 
     fu_result_s rob_r [0:N_WARPS-1][0:ROB_SIZE-1];
-    logic rob_valid_r [0:N_WARPS-1][0:ROB_SIZE-1];
-    logic [W_ROB_ADDR-1:0] rob_head_r [0:N_WARPS-1];
+    logic [N_WARPS-1:0][ROB_SIZE-1:0] rob_valid_r;
+    logic [N_WARPS-1:0][W_ROB_ADDR-1:0] rob_head_r;
 
     logic fu_handshake_w;
     logic [W_FUNCTION_UNITS-1:0] fu_index_w;
@@ -49,8 +49,8 @@ module core_commit
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            rob_valid_r <= '{default: 0};
-            rob_head_r <= '{default: 0};
+            rob_valid_r <= '0;
+            rob_head_r <= '0;
         end else begin
             if (fu_handshake_w) begin
                 rob_r[fu_result_w.warp_id][fu_result_w.seq] <= fu_result_w;

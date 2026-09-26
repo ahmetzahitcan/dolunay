@@ -24,13 +24,6 @@ package fu_pkg;
         fpnew_pkg::status_t [N_THREADS-1:0] fpu_status ;
     } fu_result_s;
 
-    localparam int N_FUNCTION_UNITS = 2;
-    localparam int W_FUNCTION_UNITS = $clog2(N_FUNCTION_UNITS);
-    typedef enum logic [W_FUNCTION_UNITS-1:0] {
-        FUNCTION_UNIT_ALU,
-        FUNCTION_UNIT_FPU
-    } function_unit_e;
-
 endpackage
 
 `default_nettype wire

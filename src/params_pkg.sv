@@ -21,7 +21,7 @@ package params_pkg;
     localparam int PC_ALIGN = 4;
     localparam int Z_PC = $clog2(PC_ALIGN);
 
-    localparam int N_WARPS = 64; // FIXME: An absurdly large number of warps for safety.
+    localparam int N_WARPS = 64;
     localparam int N_THREADS = 8;
     localparam int N_REGISTERS = 32; // RV32I
     localparam int W_WARPS = $clog2(N_WARPS);
@@ -45,6 +45,12 @@ package params_pkg;
 
     typedef logic [W_ROB_ADDR-1:0] seq_t;
 
+    localparam int N_FUNCTION_UNITS = 2;
+    localparam int W_FUNCTION_UNITS = $clog2(N_FUNCTION_UNITS);
+    typedef enum logic [W_FUNCTION_UNITS-1:0] {
+        FUNCTION_UNIT_ALU,
+        FUNCTION_UNIT_FPU
+    } function_unit_e;
 endpackage
 
 `default_nettype wire

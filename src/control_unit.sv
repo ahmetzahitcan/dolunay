@@ -59,7 +59,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -83,7 +83,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -107,7 +107,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -131,7 +131,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -155,7 +155,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -179,7 +179,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -203,7 +203,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -227,7 +227,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -251,7 +251,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -275,7 +275,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH1ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -299,7 +299,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH2ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -323,7 +323,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH3ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -347,7 +347,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SUB;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -371,7 +371,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -395,7 +395,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -419,7 +419,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -443,7 +443,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_XOR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -467,7 +467,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SRL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -491,7 +491,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SRA;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -515,7 +515,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_OR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -539,7 +539,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_AND;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -563,7 +563,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -587,7 +587,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SRL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -611,7 +611,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SRA;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -635,7 +635,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_CZERO_EQZ;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -659,7 +659,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_CZERO_NEZ;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -683,7 +683,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -707,7 +707,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -731,7 +731,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -755,7 +755,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -779,7 +779,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -803,7 +803,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -827,7 +827,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -851,7 +851,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -875,7 +875,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -899,7 +899,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -923,7 +923,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_XOR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -947,7 +947,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_OR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -971,7 +971,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_AND;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -995,7 +995,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b1;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1019,7 +1019,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b1;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1043,7 +1043,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b1;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1067,7 +1067,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b1;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_FPU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1091,7 +1091,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_OP2;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1115,7 +1115,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::FUNCTION_UNIT_ALU;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_PC;
@@ -1142,7 +1142,7 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 'x;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
-                instr_o.fu_sel = fu_pkg::function_unit_e'('x);
+                instr_o.fu_sel = params_pkg::function_unit_e'('x);
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
