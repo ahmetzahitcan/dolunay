@@ -86,7 +86,7 @@ module core_top
     regfile_sel_e sb_rel_regfile_w;
     seq_t sb_rel_seq_w;
     logic sb_rel_en_w;
-    logic sb_rel_success_w;
+    logic sb_rel_valid_w;
 
     scoreboard u_scoreboard (
         .clk(clk),
@@ -119,7 +119,7 @@ module core_top
         .rel_regfile_i(sb_rel_regfile_w),
         .rel_seq_i(sb_rel_seq_w),
         .rel_en_i(sb_rel_en_w),
-        .rel_success_o(sb_rel_success_w)
+        .rel_valid_o(sb_rel_valid_w)
     );
 
     // - Register File
@@ -138,6 +138,12 @@ module core_top
     regfile_sel_e rf_rs3_regfile_w;
     simd_data_t rf_rs3_data_w;
 
+    warp_id_t rf_write_warp_id_w;
+    reg_id_t rf_rd_idx_w;
+    regfile_sel_e rf_rd_regfile_w;
+    simd_data_t rf_write_data_w;
+    simd_mask_t rf_write_en_mask_w;
+
     register_file u_register_file(
         .clk(clk),
 
@@ -155,14 +161,14 @@ module core_top
         .rs3_regfile_i(rf_rs3_regfile_w),
         .rs3_data_o(rf_rs3_data_w),
 
-        .write_warp_id_i(),
-        .write_en_mask_i(),
-        .rd_idx_i(),
-        .rd_regfile_i(),
-        .write_data_i()
+        .write_warp_id_i(rf_write_warp_id_w),
+        .write_en_mask_i(rf_write_en_mask_w),
+        .rd_idx_i(rf_rd_idx_w),
+        .rd_regfile_i(rf_rd_regfile_w),
+        .write_data_i(rf_write_data_w)
     );
 
-    // Front-end Issue
+    // - Front-end Issue Unit
 
     core_issue #(
         .IROM_SIZE(IROM_SIZE)
@@ -207,7 +213,9 @@ module core_top
         .sb_acq_en_o(sb_acq_en_w)
     );
 
-    // -- Function Units
+    // - Function Units
+
+    fu_result_s fu_result_w [0:N_FUNCTION_UNITS-1];
 
     fu_multialu u_multialu (
     	.clk            (clk),
@@ -216,7 +224,8 @@ module core_top
     	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_ALU]),
     	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_ALU]),
     	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_ALU]),
-    	.in_operation_i (fu_in_operation_w)
+    	.in_operation_i (fu_in_operation_w),
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_ALU])
     );
 
     fu_fpnew u_fpnew (
@@ -226,7 +235,29 @@ module core_top
     	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_FPU]),
     	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_FPU]),
     	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_FPU]),
-    	.in_operation_i (fu_in_operation_w)
+    	.in_operation_i (fu_in_operation_w),
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_FPU])
+    );
+
+    // - Back-end Commit Unit
+
+    core_commit core_commit (
+    	.clk               (clk),
+    	.rst_n             (rst_n),
+    	.fu_out_valid_i    (fu_out_valid_w),
+    	.fu_out_ready_o    (fu_out_ready_w),
+    	.fu_out_result_i   (fu_result_w),
+    	.sb_warp_id_o      (sb_commit_warp_id_w),
+    	.sb_rel_idx_o      (sb_rel_idx_w),
+    	.sb_rel_regfile_o  (sb_rel_regfile_w),
+    	.sb_rel_seq_o      (sb_rel_seq_w),
+    	.sb_rel_en_o       (sb_rel_en_w),
+    	.sb_rel_valid_i    (sb_rel_valid_w),
+        .rf_warp_id_o      (rf_write_warp_id_w),
+    	.rf_write_en_mask_o(rf_write_en_mask_w),
+    	.rf_rd_idx_o       (rf_rd_idx_w),
+    	.rf_rd_regfile_o   (rf_rd_regfile_w),
+    	.rf_write_data_o   (rf_write_data_w)
     );
 
 endmodule

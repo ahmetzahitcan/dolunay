@@ -9,7 +9,20 @@ module core_commit
 
     input wire logic [N_FUNCTION_UNITS-1:0] fu_out_valid_i,
     output logic [N_FUNCTION_UNITS-1:0] fu_out_ready_o,
-    input wire fu_result_s [N_FUNCTION_UNITS-1:0] fu_out_result_i
+    input wire fu_result_s fu_out_result_i [0:N_FUNCTION_UNITS-1],
+
+    output warp_id_t sb_warp_id_o,
+    output reg_id_t sb_rel_idx_o,
+    output regfile_sel_e sb_rel_regfile_o,
+    output seq_t sb_rel_seq_o,
+    output logic sb_rel_en_o,
+    input wire logic sb_rel_valid_i,
+
+    output warp_id_t rf_warp_id_o,
+    output simd_mask_t rf_write_en_mask_o,
+    output reg_id_t rf_rd_idx_o,
+    output regfile_sel_e rf_rd_regfile_o,
+    output simd_data_t  rf_write_data_o
 );
     // Writeback signals
     fu_result_s wb_fu_result_r;
@@ -65,7 +78,22 @@ module core_commit
         end
     end
 
-    // Writeback -- TODO
+    // Writeback
+
+    assign sb_warp_id_o = wb_fu_result_r.warp_id;
+    assign sb_rel_idx_o = wb_fu_result_r.instr.rd_idx;
+    assign sb_rel_regfile_o = wb_fu_result_r.instr.rd_regfile;
+    assign sb_rel_seq_o = wb_fu_result_r.seq;
+    assign sb_rel_en_o = wb_fu_result_r.instr.rd_used;
+
+    logic rf_writeback_w;
+    assign rf_writeback_w = wb_fu_result_r.instr.rd_used && sb_rel_valid_i;
+
+    assign rf_warp_id_o = wb_fu_result_r.warp_id;
+    assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : 0;
+    assign rf_rd_idx_o = wb_fu_result_r.instr.rd_idx;
+    assign rf_rd_regfile_o = wb_fu_result_r.instr.rd_regfile;
+    assign rf_write_data_o = wb_fu_result_r.result;
 
 endmodule
 

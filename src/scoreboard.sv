@@ -5,9 +5,15 @@
 
     Three check ports for the issue unit. Reports busy if the register is acquired. These are combinatorial.
 
-    One acquire port for the issue unit. Acquiring an already acquired register causes the earlier acquire to drop.
-    One release port for the commit unit. Outputs whether the release was successful, or if the acquire was dropped.
-    Acquire and release ports operate with the clock.
+    One acquire port for the issue unit.
+    Acquiring an already acquired register causes the earlier acquire to drop.
+    Acquire port operates with the clock.
+
+    One release port for the commit unit.
+    Outputs whether the release is valid, or if the acquire was dropped.
+    Release port is half-synchronous half-combinatorial.
+    Information on whether the release will be succesful is combinatorial,
+    But no actual release happens until the clock edge.
 
     x0 register is special:
     - Check operations on x0 always report not busy.
@@ -54,14 +60,14 @@ module scoreboard
     input wire  regfile_sel_e rel_regfile_i,
     input wire  seq_t   rel_seq_i,
     input wire  logic rel_en_i,
-    output wire logic rel_success_o
+    output logic rel_valid_o
 );
 
     logic [N_WARPS-1:0][N_REGFILES-1:0][N_REGISTERS-1:0] busy_r;
     seq_t seq_r [0:N_WARPS-1][0:N_REGFILES-1][0:N_REGISTERS-1];
 
     logic chk1_busy_w, chk2_busy_w, chk3_busy_w;
-    logic rel_success_r;
+    logic rel_valid_w;
 
     always_comb begin
         chk1_busy_w = chk1_en_i &&
@@ -75,12 +81,17 @@ module scoreboard
         chk3_busy_w = chk3_en_i &&
             !(chk3_idx_i == 0 && chk3_regfile_i == REGFILE_SEL_I) &&
             busy_r[issue_warp_id_i][chk3_regfile_i][chk3_idx_i];
+
+        rel_valid_w = (rel_idx_i == 0 && rel_regfile_i == REGFILE_SEL_I) ||
+            (
+                busy_r[commit_warp_id_i][rel_regfile_i][rel_idx_i] &&
+                rel_seq_i == seq_r[commit_warp_id_i][rel_regfile_i][rel_idx_i]
+            );
     end
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             busy_r <= '0;
-            rel_success_r <= 0;
         end else begin
             assert (
                 (!(acq_en_i && rel_en_i)) ||
@@ -96,19 +107,14 @@ module scoreboard
             end
 
             if (rel_en_i) begin
-                if (rel_idx_i == 0 && rel_regfile_i == REGFILE_SEL_I) begin
-                    rel_success_r <= 1;
-                end else begin
+                if (!(rel_idx_i == 0 && rel_regfile_i == REGFILE_SEL_I)) begin
                     assert (busy_r[commit_warp_id_i][rel_regfile_i][rel_idx_i])
                         else $warning("Release operation on non-busy entry! Entry: %d-%d", rel_regfile_i, rel_idx_i);
                     assert (!$isunknown(seq_r[commit_warp_id_i][rel_regfile_i][rel_idx_i]))
                         else $error("Release operation on invalid seq! Entry: %d-%d", rel_regfile_i, rel_idx_i);
 
                     if (rel_seq_i == seq_r[commit_warp_id_i][rel_regfile_i][rel_idx_i]) begin
-                        rel_success_r <= busy_r[commit_warp_id_i][rel_regfile_i][rel_idx_i];
                         busy_r[commit_warp_id_i][rel_regfile_i][rel_idx_i] <= 0;
-                    end else begin
-                        rel_success_r <= 0;
                     end
                 end
             end
@@ -118,7 +124,7 @@ module scoreboard
     assign chk1_busy_o = chk1_busy_w;
     assign chk2_busy_o = chk2_busy_w;
     assign chk3_busy_o = chk3_busy_w;
-    assign rel_success_o = rel_success_r;
+    assign rel_valid_o = rel_valid_w;
 
 endmodule
 
