@@ -24,7 +24,7 @@ module core_issue
 
     input wire logic [N_FUNCTION_UNITS-1:0] fu_in_ready_i,
     output logic [N_FUNCTION_UNITS-1:0] fu_in_valid_o,
-    output operation_s fu_in_operation_o,
+    output fu_operation_s fu_in_operation_o,
 
     // IROM Interface
     output logic [W_IROM_ADDR-1:Z_PC] instr_addr_o,
@@ -334,7 +334,7 @@ module core_issue
 
     // - Operation
 
-    operation_s dp_operation_w;
+    fu_operation_s dp_operation_w;
     assign dp_operation_w = '{
         seq: dp_seq_r,
         mask: dp_mask_r,

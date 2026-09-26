@@ -98,7 +98,7 @@ module tb_core_issue;
     // -----------------------------------------------------------------------
     logic [N_FUNCTION_UNITS-1:0] fu_in_ready_i;
     logic [N_FUNCTION_UNITS-1:0] fu_in_valid_o;
-    operation_s                  fu_in_operation_o;
+    fu_operation_s                  fu_in_operation_o;
 
     logic [W_IROM_ADDR-1:Z_PC] instr_addr_o;
     logic [RLEN-1:0]           undec_instr32_i;
@@ -246,7 +246,7 @@ module tb_core_issue;
     // them).
     int  disp_base   = 0;
     int  disp_before = 0;
-    operation_s held_op;
+    fu_operation_s held_op;
     bit  wait_ok;
 
     task automatic fail(input string label);
@@ -259,7 +259,7 @@ module tb_core_issue;
     // -----------------------------------------------------------------------
     logic       prev_valid;
     logic       prev_stalled;
-    operation_s prev_op;
+    fu_operation_s prev_op;
 
     initial begin
         prev_valid   = 1'b0;
@@ -268,7 +268,7 @@ module tb_core_issue;
     end
 
     always @(negedge clk) begin
-        operation_s opw;
+        fu_operation_s opw;
         instr_s     raref;
         logic       handshake;
 

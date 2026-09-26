@@ -34,7 +34,7 @@ module core_top
 );
     logic [N_FUNCTION_UNITS-1:0] fu_in_ready_w;
     logic [N_FUNCTION_UNITS-1:0] fu_in_valid_w;
-    operation_s fu_in_operation_w;
+    fu_operation_s fu_in_operation_w;
 
     logic [N_FUNCTION_UNITS-1:0] fu_out_ready_w;
     logic [N_FUNCTION_UNITS-1:0] fu_out_valid_w;
@@ -210,23 +210,23 @@ module core_top
     // -- Function Units
 
     fu_multialu u_multialu (
-    	.clk         (clk),
-    	.rst_n       (rst_n),
-    	.in_valid_i  (fu_in_valid_w[FUNCTION_UNIT_ALU]),
-    	.in_ready_o  (fu_in_ready_w[FUNCTION_UNIT_ALU]),
-    	.out_valid_o (fu_out_valid_w[FUNCTION_UNIT_ALU]),
-    	.out_ready_i (fu_out_ready_w[FUNCTION_UNIT_ALU]),
-    	.operation_i (fu_in_operation_w)
+    	.clk            (clk),
+    	.rst_n          (rst_n),
+    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_ALU]),
+    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_ALU]),
+    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_ALU]),
+    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_ALU]),
+    	.in_operation_i (fu_in_operation_w)
     );
 
     fu_fpnew u_fpnew (
-    	.clk         (clk),
-    	.rst_n       (rst_n),
-    	.in_valid_i  (fu_in_valid_w[FUNCTION_UNIT_FPU]),
-    	.in_ready_o  (fu_in_ready_w[FUNCTION_UNIT_FPU]),
-    	.out_valid_o (fu_out_valid_w[FUNCTION_UNIT_FPU]),
-    	.out_ready_i (fu_out_ready_w[FUNCTION_UNIT_FPU]),
-    	.operation_i (fu_in_operation_w)
+    	.clk            (clk),
+    	.rst_n          (rst_n),
+    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_FPU]),
+    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_FPU]),
+    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_FPU]),
+    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_FPU]),
+    	.in_operation_i (fu_in_operation_w)
     );
 
 endmodule
