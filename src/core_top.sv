@@ -170,11 +170,11 @@ module core_top
         .write_data_i(rf_write_data_w)
     );
 
-    // - Front-end Issue Unit
+    // - Front-end
 
-    core_issue #(
+    core_frontend #(
         .IROM_SIZE(IROM_SIZE)
-    ) u_core_issue (
+    ) u_core_frontend (
         .clk(clk),
         .rst_n(rst_n),
         .fu_in_ready_i(fu_in_ready_w),
@@ -241,9 +241,9 @@ module core_top
         .out_result_o   (fu_result_w[FUNCTION_UNIT_FPU])
     );
 
-    // - Back-end Commit Unit
+    // - Back-end
 
-    core_commit u_core_commit (
+    core_backend u_core_backend (
     	.clk               (clk),
     	.rst_n             (rst_n),
     	.fu_out_valid_i    (fu_out_valid_w),

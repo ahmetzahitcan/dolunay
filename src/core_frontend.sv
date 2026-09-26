@@ -11,7 +11,7 @@
     TODO: Add support for branching and ITS features.
 */
 
-module core_issue
+module core_frontend
     import params_pkg::*;
     import control_unit_pkg::*;
     import fu_pkg::*;

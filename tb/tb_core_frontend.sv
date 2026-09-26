@@ -115,7 +115,7 @@ module tb_core_issue;
     seq_t         sb_acq_seq_o;
     logic         sb_chk1_busy_i, sb_chk2_busy_i, sb_chk3_busy_i;
 
-    core_issue #(.IROM_SIZE(IROM_SIZE)) dut (
+    core_frontend #(.IROM_SIZE(IROM_SIZE)) dut (
         .clk(clk),
         .rst_n(rst_n),
 

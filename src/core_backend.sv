@@ -1,6 +1,6 @@
 `default_nettype none
 
-module core_commit
+module core_backend
     import params_pkg::*;
     import fu_pkg::*;
 (
@@ -24,28 +24,79 @@ module core_commit
     output regfile_sel_e rf_rd_regfile_o,
     output simd_data_t  rf_write_data_o
 );
+    // Pipeline control
+    logic co_fu_handshake_w;
+
+    // - Indicate whether a stage contains a valid instruction.
+    logic wb_stage_valid_r;
+
+    // - Indicate whether a stage should stall.
+    logic co_stage_stall_w, wb_stage_stall_w;
+
+    assign co_stage_stall_w = wb_stage_stall_w;
+    assign wb_stage_stall_w = '0;
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            wb_stage_valid_r <= '0;
+        end else begin
+            if (!wb_stage_stall_w) wb_stage_valid_r <= !co_stage_stall_w && co_fu_handshake_w;
+        end
+    end
+
     // Writeback signals
     fu_result_s wb_fu_result_r;
 
+    // Collect
+    logic [W_FUNCTION_UNITS-1:0] co_fu_index_w;
+
+    fu_result_s co_fu_result_w;
+    assign co_fu_result_w = fu_out_result_i[co_fu_index_w];
+
+    logic [N_FUNCTION_UNITS-1:0] fu_sel_w;
+    assign fu_out_ready_o = !co_stage_stall_w ? fu_sel_w : '0;
+
+    logic co_pe_valid_w;
+    assign co_fu_handshake_w = !co_stage_stall_w ? co_pe_valid_w : 0;
+
+    priority_encoder #(
+        .WIDTH   (N_FUNCTION_UNITS)
+     ) u_fu_handshake_unit (
+    	.input_i  (fu_out_valid_i),
+    	.one_hot_o(fu_sel_w),
+    	.index_o  (co_fu_index_w),
+       	.valid_o  (co_pe_valid_w)
+    );
+
+    always_ff @(posedge clk) begin
+        if (!wb_stage_stall_w) begin
+            wb_fu_result_r <= co_fu_result_w;
+        end
+    end
+
+    // Writeback
+
+    assign sb_warp_id_o = wb_fu_result_r.warp_id;
+    assign sb_rel_idx_o = wb_fu_result_r.instr.rd_idx;
+    assign sb_rel_regfile_o = wb_fu_result_r.instr.rd_regfile;
+    assign sb_rel_seq_o = wb_fu_result_r.seq;
+    assign sb_rel_en_o = wb_stage_valid_r && wb_fu_result_r.instr.rd_used;
+
+    logic rf_writeback_w;
+    assign rf_writeback_w = wb_stage_valid_r && wb_fu_result_r.instr.rd_used && sb_rel_valid_i;
+
+    assign rf_warp_id_o = wb_fu_result_r.warp_id;
+    assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : 0;
+    assign rf_rd_idx_o = wb_fu_result_r.instr.rd_idx;
+    assign rf_rd_regfile_o = wb_fu_result_r.instr.rd_regfile;
+    assign rf_write_data_o = wb_fu_result_r.result;
+
+    /*
     // Reorder
 
     fu_result_s rob_r [0:N_WARPS-1][0:ROB_SIZE-1];
     logic [N_WARPS-1:0][ROB_SIZE-1:0] rob_valid_r;
     logic [N_WARPS-1:0][W_ROB_ADDR-1:0] rob_head_r;
-
-    logic fu_handshake_w;
-    logic [W_FUNCTION_UNITS-1:0] fu_index_w;
-    fu_result_s fu_result_w;
-    assign fu_result_w = fu_out_result_i[fu_index_w];
-
-    priority_encoder #(
-        .WIDTH   (N_FUNCTION_UNITS)
-     ) u_handshake_unit (
-    	.input_i  (fu_out_valid_i),
-    	.one_hot_o(fu_out_ready_o),
-    	.index_o  (fu_index_w),
-       	.valid_o  (fu_handshake_w)
-    );
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -77,23 +128,7 @@ module core_commit
             end
         end
     end
-
-    // Writeback
-
-    assign sb_warp_id_o = wb_fu_result_r.warp_id;
-    assign sb_rel_idx_o = wb_fu_result_r.instr.rd_idx;
-    assign sb_rel_regfile_o = wb_fu_result_r.instr.rd_regfile;
-    assign sb_rel_seq_o = wb_fu_result_r.seq;
-    assign sb_rel_en_o = wb_fu_result_r.instr.rd_used;
-
-    logic rf_writeback_w;
-    assign rf_writeback_w = wb_fu_result_r.instr.rd_used && sb_rel_valid_i;
-
-    assign rf_warp_id_o = wb_fu_result_r.warp_id;
-    assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : 0;
-    assign rf_rd_idx_o = wb_fu_result_r.instr.rd_idx;
-    assign rf_rd_regfile_o = wb_fu_result_r.instr.rd_regfile;
-    assign rf_write_data_o = wb_fu_result_r.result;
+    */
 
 endmodule
 

@@ -53,7 +53,7 @@ module tb_core_top;
     core_top #(
     	.WRAM_SIZE(WRAM_SIZE),
     	.IROM_SIZE(IROM_SIZE)
-     ) core_top (
+     ) dut (
 	.clk          (clk),
 	.rst_n        (rst_n),
 	.wram_addr_o  (wram_addr_w),
