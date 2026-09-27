@@ -61,9 +61,10 @@ package control_unit_pkg;
 		FPU_OP2_SEL_RS3
 	} fpu_op2_sel_e;
 
-	localparam int LEN_HAZARDS = 2;
-	localparam int HAZARDS_FFLAGS = 0;
-	localparam int HAZARDS_FRM = 1;
+	localparam int N_HAZARDS = 2;
+	localparam int W_HAZARDS = $clog2(N_HAZARDS);
+	localparam int I_HAZARDS_FFLAGS = 0;
+	localparam int I_HAZARDS_FRM = 1;
 
 	typedef struct packed {
 		`ifndef SYNTHESIS
@@ -83,7 +84,7 @@ package control_unit_pkg;
 		params_pkg::regfile_sel_e rs2_regfile;
 		logic rs3_used;
 		params_pkg::regfile_sel_e rs3_regfile;
-		hazards_e [LEN_HAZARDS-1:0] hazards;
+		hazards_e [N_HAZARDS-1:0] hazards;
 		params_pkg::function_unit_e fu_sel;
 		alu_funct_e alu_funct;
 		alu_addy_funct_e alu_addy_funct;

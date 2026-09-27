@@ -20,7 +20,7 @@ fi
 verilator --binary --timing $TRACE -Wall -Wno-fatal \
     --top-module tb_core_issue --Mdir sim/obj_core_issue -o tb_core_issue_sim \
     "$FPNEW" \
-    src/params_pkg.sv src/control_unit_pkg.sv src/fu_pkg.sv \
+    src/params_pkg.sv src/control_unit_pkg.sv src/core_pkg.sv \
     src/immediate_decoder.sv src/sim__instr_formatter.sv src/control_unit.sv \
     src/warp_scheduler.sv src/thread_scheduler.sv src/core_issue.sv \
     tb/tb_config_pkg.sv tb/tb_core_issue.sv

@@ -4,7 +4,7 @@
 
 module fu_multialu
     import params_pkg::*;
-    import fu_pkg::*;
+    import core_pkg::*;
 (
     input wire logic clk,
     input wire logic rst_n,

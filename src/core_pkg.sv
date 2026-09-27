@@ -1,7 +1,8 @@
 `default_nettype none
 
-package fu_pkg;
+package core_pkg;
     import params_pkg::*;
+    import control_unit_pkg::*;
 
     typedef struct packed {
         seq_t seq;
@@ -23,6 +24,8 @@ package fu_pkg;
         simd_data_t result;
         fpnew_pkg::status_t [N_THREADS-1:0] fpu_status ;
     } fu_result_s;
+
+    typedef logic [N_HAZARDS-1:0] hazard_mask_t;
 
 endpackage
 

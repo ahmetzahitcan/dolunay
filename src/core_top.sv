@@ -2,7 +2,8 @@
 
 module core_top
     import params_pkg::*;
-    import fu_pkg::*;
+    import control_unit_pkg::*;
+    import core_pkg::*;
 # (
     parameter int WRAM_SIZE,
     localparam int WRAM_DEPTH = WRAM_SIZE / ADDR_ALIGN,
@@ -61,8 +62,6 @@ module core_top
 
     // - Special Hazards Scoreboard
 
-    typedef logic [1:0] hazard_mask_t; // FIXME: Put this somewhere else!
-
     warp_id_t hsb_frontend_warp_id_w;
     warp_id_t hsb_backend_warp_id_w;
 
@@ -76,7 +75,7 @@ module core_top
     hazard_mask_t hsb_rel_valid_w;
 
     scoreboard_mask #(
-        .N_ENTRIES(2) // FIXME: Magic number!
+        .N_ENTRIES(N_HAZARDS)
      ) u_haz_scoreboard (
     	.clk               (clk),
     	.rst_n             (rst_n),
@@ -242,7 +241,12 @@ module core_top
         .sb_acq_idx_o(sb_acq_idx_w),
         .sb_acq_regfile_o(sb_acq_regfile_w),
         .sb_acq_seq_o(sb_acq_seq_w),
-        .sb_acq_en_o(sb_acq_en_w)
+        .sb_acq_en_o(sb_acq_en_w),
+
+        .hsb_warp_id_o(hsb_frontend_warp_id_w),
+        .hsb_acq_mask_o(hsb_acq_mask_w),
+        .hsb_acq_seq_o(hsb_acq_seq_w),
+        .hsb_busy_i(hsb_busy_w)
     );
 
     // - Function Units
@@ -289,7 +293,11 @@ module core_top
     	.rf_write_en_mask_o(rf_write_en_mask_w),
     	.rf_rd_idx_o       (rf_rd_idx_w),
     	.rf_rd_regfile_o   (rf_rd_regfile_w),
-    	.rf_write_data_o   (rf_write_data_w)
+    	.rf_write_data_o   (rf_write_data_w),
+        .hsb_warp_id_o     (hsb_backend_warp_id_w),
+        .hsb_rel_mask_o    (hsb_rel_mask_w),
+        .hsb_rel_seq_o     (hsb_rel_seq_w),
+        .hsb_rel_valid_i   (hsb_rel_valid_w)
     );
 
 endmodule

@@ -3,7 +3,7 @@
 module fu_fpnew
     import params_pkg::*;
     import control_unit_pkg::*;
-    import fu_pkg::*;
+    import core_pkg::*;
 #(
     localparam FPU_WIDTH = N_THREADS * RLEN
 ) (

@@ -14,7 +14,7 @@
 module core_frontend
     import params_pkg::*;
     import control_unit_pkg::*;
-    import fu_pkg::*;
+    import core_pkg::*;
 # (
     parameter int IROM_SIZE,
     localparam int W_IROM_ADDR = $clog2(IROM_SIZE)
@@ -67,12 +67,18 @@ module core_frontend
     output reg_id_t sb_acq_idx_o,
     output regfile_sel_e sb_acq_regfile_o,
     output seq_t sb_acq_seq_o,
-    output logic sb_acq_en_o
+    output logic sb_acq_en_o,
+
+    output warp_id_t hsb_warp_id_o,
+    input wire hazard_mask_t hsb_busy_i,
+    output hazard_mask_t hsb_acq_mask_o,
+    output seq_t hsb_acq_seq_o
 );
+
     // Pipeline control
 
     logic dp_in_handshake_w;
-    logic ra_sb_busy_w;
+    logic ra_sb_busy_w, ra_hsb_busy_w;
 
     // - Indicate whether a stage contains a valid instruction.
     logic if_stage_valid_r, id_stage_valid_r, ra_stage_valid_r, dp_stage_valid_r;
@@ -83,7 +89,7 @@ module core_frontend
     assign ws_stage_stall_w = if_stage_stall_w;
     assign if_stage_stall_w = id_stage_stall_w;
     assign id_stage_stall_w = ra_stage_stall_w;
-    assign ra_stage_stall_w = dp_stage_stall_w || (ra_stage_valid_r && ra_sb_busy_w);
+    assign ra_stage_stall_w = dp_stage_stall_w || (ra_stage_valid_r && (ra_sb_busy_w || ra_hsb_busy_w));
     assign dp_stage_stall_w = dp_stage_valid_r && !dp_in_handshake_w;
 
     always_ff @(posedge clk) begin
@@ -293,9 +299,11 @@ module core_frontend
     assign dp_rs2_data_w = dp_stage_stall_skid_r ? dp_rs2_data_skid_r : rf_rs2_data_i;
     assign dp_rs3_data_w = dp_stage_stall_skid_r ? dp_rs3_data_skid_r : rf_rs3_data_i;
 
-    // - Scoreboard check
+    // - Register Scoreboard
 
     assign sb_warp_id_o = ra_warp_id_r;
+
+    // -- Check
 
     assign sb_chk1_idx_o = ra_instr_r.rs1_idx;
     assign sb_chk1_regfile_o = ra_instr_r.rs1_regfile;
@@ -317,7 +325,7 @@ module core_frontend
 
     assign ra_sb_busy_w = sb_chk1_busy_i || sb_chk2_busy_i || sb_chk3_busy_i;
 
-    // - Scoreboard acquire
+    // -- Acquire
 
     assign sb_acq_idx_o = ra_instr_r.rd_idx;
     assign sb_acq_regfile_o = ra_instr_r.rd_regfile;
@@ -326,6 +334,45 @@ module core_frontend
         !ra_sb_busy_w &&
         ra_instr_r.rd_used &&
         !(ra_instr_r.rd_idx == 0 && ra_instr_r.rd_regfile == REGFILE_SEL_I);
+
+    // - Hazards Scoreboard
+
+    assign hsb_warp_id_o = ra_warp_id_r;
+
+    // -- Check
+
+    hazard_mask_t ra_checked_hazards_w;
+    always_comb begin
+        ra_checked_hazards_w = '0;
+        for (int i = 0; i < N_HAZARDS; i++) begin
+            unique case(ra_instr_r.hazards[i])
+                HAZARDS_IGN: ra_checked_hazards_w[i] = 0;
+                HAZARDS_AQ: ra_checked_hazards_w[i] = 0;
+                HAZARDS_CK: ra_checked_hazards_w[i] = 1;
+            endcase
+        end
+    end
+
+    hazard_mask_t ra_busy_hazards_w;
+    assign ra_busy_hazards_w = ra_checked_hazards_w & hsb_busy_i;
+    assign ra_hsb_busy_w = ra_stage_valid_r && |ra_busy_hazards_w;
+
+    // -- Acquire
+
+    always_comb begin
+        hsb_acq_mask_o = '0;
+        if (ra_stage_valid_r) begin
+            for (int i = 0; i < N_HAZARDS; i++) begin
+                unique case(ra_instr_r.hazards[i])
+                    HAZARDS_IGN: hsb_acq_mask_o[i] = 0;
+                    HAZARDS_AQ: hsb_acq_mask_o[i] = 1;
+                    HAZARDS_CK: hsb_acq_mask_o[i] = 0;
+                endcase
+            end
+        end
+    end
+
+    assign hsb_acq_seq_o = ra_seq_w;
 
     // - Pipeline Registers
 

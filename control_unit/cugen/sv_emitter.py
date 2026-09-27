@@ -164,7 +164,7 @@ def _write_assignments(f, control_signals, values, enums, external_enums):
             target = f"instr_o.{s.name}[{int(s.index)}]"
         else:
             # Identifier indices address the element through its localparam.
-            target = f"instr_o.{s.name}[{s.name.upper()}_{s.index}]"
+            target = f"instr_o.{s.name}[I_{s.name.upper()}_{s.index}]"
         f.write(f"                {target} = "
                 f"{format_value(raw.strip(), s.name, s.rng, enums, external_enums)};\n")
 
@@ -216,10 +216,11 @@ def emit_sv_package(data, output_file, package_name, source_csv):
         if arrays:
             for name, info in arrays.items():
                 upper = name.upper()
-                f.write(f"\tlocalparam int LEN_{upper} = {len(info.signals)};\n")
+                f.write(f"\tlocalparam int N_{upper} = {len(info.signals)};\n")
+                f.write(f"\tlocalparam int W_{upper} = $clog2(N_{upper});\n")
                 if not info.integer_indexed:
                     f.writelines(
-                        f"\tlocalparam int {upper}_{elem.index} = {pos};\n"
+                        f"\tlocalparam int I_{upper}_{elem.index} = {pos};\n"
                         for pos, elem in enumerate(info.signals))
             f.write("\n")
 
@@ -233,7 +234,7 @@ def emit_sv_package(data, output_file, package_name, source_csv):
                 if s.name in emitted_arrays:
                     continue
                 emitted_arrays.add(s.name)
-                dim = f"[LEN_{s.name.upper()}-1:0]"
+                dim = f"[N_{s.name.upper()}-1:0]"
                 if s.name in external_enums:
                     # Type is provided by another (third-party) package.
                     f.write(f"\t\t{external_enums[s.name].type_ref} {dim} {s.name};\n")

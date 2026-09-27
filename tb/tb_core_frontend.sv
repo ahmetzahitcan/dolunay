@@ -50,7 +50,7 @@
 module tb_core_issue;
     import params_pkg::*;
     import control_unit_pkg::*;
-    import fu_pkg::*;
+    import core_pkg::*;
     import tb_config_pkg::RST_CYCLES;
 
     // -----------------------------------------------------------------------
