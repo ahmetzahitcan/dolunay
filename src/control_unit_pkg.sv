@@ -8,6 +8,12 @@ package control_unit_pkg;
 		IMM_TYPE_U
 	} imm_type_e;
 
+	typedef enum logic [1:0] {
+		HAZARDS_IGN,
+		HAZARDS_AQ,
+		HAZARDS_CK
+	} hazards_e;
+
 	typedef enum logic [3:0] {
 		ALU_FUNCT_ADDY,
 		ALU_FUNCT_SLL,
@@ -55,6 +61,10 @@ package control_unit_pkg;
 		FPU_OP2_SEL_RS3
 	} fpu_op2_sel_e;
 
+	localparam int LEN_HAZARDS = 2;
+	localparam int HAZARDS_FFLAGS = 0;
+	localparam int HAZARDS_FRM = 1;
+
 	typedef struct packed {
 		`ifndef SYNTHESIS
 		sim__disasm_t sim__disasm;
@@ -73,6 +83,7 @@ package control_unit_pkg;
 		params_pkg::regfile_sel_e rs2_regfile;
 		logic rs3_used;
 		params_pkg::regfile_sel_e rs3_regfile;
+		hazards_e [LEN_HAZARDS-1:0] hazards;
 		params_pkg::function_unit_e fu_sel;
 		alu_funct_e alu_funct;
 		alu_addy_funct_e alu_addy_funct;

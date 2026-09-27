@@ -156,11 +156,17 @@ def emit_sv_module(data, output_file, module_name, package_name, source_csv):
 
 def _write_assignments(f, control_signals, values, enums, external_enums):
     """Write the per-signal assignment lines for one instruction (or the default)."""
-    for col, sig, rng in control_signals:
-        raw = values.get(col) or ""
-        target = "imm_type_w" if sig == "imm_type" else f"instr_o.{sig}"
+    for s in control_signals:
+        raw = values.get(s.col) or ""
+        if s.index is None:
+            target = "imm_type_w" if s.name == "imm_type" else f"instr_o.{s.name}"
+        elif s.index.isdigit():
+            target = f"instr_o.{s.name}[{int(s.index)}]"
+        else:
+            # Identifier indices address the element through its localparam.
+            target = f"instr_o.{s.name}[{s.name.upper()}_{s.index}]"
         f.write(f"                {target} = "
-                f"{format_value(raw.strip(), sig, rng, enums, external_enums)};\n")
+                f"{format_value(raw.strip(), s.name, s.rng, enums, external_enums)};\n")
 
 
 # ---------------------------------------------------------------------------
@@ -190,6 +196,7 @@ def emit_sv_package(data, output_file, package_name, source_csv):
     control_signals = data.control_signals
     enums = data.enums
     external_enums = data.external_enums
+    arrays = data.arrays
 
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(_PACKAGE_HEADER.format(package_name=package_name))
@@ -206,22 +213,49 @@ def emit_sv_package(data, output_file, package_name, source_csv):
             f.write(",\n".join(f"\t\t{prefix}_{value}" for value in values) + "\n")
             f.write(f"\t}} {sig}_e;\n\n")
 
+        if arrays:
+            for name, info in arrays.items():
+                upper = name.upper()
+                f.write(f"\tlocalparam int LEN_{upper} = {len(info.signals)};\n")
+                if not info.integer_indexed:
+                    f.writelines(
+                        f"\tlocalparam int {upper}_{elem.index} = {pos};\n"
+                        for pos, elem in enumerate(info.signals))
+            f.write("\n")
+
         f.write(_PACKAGE_STRUCT_HEADER)
-        for _, sig, rng in control_signals:
-            if sig == 'imm_type':
+        emitted_arrays = set()
+        for s in control_signals:
+            if s.name == 'imm_type':
                 continue
 
-            if sig in external_enums:
+            if s.index is not None:
+                if s.name in emitted_arrays:
+                    continue
+                emitted_arrays.add(s.name)
+                dim = f"[LEN_{s.name.upper()}-1:0]"
+                if s.name in external_enums:
+                    # Type is provided by another (third-party) package.
+                    f.write(f"\t\t{external_enums[s.name].type_ref} {dim} {s.name};\n")
+                elif s.name in enums:
+                    f.write(f"\t\t{s.name}_e {dim} {s.name};\n")
+                elif s.rng == "":
+                    f.write(f"\t\tlogic {dim} {s.name};\n")
+                else:
+                    f.write(f"\t\tlogic [{s.rng}]{dim} {s.name};\n")
+                continue
+
+            if s.name in external_enums:
                 # Type is provided by another (third-party) package; reference it
                 # by its qualified name instead of declaring a local enum.
-                f.write(f"\t\t{external_enums[sig].type_ref} {sig};\n")
-            elif sig in enums:
-                f.write(f"\t\t{sig}_e {sig};\n")
+                f.write(f"\t\t{external_enums[s.name].type_ref} {s.name};\n")
+            elif s.name in enums:
+                f.write(f"\t\t{s.name}_e {s.name};\n")
             else:
-                if rng == "":
-                    f.write(f"\t\tlogic {sig};\n")
+                if s.rng == "":
+                    f.write(f"\t\tlogic {s.name};\n")
                 else:
-                    f.write(f"\t\tlogic [{rng}] {sig};\n")
+                    f.write(f"\t\tlogic [{s.rng}] {s.name};\n")
         f.write(_PACKAGE_FOOTER)
 
     print(f"Successfully generated {output_file} from {source_csv}")

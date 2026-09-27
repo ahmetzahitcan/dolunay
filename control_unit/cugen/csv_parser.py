@@ -4,24 +4,38 @@ import csv
 import re
 import sys
 
-from .model import ControlUnitData, ExternalEnum, is_dont_care
+from .model import ArrayInfo, ControlUnitData, ExternalEnum, Signal, is_dont_care
 
 # Matches a valid snake_case identifier: lowercase letters, digits, underscores only.
 _SNAKE_CASE_RE = re.compile(r'^[a-z][a-z0-9_]*$')
 
-# Matches a bare UPPER_CASE enum identifier (letters, digits, underscores; must start with a letter).
+# Matches a bare UPPER_CASE identifier (letters, digits, underscores; must start with a letter).
 _ENUM_VALUE_RE = re.compile(r'^[A-Z][A-Z0-9_]*$')
+
+# Matches a control-signal column header: name (index) [range] {annotation}, with
+# the index, range and annotation all optional and in that order.
+_COLUMN_RE = re.compile(
+    r'^([A-Za-z0-9_]+)\s*(?:\(([^)]*)\))?\s*(?:\[([^\]]+)\])?\s*(?:\{([^}]*)\})?$'
+)
+
+# Matches an all-digit (non-negative integer) array index.
+_INT_INDEX_RE = re.compile(r'^\d+$')
 
 # Columns that hold metadata rather than a control signal.
 _NON_SIGNAL_COLUMNS = {'instruction', 'match_string', 'sim__disasm_format'}
 _REQUIRED_COLUMNS = {'instruction', 'match_string', 'imm_type'}
 
 
+def _error(message):
+    print(f"Error: {message}")
+    sys.exit(1)
+
+
 def field_base_name(field):
     """Return the bare signal name of a CSV header field.
 
-    Strips an optional bit range ("sig[2:0]") and/or external-enum
-    annotation ("sig{pkg::type}") suffix.
+    Strips an optional array index ("sig(0)"), bit range ("sig[2:0]") and/or
+    external-enum annotation ("sig{pkg::type}") suffix.
     """
     m = re.match(r'^([A-Za-z0-9_]+)', field.strip())
     return m.group(1) if m else field.strip()
@@ -56,8 +70,8 @@ def parse_csv(csv_file):
     _reject_ambiguous_patterns(instructions)
     # Sort most-specific patterns first (more fixed bits -> higher priority).
     instructions.sort(key=lambda x: x['SpecificBits'], reverse=True)
-    control_signals, external_enums = _parse_control_signals(fields)
-    enums = _detect_enums(control_signals, external_enums, default_values, instructions)
+    control_signals, external_enums, arrays = _parse_control_signals(fields)
+    enums = _detect_enums(control_signals, external_enums, arrays, default_values, instructions)
     _warn_on_bad_external_enum_values(
         control_signals, external_enums, default_values, instructions)
 
@@ -67,6 +81,7 @@ def parse_csv(csv_file):
         instructions=instructions,
         enums=enums,
         external_enums=external_enums,
+        arrays=arrays,
     )
 
 
@@ -174,103 +189,205 @@ def _reject_ambiguous_patterns(instructions):
 
 
 def _parse_control_signals(fields):
-    """Parse control-signal columns into (col_name, sv_name, sv_range) tuples.
+    """Parse control-signal columns into Signal objects and packed arrays.
 
-    Returns (control_signals, external_enums).  A header may carry an optional
-    bit-width (e.g. "alu_op[2:0]") and/or an external-enum annotation
-    (e.g. "fpu_op{fpnew_pkg::operation_e}").
+    Returns (control_signals, external_enums, arrays).  A header may carry an
+    optional array index ("sig(0)"), bit range ("sig[2:0]") and/or external-enum
+    annotation ("sig{fpnew_pkg::operation_e}").
     """
-    control_signals = []
-    external_enums = {}  # sig_name -> ExternalEnum
+    columns = []
     for field in fields:
         if field in _NON_SIGNAL_COLUMNS:
             continue
         if field.startswith("'"):  # commented-out column
             continue
-        m = re.match(r'^([A-Za-z0-9_]+)\s*(?:\[([^\]]+)\])?\s*(?:\{([^}]*)\})?$', field)
+        m = _COLUMN_RE.match(field)
         if m:
             name = m.group(1)
-            rng = m.group(2) if m.group(2) else ""
-            ext_spec = m.group(3)
+            index = m.group(2)
+            rng = m.group(3) if m.group(3) else ""
+            ext_spec = m.group(4)
         else:
             if '{' in field or '}' in field:
-                print(f"Error: malformed external enum annotation in column '{field}' "
-                      f"(expected 'signal{{package::type}}').")
-                sys.exit(1)
+                _error(f"malformed external enum annotation in column '{field}' "
+                       f"(expected 'signal{{package::type}}').")
+            if '(' in field or ')' in field:
+                _error(f"malformed array index in column '{field}' "
+                       f"(expected 'signal(index)').")
             name = field.strip()
+            index = None
             rng = ""
             ext_spec = None
         if not _SNAKE_CASE_RE.match(name):
             print(f"Warning: column '{name}' does not look like snake_case. "
                   f"Consider renaming it in the CSV.")
-        control_signals.append((field, name, rng))
-        if ext_spec is not None:
-            if rng:
-                print(f"Warning: column '{field}' declares both a bit range and an "
-                      f"external enum; the bit range is ignored.")
-            external_enums[name] = parse_external_enum(field, ext_spec)
-    return control_signals, external_enums
+        if index is None and ext_spec is not None and rng:
+            print(f"Warning: column '{field}' declares both a bit range and an "
+                  f"external enum; the bit range is ignored.")
+        columns.append({'field': field, 'name': name, 'index': index,
+                        'rng': rng, 'ext_spec': ext_spec})
+
+    control_signals = [Signal(c['field'], c['name'], c['rng'], c['index'])
+                       for c in columns]
+    arrays = _build_arrays(columns, control_signals)
+
+    external_enums = {}  # sig_name -> ExternalEnum
+    for c in columns:
+        if c['index'] is not None or c['ext_spec'] is None:
+            continue  # array element types are resolved by _build_arrays
+        external_enums[c['name']] = parse_external_enum(c['field'], c['ext_spec'])
+    for name, info in arrays.items():
+        if info.external_enum is not None:
+            external_enums[name] = info.external_enum
+
+    return control_signals, external_enums, arrays
 
 
-def _detect_enums(control_signals, external_enums, default_values, instructions):
-    """Auto-detect enum columns.
+def _build_arrays(columns, control_signals):
+    """Group indexed columns into packed arrays, validating their layout."""
+    positions = {}  # array name -> column positions
+    for i, c in enumerate(columns):
+        if c['index'] is not None:
+            positions.setdefault(c['name'], []).append(i)
 
-    For each control-signal column, collect every non-empty value that appears
-    in any instruction row or in the default row.  If *all* such values match
-    the UPPER_CASE identifier pattern, the column is an enum.
+    arrays = {}
+    for name, idxs in positions.items():
+        if idxs[-1] - idxs[0] + 1 != len(idxs):
+            _error(f"the elements of array '{name}' must occupy adjacent columns.")
+        if any(c['index'] is None and c['name'] == name for c in columns):
+            _error(f"'{name}' is used both as a scalar signal and as an array.")
+        if name == 'imm_type':
+            _error("'imm_type' cannot be an array.")
+        arrays[name] = _make_array(
+            name, [columns[i] for i in idxs], [control_signals[i] for i in idxs])
+    return arrays
 
-    Returns a dict mapping col_name -> ordered list of unique member names.
+
+def _make_array(name, elements, signals):
+    """Validate one array and return its :class:`ArrayInfo`."""
+    indices = [e['index'] for e in elements]
+    int_index = [_INT_INDEX_RE.match(ix) is not None for ix in indices]
+
+    if all(int_index):
+        integer_indexed = True
+        for pos, ix in enumerate(indices):
+            if int(ix) != pos:
+                _error(f"integer indices of array '{name}' must start at 0 and "
+                       f"increase by 1 (got '{ix}' where '{pos}' was expected).")
+    else:
+        if any(int_index):
+            _error(f"array '{name}' mixes integer and identifier indices.")
+        integer_indexed = False
+        seen = set()
+        for ix in indices:
+            if not _ENUM_VALUE_RE.match(ix):
+                _error(f"index '{ix}' of array '{name}' must be UPPER_CASE.")
+            if ix in seen:
+                _error(f"array '{name}' has a duplicate index '{ix}'.")
+            seen.add(ix)
+
+    # All elements share the first element's type.
+    first = elements[0]
+    for e in elements[1:]:
+        if e['ext_spec'] is not None and e['ext_spec'] != first['ext_spec']:
+            _error(f"array '{name}' has conflicting external enum annotations "
+                   f"('{first['ext_spec']}' vs '{e['ext_spec']}').")
+        if e['rng'] and e['rng'] != first['rng']:
+            _error(f"array '{name}' has conflicting bit ranges "
+                   f"('{first['rng']}' vs '{e['rng']}').")
+
+    external_enum = None
+    if first['ext_spec'] is not None:
+        if first['rng']:
+            print(f"Warning: column '{first['field']}' declares both a bit range "
+                  f"and an external enum; the bit range is ignored.")
+        external_enum = parse_external_enum(first['field'], first['ext_spec'])
+
+    # Every element is the same type, so give them all the first element's range
+    # to keep value formatting uniform.
+    for s in signals:
+        s.rng = first['rng']
+
+    return ArrayInfo(name, signals, integer_indexed, external_enum)
+
+
+def _detect_enums(control_signals, external_enums, arrays, default_values, instructions):
+    """Auto-detect enum columns and arrays, keyed by signal name.
+
+    A scalar column is an enum when all of its values are bare UPPER_CASE
+    identifiers.  An array is an enum when the values of *all* its element
+    columns are, and the values are combined into one member list.
+
+    Returns a dict mapping signal name -> ordered list of unique member names.
     """
     enums = {}
-    for col, name, rng in control_signals:
-        if name in external_enums:
-            continue  # type is defined elsewhere; never auto-declare it
-
-        seen = []          # preserves first-appearance order
-        seen_set = set()
-        all_enum = True    # optimistic: assume enum until proven otherwise
-
-        # Check the default (INVALID) row value.
-        def_val = default_values.get(col, "").strip()
-        if def_val and not is_dont_care(def_val):
-            if _ENUM_VALUE_RE.match(def_val):
-                if def_val not in seen_set:
-                    seen.append(def_val)
-                    seen_set.add(def_val)
-            else:
-                all_enum = False
-
-        # Check every instruction row value.
-        for row in instructions:
-            val = row.get(col, "").strip() if row.get(col) else ""
-            if is_dont_care(val):
+    emitted_arrays = set()
+    for s in control_signals:
+        if s.index is None:
+            if s.name in external_enums:
+                continue  # type is defined elsewhere; never auto-declare it
+            values = _detect_enum_values([s.col], default_values, instructions)
+        else:
+            if s.name in emitted_arrays:
                 continue
-            if _ENUM_VALUE_RE.match(val):
-                if val not in seen_set:
-                    seen.append(val)
-                    seen_set.add(val)
-            else:
-                all_enum = False
-                break
-
-        if all_enum and seen:
-            enums[col] = seen
+            emitted_arrays.add(s.name)
+            if s.name in external_enums:
+                continue
+            values = _detect_enum_values(
+                [e.col for e in arrays[s.name].signals], default_values, instructions)
+        if values:
+            enums[s.name] = values
     return enums
+
+
+def _detect_enum_values(columns, default_values, instructions):
+    """Return the combined member list for `columns`, or None if not all enum.
+
+    The INVALID (default) row is considered before the instruction rows, matching
+    the order used for a single column.
+    """
+    seen = []
+    seen_set = set()
+
+    def consider(value):
+        if is_dont_care(value):
+            return True
+        if not _ENUM_VALUE_RE.match(value):
+            return False
+        if value not in seen_set:
+            seen.append(value)
+            seen_set.add(value)
+        return True
+
+    for col in columns:
+        if not consider(default_values.get(col, "").strip()):
+            return None
+    for row in instructions:
+        for col in columns:
+            value = row.get(col, "").strip() if row.get(col) else ""
+            if not consider(value):
+                return None
+    return seen if seen else None
 
 
 def _warn_on_bad_external_enum_values(control_signals, external_enums, default_values, instructions):
     """Warn if a value used with an external enum is not a bare member name."""
-    for col, name, rng in control_signals:
+    columns_by_name = {}
+    for s in control_signals:
+        columns_by_name.setdefault(s.name, []).append(s.col)
+
+    for name, columns in columns_by_name.items():
         ext = external_enums.get(name)
         if ext is None:
             continue
-        values = [default_values.get(col, "")]
-        values += [(row.get(col) or "") for row in instructions]
-        for val in values:
-            val = val.strip()
-            if is_dont_care(val):
-                continue
-            if not _ENUM_VALUE_RE.match(val):
-                print(f"Warning: column '{name}' uses external enum "
-                      f"'{ext.type_ref}' but value '{val}' is not a valid enum "
-                      f"member name. Consider the '{{type|prefix}}' annotation form.")
+        for col in columns:
+            values = [default_values.get(col, "")]
+            values += [(row.get(col) or "") for row in instructions]
+            for val in values:
+                val = val.strip()
+                if is_dont_care(val):
+                    continue
+                if not _ENUM_VALUE_RE.match(val):
+                    print(f"Warning: column '{name}' uses external enum "
+                          f"'{ext.type_ref}' but value '{val}' is not a valid enum "
+                          f"member name. Consider the '{{type|prefix}}' annotation form.")

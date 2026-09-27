@@ -41,13 +41,13 @@ class TestParseCsv(GeneratorTestCase):
     def test_control_signals_are_collected_in_order(self):
         data, _ = self.parse(BASE)
         self.assertEqual(
-            [(name, rng) for _, name, rng in data.control_signals],
+            [(s.name, s.rng) for s in data.control_signals],
             [("imm_type", ""), ("alu_op", ""), ("flag", "")],
         )
 
     def test_metadata_columns_are_not_control_signals(self):
         data, _ = self.parse(BASE)
-        names = [name for _, name, _ in data.control_signals]
+        names = [s.name for s in data.control_signals]
         for column in ("instruction", "match_string", "sim__disasm_format"):
             self.assertNotIn(column, names)
 
@@ -138,7 +138,7 @@ class TestParseCsv(GeneratorTestCase):
             [["ADD", "0" * 30, "add", "IMM_A", "4"]],
         )
         data, _ = self.parse(text)
-        ranges = {name: rng for _, name, rng in data.control_signals}
+        ranges = {s.name: s.rng for s in data.control_signals}
         self.assertEqual(ranges["br"], "3:0")
 
     def test_external_enum_annotation_is_parsed(self):
@@ -222,7 +222,7 @@ class TestParseCsv(GeneratorTestCase):
             [["ADD", "0" * 30, "add", "IMM_A", "IMM_OLD"]],
         )
         data, _ = self.parse(text)
-        self.assertNotIn("old_sig", [name for _, name, _ in data.control_signals])
+        self.assertNotIn("old_sig", [s.name for s in data.control_signals])
 
     def test_commented_out_row_is_skipped(self):
         text = csv_text(

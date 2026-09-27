@@ -9,12 +9,14 @@
 """
 
 from .csv_parser import parse_csv
-from .model import ControlUnitData, ExternalEnum, is_dont_care
+from .model import ArrayInfo, ControlUnitData, ExternalEnum, Signal, is_dont_care
 from .sv_emitter import emit_sv_module, emit_sv_package
 
 __all__ = [
+    'ArrayInfo',
     'ControlUnitData',
     'ExternalEnum',
+    'Signal',
     'emit_sv_module',
     'emit_sv_package',
     'is_dont_care',

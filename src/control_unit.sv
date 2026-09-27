@@ -59,6 +59,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -83,6 +85,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
@@ -107,6 +111,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
@@ -131,6 +137,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -155,6 +163,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -179,6 +189,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -203,6 +215,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -227,6 +241,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -251,6 +267,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
@@ -275,6 +293,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH1ADD;
@@ -299,6 +319,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH2ADD;
@@ -323,6 +345,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH3ADD;
@@ -347,6 +371,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SUB;
@@ -371,6 +397,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -395,6 +423,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -419,6 +449,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -443,6 +475,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_XOR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -467,6 +501,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SRL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -491,6 +527,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SRA;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -515,6 +553,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_OR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -539,6 +579,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_AND;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -563,6 +605,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -587,6 +631,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SRL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -611,6 +657,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SRA;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -635,6 +683,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_CZERO_EQZ;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -659,6 +709,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_CZERO_NEZ;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -683,6 +735,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -707,6 +761,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -731,6 +787,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -755,6 +813,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -779,6 +839,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -803,6 +865,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -827,6 +891,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -851,6 +917,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
@@ -875,6 +943,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -899,6 +969,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -923,6 +995,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_XOR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -947,6 +1021,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_OR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -971,6 +1047,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_AND;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -995,6 +1073,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b1;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -1019,6 +1099,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b1;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -1043,6 +1125,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b1;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -1067,6 +1151,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs3_used = 1'b1;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_AQ;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -1091,6 +1177,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_OP2;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
@@ -1115,6 +1203,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
@@ -1142,6 +1232,8 @@ module control_unit
                 instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.rs3_used = 'x;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[HAZARDS_FFLAGS] = hazards_e'('x);
+                instr_o.hazards[HAZARDS_FRM] = hazards_e'('x);
                 instr_o.fu_sel = params_pkg::function_unit_e'('x);
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);

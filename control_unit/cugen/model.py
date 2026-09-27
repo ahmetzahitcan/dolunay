@@ -19,11 +19,15 @@ class ExternalEnum:
 
         sig{fpnew_pkg::operation_e}                       member -> fpnew_pkg::<VALUE>
         sig{fpnew_pkg::operation_e|OP_}                   member -> fpnew_pkg::OP_<VALUE>
-        sig{fpnew_pkg::operation_e|OP_|fpnew_pkg::NONE}   explicit default member
+        sig{fpnew_pkg::operation_e|OP_|NONE}              default -> fpnew_pkg::OP_NONE
 
-    The type is emitted verbatim, so it should be fully qualified.  When no
-    default/undefined member is given, don't-care values are rendered as a cast
-    to the type (``fpnew_pkg::operation_e'('x)``)
+    The type is emitted verbatim, so it should be fully qualified.  The optional
+    second field is a prefix prepended to every member name, and the optional
+    third field names the member used for don't-care/default values; it is
+    qualified by the same scope and prefix as the other members, so it should be
+    given as a bare suffix (e.g. ``NONE``, not ``fpnew_pkg::NONE``).  When no
+    default member is given, don't-care values are rendered as a cast to the type
+    (``fpnew_pkg::operation_e'('x)``)
     """
 
     def __init__(self, col, type_ref, prefix="", def_member=None):
@@ -46,6 +50,40 @@ class ExternalEnum:
 
 
 @dataclass
+class Signal:
+    """A single control-signal column.
+
+    A scalar signal has ``index is None``.  An element of a packed array has
+    ``index`` set to the text between the parentheses (e.g. ``"0"`` or
+    ``"FOO"``); its ``name`` is the array's base name.
+    """
+
+    col: str
+    name: str
+    rng: str = ""
+    index: str | None = None
+
+
+@dataclass
+class ArrayInfo:
+    """A packed array built from a run of adjacent element columns.
+
+    Attributes:
+        name:             the array's base name (e.g. "array" for "array(0)").
+        signals:          the element :class:`Signal` objects, in column order.
+        integer_indexed:  True when indices are 0,1,2,...; False when they are
+                          UPPER_CASE identifiers.
+        external_enum:    the ExternalEnum shared by every element, or None when
+                          the element type is not an explicit external type.
+    """
+
+    name: str
+    signals: list
+    integer_indexed: bool
+    external_enum: 'ExternalEnum | None'
+
+
+@dataclass
 class ControlUnitData:
     """Validated control-unit description produced by :func:`parse_csv`.
 
@@ -55,12 +93,16 @@ class ControlUnitData:
         instructions:    list of dicts, each with at minimum
                          'instruction', 'CleanMatchString' and 'SpecificBits',
                          plus one key per control-signal column.
-        enums:           dict mapping col_name -> list[str] of ordered unique
-                         enum member names, for every column whose values are
-                         all bare UPPER_CASE identifiers (e.g. ALU_ADD, ALU_BEQ).
-                         Columns not detected as enums are absent.
-        external_enums:  dict mapping sig_name -> ExternalEnum for columns whose
-                         enum type is defined outside this package.
+        enums:           dict mapping a signal name -> list[str] of ordered
+                         unique enum member names, for every column (or array)
+                         whose values are all bare UPPER_CASE identifiers (e.g.
+                         ALU_ADD, ALU_BEQ).  Names not detected as enums are
+                         absent.
+        external_enums:  dict mapping a signal name -> ExternalEnum for columns
+                         (or arrays) whose enum type is defined outside this
+                         package.
+        arrays:          dict mapping an array base name -> :class:`ArrayInfo`
+                         for every packed array in the sheet.
     """
 
     control_signals: list
@@ -68,3 +110,4 @@ class ControlUnitData:
     instructions: list
     enums: dict
     external_enums: dict
+    arrays: dict

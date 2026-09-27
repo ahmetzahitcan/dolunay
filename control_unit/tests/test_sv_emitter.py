@@ -2,7 +2,7 @@
 
 import unittest
 
-from cugen.model import ControlUnitData, ExternalEnum
+from cugen.model import ControlUnitData, ExternalEnum, Signal
 from cugen.sv_emitter import emit_sv_module, emit_sv_package, format_value
 
 from .helpers import GeneratorTestCase, csv_text
@@ -21,14 +21,19 @@ SMALL = csv_text(
 
 
 def make_data(control_signals=(), enums=None, external_enums=None,
-              default_values=None, instructions=None):
-    """Build a ControlUnitData with sensible defaults for emitter tests."""
+              default_values=None, instructions=None, arrays=None):
+    """Build a ControlUnitData with sensible defaults for emitter tests.
+
+    ``control_signals`` entries may be (col, name, rng) tuples or Signals.
+    """
+    signals = [Signal(*s) if isinstance(s, tuple) else s for s in control_signals]
     return ControlUnitData(
-        control_signals=list(control_signals),
+        control_signals=signals,
         default_values=default_values or {},
         instructions=instructions or [],
         enums=enums or {},
         external_enums=external_enums or {},
+        arrays=arrays or {},
     )
 
 
