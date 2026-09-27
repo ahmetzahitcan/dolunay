@@ -242,7 +242,7 @@ def emit_sv_package(data, output_file, package_name, source_csv):
                 elif s.rng == "":
                     f.write(f"\t\tlogic {dim} {s.name};\n")
                 else:
-                    f.write(f"\t\tlogic [{s.rng}]{dim} {s.name};\n")
+                    f.write(f"\t\tlogic {dim}[{s.rng}] {s.name};\n")
                 continue
 
             if s.name in external_enums:

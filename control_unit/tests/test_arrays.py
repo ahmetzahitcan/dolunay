@@ -160,7 +160,7 @@ class TestArrayEmission(GeneratorTestCase):
         _, package = self._emit(data)
         self.assertIn("\t\tarr_e [LEN_ARR-1:0] arr;\n", package)
         self.assertIn("\t\text_pkg::flag_e [LEN_FLAGS-1:0] flags;\n", package)
-        self.assertIn("\t\tlogic [3:0][LEN_CNT-1:0] cnt;\n", package)
+        self.assertIn("\t\tlogic [LEN_CNT-1:0][3:0] cnt;\n", package)
 
     def test_module_emits_element_assignments(self):
         data, _ = self.parse(BASE)
