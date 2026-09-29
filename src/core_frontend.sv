@@ -323,7 +323,9 @@ module core_frontend
         ra_instr_r.rs3_used &&
         !(ra_instr_r.rs3_idx == 0 && ra_instr_r.rs3_regfile == REGFILE_SEL_I);
 
-    assign ra_sb_busy_w = sb_chk1_busy_i || sb_chk2_busy_i || sb_chk3_busy_i;
+    assign ra_sb_busy_w = sb_chk1_busy_i ||
+        sb_chk2_busy_i ||
+        sb_chk3_busy_i;
 
     // -- Acquire
 
@@ -349,6 +351,7 @@ module core_frontend
                 HAZARDS_IGN: ra_checked_hazards_w[i] = 0;
                 HAZARDS_AQ: ra_checked_hazards_w[i] = 0;
                 HAZARDS_CK: ra_checked_hazards_w[i] = 1;
+                HAZARDS_CKAQ: ra_checked_hazards_w[i] = 1;
             endcase
         end
     end
@@ -359,14 +362,18 @@ module core_frontend
 
     // -- Acquire
 
+    logic hsb_acq_valid_w;
+    assign hsb_acq_valid_w = !ra_hsb_busy_w;
+
     always_comb begin
         hsb_acq_mask_o = '0;
         if (ra_stage_valid_r) begin
             for (int i = 0; i < N_HAZARDS; i++) begin
                 unique case(ra_instr_r.hazards[i])
                     HAZARDS_IGN: hsb_acq_mask_o[i] = 0;
-                    HAZARDS_AQ: hsb_acq_mask_o[i] = 1;
+                    HAZARDS_AQ: hsb_acq_mask_o[i] = hsb_acq_valid_w;
                     HAZARDS_CK: hsb_acq_mask_o[i] = 0;
+                    HAZARDS_CKAQ: hsb_acq_mask_o[i] = hsb_acq_valid_w;
                 endcase
             end
         end

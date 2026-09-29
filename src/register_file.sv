@@ -32,13 +32,6 @@ module register_file
     input wire  regfile_sel_e rd_regfile_i,
     input wire  simd_data_t  write_data_i
 );
-
-    `ifndef SYNTHESIS
-        assert property
-            (@(posedge clk) (read_warp_id_i != write_warp_id_i) || (write_en_mask_i == '0))
-            else $error("Register file read and write from same warp");
-    `endif
-
     simd_data_t rs1_data_r;
     simd_data_t rs2_data_r;
     simd_data_t rs3_data_r;

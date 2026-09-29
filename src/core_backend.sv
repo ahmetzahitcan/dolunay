@@ -28,7 +28,9 @@ module core_backend
     output warp_id_t hsb_warp_id_o,
     output hazard_mask_t hsb_rel_mask_o,
     output seq_t hsb_rel_seq_o,
-    input wire hazard_mask_t hsb_rel_valid_i
+    input wire hazard_mask_t hsb_rel_valid_i, // INFO: Remains unneeded for now...
+
+    output fpnew_pkg::status_t [N_THREADS-1:0] fflags_o
 );
     // Pipeline control
     logic cl_fu_handshake_w;
@@ -110,7 +112,7 @@ module core_backend
     assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : 0;
     assign rf_rd_idx_o = wb_fu_result_r.instr.rd_idx;
     assign rf_rd_regfile_o = wb_fu_result_r.instr.rd_regfile;
-    assign rf_write_data_o = wb_fu_result_r.result;
+    assign rf_write_data_o = wb_fu_result_r.wb_result;
 
     always_ff @(posedge clk) begin
         if (!rob_stall_w) begin
@@ -124,6 +126,18 @@ module core_backend
     logic [N_WARPS-1:0][ROB_SIZE-1:0] rob_valid_r;
     logic [N_WARPS-1:0][W_ROB_ADDR-1:0] rob_head_r;
 
+    always_comb begin
+        rob_output_valid_w = 0;
+        if(!cm_stage_stall_w) begin
+            for (int i = 0; i < N_WARPS; i++) begin
+                if (rob_valid_r[i][rob_head_r[i]]) begin
+                    rob_output_valid_w = 1;
+                    break;
+                end
+            end
+        end
+    end
+
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             rob_valid_r <= '0;
@@ -134,7 +148,6 @@ module core_backend
                 rob_valid_r[rob_fu_result_r.warp_id][rob_fu_result_r.seq] <= 1;
             end
 
-            rob_output_valid_w <= 0;
             if (!cm_stage_stall_w) begin
                 for (int i = 0; i < N_WARPS; i++) begin
                     if (rob_valid_r[i][rob_head_r[i]]) begin
@@ -151,8 +164,6 @@ module core_backend
 
                         rob_valid_r[i][rob_head_r[i]] <= 0;
                         rob_head_r[i] <= rob_head_r[i] + 1;
-
-                        rob_output_valid_w <= 1;
                         break;
                     end
                 end
@@ -175,10 +186,33 @@ module core_backend
                     HAZARDS_IGN: hsb_rel_mask_o[i] = 0;
                     HAZARDS_AQ: hsb_rel_mask_o[i] = 1;
                     HAZARDS_CK: hsb_rel_mask_o[i] = 0;
+                    HAZARDS_CKAQ: hsb_rel_mask_o[i] = 1;
                 endcase
             end
         end
     end
+
+    // - FFLAGS - TODO: Move this to either fu_csru.sv or fu_fpnew.sv
+
+    fpnew_pkg::status_t [N_THREADS-1:0] cm_fflags_r;
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            cm_fflags_r <= '0;
+        end else begin
+            if (cm_stage_valid_r) begin
+                for (int i = 0; i < N_THREADS; i++) begin
+                    unique case (cm_fu_result_r.instr.fflags_update)
+                        FFLAGS_UPDATE_NONE: cm_fflags_r[i] <= cm_fflags_r[i];
+                        FFLAGS_UPDATE_ACC_FPU_STATUS: cm_fflags_r[i] <= cm_fflags_r[i] | cm_fu_result_r.fpu_status[i];
+                        FFLAGS_UPDATE_CSRW: cm_fflags_r[i] <= cm_fu_result_r.csrw_result[i][$bits(fpnew_pkg::status_t)-1:0];
+                    endcase
+                end
+            end
+        end
+    end
+
+    assign fflags_o = cm_fflags_r;
 
 endmodule
 

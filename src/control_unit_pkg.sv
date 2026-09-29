@@ -10,9 +10,24 @@ package control_unit_pkg;
 
 	typedef enum logic [1:0] {
 		HAZARDS_IGN,
+		HAZARDS_CKAQ,
 		HAZARDS_AQ,
 		HAZARDS_CK
 	} hazards_e;
+
+	typedef enum logic {
+		CSRR_SRC_FFLAGS
+	} csrr_src_e;
+
+	typedef enum logic {
+		CSRW_METHOD_WRITE
+	} csrw_method_e;
+
+	typedef enum logic [1:0] {
+		FFLAGS_UPDATE_NONE,
+		FFLAGS_UPDATE_CSRW,
+		FFLAGS_UPDATE_ACC_FPU_STATUS
+	} fflags_update_e;
 
 	typedef enum logic [3:0] {
 		ALU_FUNCT_ADDY,
@@ -86,6 +101,9 @@ package control_unit_pkg;
 		params_pkg::regfile_sel_e rs3_regfile;
 		hazards_e [N_HAZARDS-1:0] hazards;
 		params_pkg::function_unit_e fu_sel;
+		csrr_src_e csrr_src;
+		csrw_method_e csrw_method;
+		fflags_update_e fflags_update;
 		alu_funct_e alu_funct;
 		alu_addy_funct_e alu_addy_funct;
 		alu_op1_sel_e alu_op1_sel;

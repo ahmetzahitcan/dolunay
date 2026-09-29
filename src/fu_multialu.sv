@@ -17,63 +17,46 @@ module fu_multialu
     input wire logic out_ready_i,
     output fu_result_s out_result_o
 );
-    logic out_valid_r, out_valid_next_w, out_hold_w;
-    logic in_ready_w, in_fire_w;
+    fu_operation_s operation_w;
+    fu_result_s result_w;
 
-    assign in_fire_w = in_valid_i & in_ready_w;
-    assign out_hold_w = out_valid_r & !out_ready_i;
-    assign out_valid_next_w = in_fire_w || out_hold_w;
-    assign in_ready_w = !out_hold_w;
+    simd_data_t simd_result_w;
 
-    always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            out_valid_r <= 0;
-        end else begin
-            out_valid_r <= out_valid_next_w;
-        end
-    end
-
-    simd_data_t result_w, result_r;
-
-    always_ff @(posedge clk) begin
-        if (in_fire_w) begin
-            result_r <= result_w;
-        end
-    end
+    assign result_w = '{
+        seq: operation_w.seq,
+        warp_id: operation_w.warp_id,
+        instr: operation_w.instr,
+        pc: operation_w.pc,
+        mask: operation_w.mask,
+        wb_result: simd_result_w,
+        fpu_status: 'x,
+        csrw_result: 'x
+    };
 
     generate
-        for (genvar I = 0; I < N_THREADS; I++) begin : gen_alu
-            alu u_alu (
-                .rs1_val_i(in_operation_i.rs1_data[I]),
-                .rs2_val_i(in_operation_i.rs2_data[I]),
-                .instr_i(in_operation_i.instr),
-                .pc_i(in_operation_i.pc),
-                .result_o(result_w[I])
+        for (genvar i = 0; i < N_THREADS; i++) begin : gen_alu
+            alu alu (
+               	.rs1_val_i(operation_w.rs1_data[i]),
+               	.rs2_val_i(operation_w.rs2_data[i]),
+               	.instr_i  (operation_w.instr),
+               	.pc_i     (operation_w.pc),
+               	.result_o (simd_result_w[i])
             );
         end
     endgenerate
 
-    assign out_valid_o = out_valid_r;
-    assign in_ready_o = in_ready_w;
-
-    fu_operation_s operation_r;
-
-    always_ff @(posedge clk) begin
-        if (in_fire_w) begin
-            operation_r <= in_operation_i;
-        end
-    end
-
-    assign out_result_o = '{
-        result: result_r,
-        fpu_status: 'x,
-
-        seq: operation_r.seq,
-        warp_id: operation_r.warp_id,
-        mask: operation_r.mask,
-        instr: operation_r.instr,
-        pc: operation_r.pc
-    };
+    fuhelper_combinatorial u_fuhelper_combinatorial (
+        .clk(clk),
+        .rst_n(rst_n),
+        .in_valid_i(in_valid_i),
+        .in_ready_o(in_ready_o),
+        .in_operation_i(in_operation_i),
+        .out_valid_o(out_valid_o),
+        .out_ready_i(out_ready_i),
+        .out_result_o(out_result_o),
+        .comb_operation_o(operation_w),
+        .comb_result_i(result_w)
+    );
 
 endmodule
 

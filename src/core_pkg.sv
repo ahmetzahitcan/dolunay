@@ -21,8 +21,9 @@ package core_pkg;
         control_unit_pkg::instr_s instr;
         pc_t pc;
         simd_mask_t mask;
-        simd_data_t result;
-        fpnew_pkg::status_t [N_THREADS-1:0] fpu_status ;
+        simd_data_t wb_result;
+        simd_data_t csrw_result;
+        fpnew_pkg::status_t [N_THREADS-1:0] fpu_status;
     } fu_result_s;
 
     typedef logic [N_HAZARDS-1:0] hazard_mask_t;

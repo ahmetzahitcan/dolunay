@@ -142,7 +142,8 @@ module fu_fpnew
         mask: out_tag_w.mask,
         instr: out_tag_w.instr,
         fpu_status: status_w,
-        result: result_2d_w
+        wb_result: result_2d_w,
+        csrw_result: 'x
     };
 
 endmodule

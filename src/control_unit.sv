@@ -62,6 +62,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -88,6 +91,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -114,10 +120,42 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
                 instr_o.alu_op2_sel = ALU_OP2_SEL_RS2;
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+            end
+            30'b000000000001?????001?????11100: begin // CSRRW_FFLAGS
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "csrrw $d, $1, fflags";
+                `endif
+                imm_type_w = imm_type_e'('x);
+                instr_o.rd_used = 1'b1;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b0;
+                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_CKAQ;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_CSRR;
+                instr_o.csrr_src = CSRR_SRC_FFLAGS;
+                instr_o.csrw_method = CSRW_METHOD_WRITE;
+                instr_o.fflags_update = FFLAGS_UPDATE_CSRW;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
                 instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
                 instr_o.fpu_op_modifier = 'x;
                 instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
@@ -140,6 +178,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -166,6 +207,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -192,6 +236,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -218,6 +265,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -244,6 +294,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -270,6 +323,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -296,6 +352,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH1ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -322,6 +381,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH2ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -348,6 +410,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SH3ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -374,6 +439,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_SUB;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -400,6 +468,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SLL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -426,6 +497,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -452,6 +526,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -478,6 +555,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_XOR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -504,6 +584,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SRL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -530,6 +613,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SRA;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -556,6 +642,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_OR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -582,6 +671,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_AND;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -608,6 +700,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SLL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -634,6 +729,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SRL;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -660,6 +758,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SRA;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -686,6 +787,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_CZERO_EQZ;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -712,6 +816,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_CZERO_NEZ;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -738,6 +845,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -764,6 +874,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -790,6 +903,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -816,6 +932,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -842,6 +961,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -868,6 +990,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -894,6 +1019,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -920,6 +1048,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -946,6 +1077,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SLT;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -972,6 +1106,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_SLTU;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -998,6 +1135,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_XOR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1024,6 +1164,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_OR;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1050,6 +1193,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_AND;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
@@ -1076,6 +1222,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1102,6 +1251,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1128,6 +1280,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1154,6 +1309,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_AQ;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_CK;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_FPU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_ACC_FPU_STATUS;
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1180,6 +1338,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_OP2;
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);
@@ -1206,6 +1367,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
                 instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
                 instr_o.fu_sel = params_pkg::FUNCTION_UNIT_ALU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
                 instr_o.alu_funct = ALU_FUNCT_ADDY;
                 instr_o.alu_addy_funct = ALU_ADDY_FUNCT_ADD;
                 instr_o.alu_op1_sel = ALU_OP1_SEL_PC;
@@ -1235,6 +1399,9 @@ module control_unit
                 instr_o.hazards[I_HAZARDS_FFLAGS] = hazards_e'('x);
                 instr_o.hazards[I_HAZARDS_FRM] = hazards_e'('x);
                 instr_o.fu_sel = params_pkg::function_unit_e'('x);
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = fflags_update_e'('x);
                 instr_o.alu_funct = alu_funct_e'('x);
                 instr_o.alu_addy_funct = alu_addy_funct_e'('x);
                 instr_o.alu_op1_sel = alu_op1_sel_e'('x);

@@ -46,12 +46,15 @@ package params_pkg;
     typedef logic [W_ROB_ADDR-1:0] seq_t;
 
     // FIXME: I had to move these here, because Verilator
-    localparam int N_FUNCTION_UNITS = 2;
+    localparam int N_FUNCTION_UNITS = 3;
     localparam int W_FUNCTION_UNITS = $clog2(N_FUNCTION_UNITS);
     // INFO: The order of enum elements actually matters, the one on top is prioritized in the back-end's Collect stage.
     typedef enum logic [W_FUNCTION_UNITS-1:0] {
         FUNCTION_UNIT_FPU,
-        FUNCTION_UNIT_ALU
+
+        // One-cycle FUs
+        FUNCTION_UNIT_ALU,
+        FUNCTION_UNIT_CSRR
     } function_unit_e;
 endpackage
 

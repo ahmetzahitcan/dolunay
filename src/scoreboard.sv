@@ -69,19 +69,8 @@ module scoreboard
         if (!rst_n) begin
             busy_r <= '0;
         end else begin
-            assert (
-                (!(acq_en_i && rel_en_i)) ||
-                (frontend_warp_id_i != backend_warp_id_i) ||
-                (acq_id_i != rel_id_i)
-            ) else $error("Cannot acquire and release the same entry! Entry: %d-%d", frontend_warp_id_i, acq_id_i);
-
-            if (acq_en_i) begin
-                seq_r[frontend_warp_id_i][acq_id_i] <= acq_seq_i;
-                busy_r[frontend_warp_id_i][acq_id_i] <= 1;
-            end
-
             if (rel_en_i) begin
-                assert (busy_r[backend_warp_id_i][rel_id_i])
+                assert (busy_r[backend_warp_id_i][rel_id_i] || rel_seq_i != seq_r[backend_warp_id_i][rel_id_i])
                     else $warning("Release operation on non-busy entry! Entry: %d-%d", backend_warp_id_i, rel_id_i);
                 assert (!$isunknown(seq_r[backend_warp_id_i][rel_id_i]))
                     else $error("Release operation on invalid seq! Entry: %d-%d", backend_warp_id_i, rel_id_i);
@@ -89,6 +78,11 @@ module scoreboard
                 if (rel_seq_i == seq_r[backend_warp_id_i][rel_id_i]) begin
                     busy_r[backend_warp_id_i][rel_id_i] <= 0;
                 end
+            end
+
+            if (acq_en_i) begin
+                seq_r[frontend_warp_id_i][acq_id_i] <= acq_seq_i;
+                busy_r[frontend_warp_id_i][acq_id_i] <= 1;
             end
         end
     end

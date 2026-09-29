@@ -33,7 +33,7 @@ module scoreboard_mask
     output entry_mask_t busy_o,
 
     // Frontend-acquire port
-    input wire  entry_mask_t        acq_mask_i,
+    input wire  entry_mask_t acq_mask_i,
     input wire  seq_t acq_seq_i,
 
     // Backend-release port
@@ -59,18 +59,6 @@ module scoreboard_mask
         if (!rst_n) begin
             busy_r <= '0;
         end else begin
-            assert (
-                (frontend_warp_id_i != backend_warp_id_i) ||
-                ((acq_mask_i & rel_mask_i) == 0)
-            ) else $error("Cannot acquire and release the same entry! Entries: %d-%b", frontend_warp_id_i, acq_mask_i);
-
-            for (int i = 0; i < N_ENTRIES; i++) begin
-                if (acq_mask_i[i]) begin
-                    seq_r[frontend_warp_id_i][i] <= acq_seq_i;
-                    busy_r[frontend_warp_id_i][i] <= 1;
-                end
-            end
-
             for (int i = 0; i < N_ENTRIES; i++) begin
                 if (rel_mask_i[i]) begin
                     assert (busy_r[backend_warp_id_i][i])
@@ -81,6 +69,11 @@ module scoreboard_mask
                     if (rel_seq_i == seq_r[backend_warp_id_i][i]) begin
                         busy_r[backend_warp_id_i][i] <= 0;
                     end
+                end
+
+                if (acq_mask_i[i]) begin
+                    seq_r[frontend_warp_id_i][i] <= acq_seq_i;
+                    busy_r[frontend_warp_id_i][i] <= 1;
                 end
             end
         end
