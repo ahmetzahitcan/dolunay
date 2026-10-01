@@ -34,7 +34,11 @@ module fu_csru
     	.out_ready_i     (out_ready_i),
     	.out_result_o    (out_result_o),
     	.comb_operation_o(operation_w),
-    	.comb_result_i   (result_w)
+    	.comb_result_i   (result_w),
+
+        // slang lint_off empty-output-connection
+        .operation_strobe_o()
+        // slang lint_on empty-output-connection
     );
 
     simd_data_t wb_result_w;

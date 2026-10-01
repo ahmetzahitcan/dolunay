@@ -17,7 +17,8 @@ module fuhelper_combinatorial
     output fu_result_s out_result_o,
 
     output fu_operation_s comb_operation_o,
-    input wire fu_result_s comb_result_i
+    input wire fu_result_s comb_result_i,
+    output logic operation_strobe_o
 );
     logic out_valid_r, out_valid_next_w, out_hold_w;
     logic in_ready_w, in_fire_w;
@@ -46,6 +47,18 @@ module fuhelper_combinatorial
         end
     end
 
+
+    logic operation_strobe_r;
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            operation_strobe_r <= 0;
+        end else begin
+            operation_strobe_r <= in_fire_w;
+        end
+    end
+
+    assign operation_strobe_o = operation_strobe_r;
     assign comb_operation_o = operation_r;
     assign out_result_o = comb_result_i;
 

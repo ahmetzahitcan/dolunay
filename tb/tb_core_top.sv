@@ -99,7 +99,7 @@ module tb_core_top;
         start_r = 1'b0;
         */
 
-        repeat (100) @(posedge clk); //wait (ready_w);
+        repeat (10000) @(posedge clk); //wait (ready_w);
         $finish;
     end
 

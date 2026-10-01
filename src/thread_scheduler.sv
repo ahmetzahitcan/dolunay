@@ -7,28 +7,27 @@ module thread_scheduler
     input wire logic rst_n,
     input wire logic en,
 
-    input wire logic [RLEN-1:Z_PC] pc_next_i,
+    input wire pc_t pc_next_i,
     input wire logic yield_i,
-
+/*
     input wire logic barr_load_i,
-    input wire [N_THREADS-1:0] barr_load_total_i,
-    input wire [N_THREADS-1:0] barr_load_parked_i,
+    input wire simd_mask_t barr_load_total_i,
+    input wire simd_mask_t barr_load_parked_i,
 
     input wire logic barr_sync_i,
-    output logic [N_THREADS-1:0] barr_sync_total_o,
-    output logic [N_THREADS-1:0] barr_sync_parked_next_o,
+    output simd_mask_t barr_sync_total_o,
+    output simd_mask_t barr_sync_parked_next_o,
     output logic barr_sync_release_o,
+*/
+    input wire logic split_i,
+    input wire pc_t split_pc_i,
+    input wire simd_mask_t split_mask_i,
 
-    input wire logic branch_i,
-    // INFO: Don't hastily delete. These are used by the currently disabled branching logic.
-    input wire logic [RLEN-1:Z_PC] pc_branch_i,
-    input wire logic [N_THREADS-1:0] mask_branch_i,
-
-    output logic [RLEN-1:Z_PC] pc_o,
-    output logic [N_THREADS-1:0] mask_o
+    output pc_t pc_o,
+    output simd_mask_t mask_o
 );
-    logic [N_THREADS-1:0][RLEN-1:Z_PC] pc_list_r;
-    logic [N_THREADS-1:0][N_THREADS-1:0] mask_list_r;
+    pc_t [N_THREADS-1:0] pc_list_r;
+    simd_mask_t [N_THREADS-1:0] mask_list_r;
     logic [W_THREADS-1:0] path_id_r;
 
     logic [N_THREADS-1:0] path_valid_w;
@@ -88,12 +87,12 @@ module thread_scheduler
         end
     end
 
-    logic [RLEN-1:Z_PC] pc_w;
+    pc_t pc_w;
     assign pc_w = pc_list_r[path_id_r];
 
-    logic [N_THREADS-1:0] mask_w;
+    simd_mask_t mask_w;
     assign mask_w = mask_list_r[path_id_r];
-
+/*
     logic [N_THREADS-1:0] barr_total_r;
     logic [N_THREADS-1:0] barr_parked_r;
 
@@ -102,6 +101,10 @@ module thread_scheduler
 
     logic barr_release_w;
     assign barr_release_w = (barr_total_r == barr_parked_next_w);
+*/
+
+    simd_mask_t split_mask_remain_w;
+    assign split_mask_remain_w = mask_w & ~split_mask_i;
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -112,13 +115,14 @@ module thread_scheduler
                 pc_list_r[i] <= '0;
                 mask_list_r[i] <= '0;
             end
-            barr_total_r <= '0;
-            barr_parked_r <= '0;
+            // barr_total_r <= '0;
+            // barr_parked_r <= '0;
         end else if (en) begin
             pc_list_r[path_id_r] <= pc_next_i;
 
             unique0 if (yield_i) begin
                 path_id_r <= path_id_next_w;
+                /*
             end else if (barr_load_i) begin
                 barr_total_r <= barr_load_total_i;
                 barr_parked_r <= barr_load_parked_i;
@@ -138,27 +142,19 @@ module thread_scheduler
 
                     assert (path_id_next_w != path_id_r) else $error("Path ID did not change during barrier sync park.");
                 end
-            end else if (branch_i) begin
-                $error("Branch not implemented!");
-
-                /*
-                assert ((mask_branch_i & ~mask_w) == '0) else $error("Branch mask is not a subset of the active thread mask.");
-                assert (mask_branch_i != '0) else $error("Branch fired with empty taken mask.");
-
-                if (mask_remain_valid_w) begin
-                    // Divergent Jump: Path splinters. Allocate an empty slot for the taken threads, keeping the fall-through threads here.
-                    // Mathematical Guarantee: Because N_THREADS == MAX_PATHS, we can never run out of empty slots during divergence.
-                    assert (empty_found_w) else $error("No empty path found during divergence.");
-
-                    pc_list_r[path_id_empty_w] <= pc_branch_i;
-                    mask_list_r[path_id_empty_w] <= mask_branch_i;
-                    mask_list_r[path_id_r] <= mask_remain_w;
-                end else begin
-                    // Uniform Jump: All threads took the branch. Overwrite the current slot to avoid wasting path capacity.
-                    pc_list_r[path_id_r] <= pc_branch_i;
-                    // mask_list_r[path_id_r] <= mask_branch_i; // Not needed since this only happens when mask_w == mask_branch_i
-                end
                 */
+            end else if (split_i) begin
+                assert (split_mask_i != mask_w) else $error("Split mask is equal to the active thread mask.");
+                assert ((split_mask_i & ~mask_w) == '0) else $error("Split mask is not a subset of the active thread mask.");
+                assert (split_mask_i != '0) else $error("Split fired with empty taken mask.");
+
+                // Divergent Jump: Path splinters. Allocate an empty slot for the taken threads, keeping the fall-through threads here.
+                // Mathematical Guarantee: Because N_THREADS == MAX_PATHS, we can never run out of empty slots during divergence.
+                assert (empty_found_w) else $error("No empty path found during divergence.");
+
+                pc_list_r[path_id_empty_w] <= split_pc_i;
+                mask_list_r[path_id_empty_w] <= split_mask_i;
+                mask_list_r[path_id_r] <= split_mask_remain_w;
             end
         end
     end
@@ -166,10 +162,11 @@ module thread_scheduler
     assign pc_o   = pc_w;
     assign mask_o = mask_w;
 
+    /*
     assign barr_sync_total_o = barr_total_r;
     assign barr_sync_parked_next_o = barr_parked_next_w;
     assign barr_sync_release_o = barr_release_w;
-
+    */
 endmodule
 
 `default_nettype wire

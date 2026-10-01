@@ -5,6 +5,7 @@ package control_unit_pkg;
 
 	typedef enum logic [1:0] {
 		IMM_TYPE_I,
+		IMM_TYPE_B,
 		IMM_TYPE_J,
 		IMM_TYPE_U
 	} imm_type_e;
@@ -77,8 +78,9 @@ package control_unit_pkg;
 		FPU_OP2_SEL_RS3
 	} fpu_op2_sel_e;
 
-	typedef enum logic {
+	typedef enum logic [1:0] {
 		BJ_TYPE_NONE,
+		BJ_TYPE_BEQ,
 		BJ_TYPE_JAL
 	} bj_type_e;
 

@@ -41,7 +41,7 @@ package params_pkg;
     typedef logic [N_THREADS-1:0][RLEN-1:0] simd_data_t;
     typedef logic [RLEN-1:Z_PC] pc_t;
 
-    localparam int ROB_SIZE = 65536; // FIXME: An absurdly large value for safety. Check how long this should be later.
+    localparam int ROB_SIZE = (1 << 12); // FIXME: An absurdly large value for safety. Check how long this should be later.
     localparam int W_ROB_ADDR = $clog2(ROB_SIZE);
 
     typedef logic [W_ROB_ADDR-1:0] seq_t;

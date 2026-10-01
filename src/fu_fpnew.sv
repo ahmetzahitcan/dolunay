@@ -26,18 +26,20 @@ module fu_fpnew
     logic [2:0][FPU_WIDTH-1:0] fpu_operands;
     always_comb begin
         fpu_operands = 'x;
-        for (integer I = 0; I < N_THREADS; I++) begin
-            unique case(in_operation_i.instr.fpu_op0_sel)
-                FPU_OP0_SEL_RS1: fpu_operands[0][I*RLEN +: RLEN] = in_operation_i.rs1_data[I];
-            endcase
-            unique case(in_operation_i.instr.fpu_op1_sel)
-                FPU_OP1_SEL_RS1: fpu_operands[1][I*RLEN +: RLEN] = in_operation_i.rs1_data[I];
-                FPU_OP1_SEL_RS2: fpu_operands[1][I*RLEN +: RLEN] = in_operation_i.rs2_data[I];
-            endcase
-            unique case(in_operation_i.instr.fpu_op2_sel)
-                FPU_OP2_SEL_RS2: fpu_operands[2][I*RLEN +: RLEN] = in_operation_i.rs2_data[I];
-                FPU_OP2_SEL_RS3: fpu_operands[2][I*RLEN +: RLEN] = in_operation_i.rs3_data[I];
-            endcase
+        if (in_valid_i) begin
+            for (integer I = 0; I < N_THREADS; I++) begin
+                unique case(in_operation_i.instr.fpu_op0_sel)
+                    FPU_OP0_SEL_RS1: fpu_operands[0][I*RLEN +: RLEN] = in_operation_i.rs1_data[I];
+                endcase
+                unique case(in_operation_i.instr.fpu_op1_sel)
+                    FPU_OP1_SEL_RS1: fpu_operands[1][I*RLEN +: RLEN] = in_operation_i.rs1_data[I];
+                    FPU_OP1_SEL_RS2: fpu_operands[1][I*RLEN +: RLEN] = in_operation_i.rs2_data[I];
+                endcase
+                unique case(in_operation_i.instr.fpu_op2_sel)
+                    FPU_OP2_SEL_RS2: fpu_operands[2][I*RLEN +: RLEN] = in_operation_i.rs2_data[I];
+                    FPU_OP2_SEL_RS3: fpu_operands[2][I*RLEN +: RLEN] = in_operation_i.rs3_data[I];
+                endcase
+            end
         end
     end
 

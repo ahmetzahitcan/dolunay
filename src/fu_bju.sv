@@ -16,11 +16,17 @@ module fu_bju
 
     output logic out_valid_o,
     input wire logic out_ready_i,
-    output fu_result_s out_result_o
+    output fu_result_s out_result_o,
+
+    // FIXME: If I ever switch to true OoO, these have to be moved to the commit stage.
+    output logic branch_complete_o,
+    output simd_mask_t branch_mask_o
 );
 
     fu_operation_s operation_w;
     fu_result_s result_w;
+
+    logic operation_strobe_w;
 
     fuhelper_combinatorial u_fuhelper_combinatorial (
     	.clk             (clk),
@@ -32,7 +38,8 @@ module fu_bju
     	.out_ready_i     (out_ready_i),
     	.out_result_o    (out_result_o),
     	.comb_operation_o(operation_w),
-    	.comb_result_i   (result_w)
+    	.comb_result_i   (result_w),
+        .operation_strobe_o(operation_strobe_w)
     );
 
     logic [RLEN-1:Z_PC] link_address_w;
@@ -40,6 +47,31 @@ module fu_bju
 
     logic [RLEN-1:0] link_address32_w;
     assign link_address32_w = {link_address_w, {(Z_PC){1'b0}}};
+
+    simd_mask_t branch_mask_w;
+    always_comb begin
+        branch_mask_w = 'x;
+        for (int i = 0; i < N_THREADS; i++) begin
+            unique case (operation_w.instr.bj_type)
+                BJ_TYPE_NONE: branch_mask_w[i] = 'x;
+                BJ_TYPE_JAL: branch_mask_w[i] = 'x;
+                BJ_TYPE_BEQ: branch_mask_w[i] = operation_w.rs1_data[i] == operation_w.rs2_data[i];
+            endcase
+        end
+    end
+
+    logic branch_w;
+    always_comb begin
+        branch_w = 'x;
+        unique case (operation_w.instr.bj_type)
+            BJ_TYPE_NONE: branch_w = 0;
+            BJ_TYPE_JAL: branch_w = 0;
+            BJ_TYPE_BEQ: branch_w = 1;
+        endcase
+    end
+
+    assign branch_complete_o = operation_strobe_w && branch_w;
+    assign branch_mask_o = branch_mask_w;
 
     assign result_w = '{
         seq: operation_w.seq,

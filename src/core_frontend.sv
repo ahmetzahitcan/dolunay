@@ -72,33 +72,44 @@ module core_frontend
     output warp_id_t hsb_warp_id_o,
     input wire hazard_mask_t hsb_busy_i,
     output hazard_mask_t hsb_acq_mask_o,
-    output seq_t hsb_acq_seq_o
+    output seq_t hsb_acq_seq_o,
+
+    // Branch interface
+    input wire logic branch_complete_i,
+    input wire simd_mask_t branch_mask_i
 );
 
     // Pipeline control
     logic dp_in_handshake_w;
     logic ra_sb_busy_w, ra_hsb_busy_w;
-    logic if_delay_slot;
+    logic if_delay_slot_w;
+    logic id_delay_slot_w;
+
+    // - Branching signals
+    logic branching_r;
+    pc_t branch_addr_r;
+    warp_id_t branch_warp_id_r;
 
     // - Indicate whether a stage contains a valid instruction.
     logic if_stage_valid_r, id_stage_valid_r, ra_stage_valid_r, dp_stage_valid_r;
-
-    // - Indicate whether a stage should stall. These stages will send bubbles to the next stages.
-    logic ws_stage_stall_w, if_stage_stall_w, id_stage_stall_w, ra_stage_stall_w, dp_stage_stall_w;
-
-    assign ws_stage_stall_w = if_stage_stall_w;
-    assign if_stage_stall_w = id_stage_stall_w;
-    assign id_stage_stall_w = ra_stage_stall_w;
-    assign ra_stage_stall_w = dp_stage_stall_w || (ra_stage_valid_r && (ra_sb_busy_w || ra_hsb_busy_w));
-    assign dp_stage_stall_w = dp_stage_valid_r && !dp_in_handshake_w;
 
     // - Indicate whether a stage should be flushed. For each flushed stage, in the next cycle, NEXT stage will contain a bubble.
     logic ws_stage_flush_w, if_stage_flush_w, id_stage_flush_w, ra_stage_flush_w;
 
     assign ws_stage_flush_w = '0;
-    assign if_stage_flush_w = if_delay_slot;
-    assign id_stage_flush_w = '0;
+    assign if_stage_flush_w = if_delay_slot_w;
+    assign id_stage_flush_w = id_delay_slot_w;
     assign ra_stage_flush_w = '0;
+
+    // - Indicate whether a stage should stall. These stages will send bubbles to the next stages.
+    logic ws_stage_stall_w, if_stage_stall_w, id_stage_stall_w, ra_stage_stall_w, dp_stage_stall_w;
+
+    assign ws_stage_stall_w = if_stage_stall_w;
+    assign if_stage_stall_w = !ws_stage_flush_w && id_stage_stall_w;
+    assign id_stage_stall_w = !if_stage_flush_w && (ra_stage_stall_w || (id_stage_valid_r && branching_r));
+    assign ra_stage_stall_w = !id_stage_flush_w && (dp_stage_stall_w || (ra_stage_valid_r && (ra_sb_busy_w || ra_hsb_busy_w)));
+    assign dp_stage_stall_w = !ra_stage_flush_w && (dp_stage_valid_r && !dp_in_handshake_w);
+
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -172,7 +183,31 @@ module core_frontend
     pc_t if_pc_p1_w;
     assign if_pc_p1_w = if_pc_w + 1;
 
-    assign if_delay_slot = id_jump_w && (if_warp_id_r == id_warp_id_r);
+    enum logic[1:0] {
+        BR_UNIFORM_ALL,
+        BR_UNIFORM_NONE,
+        BR_DIVERGENT
+    } branch_type_w;
+
+    always_comb begin
+        branch_type_w = BR_DIVERGENT;
+        if (branch_mask_i == id_mask_r) branch_type_w = BR_UNIFORM_ALL;
+        if (branch_mask_i == 0) branch_type_w = BR_UNIFORM_NONE;
+    end
+
+    logic br_jump_w;
+    assign br_jump_w = branch_complete_i && branch_type_w == BR_UNIFORM_ALL;
+
+    logic jump_w; // FIXME: there has to be a better name here.
+    assign jump_w = id_jump_w || br_jump_w;
+
+    pc_t jump_addr_w;
+    assign jump_addr_w = branching_r ? branch_addr_r : id_jump_addr_w;
+
+    assign if_delay_slot_w = (id_jump_w && (if_warp_id_r == id_warp_id_r)) || (br_jump_w && (if_warp_id_r == branch_warp_id_r));
+
+    logic split_w;
+    assign split_w = branch_complete_i && branch_type_w == BR_DIVERGENT;
 
     // - Thread Schedulers
     generate
@@ -183,15 +218,23 @@ module core_frontend
             assign u_thread_scheduler_pc_w[I] = pc_w;
             assign u_thread_scheduler_mask_w[I] = mask_w;
 
+            logic en;
+            assign en = (branch_complete_i && branch_warp_id_r == I) ||
+                (if_stage_valid_r && !if_stage_stall_w && (if_warp_id_r == I));
+
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n), // FIXME: start_i
-                .en(if_stage_valid_r && !if_stage_stall_w && (if_warp_id_r == I)),
+                .en(en),
 
                 // INFO: Hazards are now managed by the scoreboard. Therefore, increase so long as there is no branch/jump.
-                .pc_next_i(id_jump_w ? id_jump_addr_w : if_pc_p1_w),
-                .yield_i(),
+                .pc_next_i(jump_w ? jump_addr_w : if_pc_p1_w),
+                .yield_i(0),
 
+                .split_i(split_w),
+                .split_pc_i(jump_addr_w),
+                .split_mask_i(branch_mask_i),
+/*
                 .barr_sync_i(),
                 .barr_sync_total_o(),
                 .barr_sync_parked_next_o(),
@@ -200,11 +243,7 @@ module core_frontend
                 .barr_load_i(),
                 .barr_load_total_i(),
                 .barr_load_parked_i(),
-
-                .branch_i(),
-                .pc_branch_i(),
-                .mask_branch_i(),
-
+*/
                 .pc_o(pc_w),
                 .mask_o(mask_w)
             );
@@ -260,16 +299,55 @@ module core_frontend
 
     // - Branch/Jump
 
+    assign id_delay_slot_w = br_jump_w && (id_warp_id_r == branch_warp_id_r);
     assign id_jump_addr_w = id_pc_r + id_instr_w.imm[RLEN-1:Z_PC];
+
     always_comb begin
         id_jump_w = 'x;
         if (id_stage_valid_r) begin
             unique case (id_instr_w.bj_type)
                 BJ_TYPE_NONE: id_jump_w = 0;
                 BJ_TYPE_JAL: id_jump_w = 1;
+                BJ_TYPE_BEQ: id_jump_w = 0;
             endcase
         end else begin
             id_jump_w = 0;
+        end
+    end
+
+    logic id_branching_w;
+
+    always_comb begin
+        id_branching_w = 'x;
+        if (id_stage_valid_r) begin
+            unique case (id_instr_w.bj_type)
+                BJ_TYPE_NONE: id_branching_w = 0;
+                BJ_TYPE_JAL: id_branching_w = 0;
+                BJ_TYPE_BEQ: id_branching_w = 1;
+            endcase
+        end else begin
+            id_branching_w = 0;
+        end
+    end
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            branching_r <= 0;
+            branch_addr_r <= 'x;
+            branch_warp_id_r <= 'x;
+        end else begin
+            unique0 if (id_branching_w && branch_complete_i) begin
+                branching_r <= 1;
+            end else if (id_branching_w && !branch_complete_i) begin
+                branching_r <= 1;
+            end else if (!id_branching_w && branch_complete_i) begin
+                branching_r <= 0;
+            end
+
+            if (id_branching_w && (branch_complete_i || !branching_r)) begin
+                branch_addr_r <= id_jump_addr_w;
+                branch_warp_id_r <= id_warp_id_r;
+            end
         end
     end
 

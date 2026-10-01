@@ -40,6 +40,13 @@ module register_file
     // slang lint_off unused-but-set-variable
         logic [RLEN-1:0] sim__regs_shadow_w [0:N_WARPS-1][0:N_THREADS-1][0:N_REGFILES-1][0:N_REGISTERS-1];
     // slang lint_on unused-but-set-variable
+
+        logic sim__init;
+        initial begin
+            sim__init = 1;
+            @(posedge clk);
+            @(posedge clk) sim__init = 0;
+        end
     `endif
 
     generate
@@ -61,6 +68,16 @@ module register_file
             `endif
 
             always_ff @(posedge clk) begin
+                `ifndef SYNTHESIS
+                    if (sim__init) begin
+                        for (int W = 0; W < N_WARPS; W++) begin
+                            for (int R = 0; R < N_REGISTERS; R++) begin
+                                regs_r[W * N_REGFILES * N_REGISTERS + int'(REGFILE_SEL_I) * N_REGISTERS + R] <= unsigned'(W << 16) | T;
+                            end
+                        end
+                    end
+                `endif
+
                 if (write_en_mask_i[T]) begin
                     regs_r[int'(write_warp_id_i) * N_REGFILES * N_REGISTERS + int'(rd_regfile_i) * N_REGISTERS + int'(rd_idx_i)] <= write_data_i[T];
                 end

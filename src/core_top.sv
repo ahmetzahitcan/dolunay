@@ -201,6 +201,10 @@ module core_top
 
     // - Front-end
 
+    // FIXME: find a better place to put these
+    logic branch_complete_w;
+    simd_mask_t branch_mask_w;
+
     core_frontend #(
         .IROM_SIZE(IROM_SIZE)
     ) u_core_frontend (
@@ -246,7 +250,10 @@ module core_top
         .hsb_warp_id_o(hsb_frontend_warp_id_w),
         .hsb_acq_mask_o(hsb_acq_mask_w),
         .hsb_acq_seq_o(hsb_acq_seq_w),
-        .hsb_busy_i(hsb_busy_w)
+        .hsb_busy_i(hsb_busy_w),
+
+        .branch_complete_i(branch_complete_w),
+        .branch_mask_i(branch_mask_w)
     );
 
     // - Function Units
@@ -297,7 +304,9 @@ module core_top
     	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_BJU]),
     	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_BJU]),
     	.in_operation_i (fu_in_operation_w),
-        .out_result_o   (fu_result_w[FUNCTION_UNIT_BJU])
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_BJU]),
+        .branch_complete_o(branch_complete_w),
+        .branch_mask_o(branch_mask_w)
     );
 
     // - Back-end
