@@ -40,7 +40,7 @@ module fu_fpnew
     end
 
     // FIXME: For simplicity, we hard code dynamic to RNE
-    // TODO: FRM needs to split the path! There is no real use for SIMD rounding mode, but different paths can still have their own FRM.
+    // TODO: FRM needs replay! There is no real use for SIMD rounding mode, but coscheduled threads can still have their own FRM.
     fpnew_pkg::roundmode_e fpu_rnd_mode;
     assign fpu_rnd_mode = in_operation_i.instr.fpu_roundmode == 3'b111 ? fpnew_pkg::RNE : fpnew_pkg::roundmode_e'(in_operation_i.instr.fpu_roundmode);
 
