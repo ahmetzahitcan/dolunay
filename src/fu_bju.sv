@@ -41,16 +41,15 @@ module fu_bju
     logic [RLEN-1:0] link_address32_w;
     assign link_address32_w = {link_address_w, {(Z_PC){1'b0}}};
 
-    simd_data_t link_address32_simd_w;
-    assign link_address32_simd_w = '{default: link_address32_w};
-
     assign result_w = '{
         seq: operation_w.seq,
         warp_id: operation_w.warp_id,
         instr: operation_w.instr,
         pc: operation_w.pc,
         mask: operation_w.mask,
-        wb_result: link_address32_simd_w,
+        use_uwb: '1,
+        uwb_result: link_address32_w,
+        wb_result: 'x,
         csrw_result: 'x,
         fpu_status: 'x
     };

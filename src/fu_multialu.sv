@@ -32,7 +32,9 @@ module fu_multialu
         mask: operation_w.mask,
         wb_result: simd_result_w,
         fpu_status: 'x,
-        csrw_result: 'x
+        csrw_result: 'x,
+        use_uwb: '0,
+        uwb_result: 'x
     };
 
     generate

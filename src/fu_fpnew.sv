@@ -146,7 +146,9 @@ module fu_fpnew
         instr: out_tag_w.instr,
         fpu_status: status_w,
         wb_result: result_2d_w,
-        csrw_result: 'x
+        csrw_result: 'x,
+        use_uwb: '0,
+        uwb_result: 'x
     };
 
 endmodule

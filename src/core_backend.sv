@@ -112,7 +112,11 @@ module core_backend
     assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : 0;
     assign rf_rd_idx_o = wb_fu_result_r.instr.rd_idx;
     assign rf_rd_regfile_o = wb_fu_result_r.instr.rd_regfile;
-    assign rf_write_data_o = wb_fu_result_r.wb_result;
+
+    simd_data_t uwb_result_as_simd_w;
+    assign uwb_result_as_simd_w = '{default: wb_fu_result_r.uwb_result};
+
+    assign rf_write_data_o = wb_fu_result_r.use_uwb ? uwb_result_as_simd_w : wb_fu_result_r.wb_result;
 
     always_ff @(posedge clk) begin
         if (!rob_stall_w) begin

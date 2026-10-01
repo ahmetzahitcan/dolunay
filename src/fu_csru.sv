@@ -65,7 +65,9 @@ module fu_csru
         mask: operation_w.mask,
         wb_result: wb_result_w,
         csrw_result: csrw_result_w,
-        fpu_status: 'x
+        fpu_status: 'x,
+        use_uwb: '0,
+        uwb_result: 'x
     };
 
 endmodule

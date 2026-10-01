@@ -37,6 +37,7 @@ package params_pkg;
     typedef logic [N_THREADS-1:0] simd_mask_t;
     typedef logic [W_WARPS-1:0] warp_id_t;
     typedef logic [W_REGISTERS-1:0] reg_id_t;
+    typedef logic [RLEN-1:0] uniform_data_t;
     typedef logic [N_THREADS-1:0][RLEN-1:0] simd_data_t;
     typedef logic [RLEN-1:Z_PC] pc_t;
 
