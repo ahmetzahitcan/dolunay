@@ -7,7 +7,7 @@ module thread_scheduler
     input wire logic rst_n,
     input wire logic en,
 
-    input wire logic pc_inc_i,
+    input wire logic [RLEN-1:Z_PC] pc_next_i,
     input wire logic yield_i,
 
     input wire logic barr_load_i,
@@ -91,9 +91,6 @@ module thread_scheduler
     logic [RLEN-1:Z_PC] pc_w;
     assign pc_w = pc_list_r[path_id_r];
 
-    logic [RLEN-1:Z_PC] pc_p1_w;
-    assign pc_p1_w = pc_w + 1;
-
     logic [N_THREADS-1:0] mask_w;
     assign mask_w = mask_list_r[path_id_r];
 
@@ -118,10 +115,7 @@ module thread_scheduler
             barr_total_r <= '0;
             barr_parked_r <= '0;
         end else if (en) begin
-            if (pc_inc_i) begin
-                pc_list_r[path_id_r] <= pc_p1_w;
-
-            end
+            pc_list_r[path_id_r] <= pc_next_i;
 
             unique0 if (yield_i) begin
                 path_id_r <= path_id_next_w;

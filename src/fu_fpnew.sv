@@ -1,5 +1,7 @@
 `default_nettype none
 
+// Function Unit - FPnew wrapper
+
 module fu_fpnew
     import params_pkg::*;
     import control_unit_pkg::*;

@@ -1,8 +1,8 @@
 `default_nettype none
 
-// Function Unit - CSR Unit
+// Function Unit - Branch/Jump Unit
 
-module fu_csru
+module fu_bju
     import params_pkg::*;
     import control_unit_pkg::*;
     import core_pkg::*;
@@ -16,9 +16,7 @@ module fu_csru
 
     output logic out_valid_o,
     input wire logic out_ready_i,
-    output fu_result_s out_result_o,
-
-    input wire fpnew_pkg::status_t [N_THREADS-1:0] fflags_i
+    output fu_result_s out_result_o
 );
 
     fu_operation_s operation_w;
@@ -37,25 +35,14 @@ module fu_csru
     	.comb_result_i   (result_w)
     );
 
-    simd_data_t wb_result_w;
-    always_comb begin
-        wb_result_w = 'x;
-        for(int i = 0; i < N_THREADS; i++) begin
-            unique case (operation_w.instr.csrr_src)
-                CSRR_SRC_FFLAGS: wb_result_w[i] = {{(RLEN-$bits(fpnew_pkg::status_t)){1'b0}}, fflags_i[i]};
-            endcase
-        end
-    end
+    logic [RLEN-1:Z_PC] link_address_w;
+    assign link_address_w = operation_w.pc + 1;
 
-    simd_data_t csrw_result_w;
-    always_comb begin
-        csrw_result_w = 'x;
-        for(int i = 0; i < N_THREADS; i++) begin
-            unique case (operation_w.instr.csrw_method)
-                CSRW_METHOD_WRITE: csrw_result_w[i] = operation_w.rs1_data[i]; // TODO: uimm[5:0]
-            endcase
-        end
-    end
+    logic [RLEN-1:0] link_address32_w;
+    assign link_address32_w = {link_address_w, {(Z_PC){1'b0}}};
+
+    simd_data_t link_address32_simd_w;
+    assign link_address32_simd_w = '{default: link_address32_w};
 
     assign result_w = '{
         seq: operation_w.seq,
@@ -63,8 +50,8 @@ module fu_csru
         instr: operation_w.instr,
         pc: operation_w.pc,
         mask: operation_w.mask,
-        wb_result: wb_result_w,
-        csrw_result: csrw_result_w,
+        wb_result: link_address32_simd_w,
+        csrw_result: 'x,
         fpu_status: 'x
     };
 

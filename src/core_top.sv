@@ -289,6 +289,17 @@ module core_top
         .fflags_i       (fflags_w)
     );
 
+    fu_bju u_bju (
+    	.clk            (clk),
+    	.rst_n          (rst_n),
+    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_BJU]),
+    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_BJU]),
+    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_BJU]),
+    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_BJU]),
+    	.in_operation_i (fu_in_operation_w),
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_BJU])
+    );
+
     // - Back-end
 
     core_backend u_core_backend (

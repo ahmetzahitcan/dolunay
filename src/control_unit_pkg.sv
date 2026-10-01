@@ -3,8 +3,9 @@
 package control_unit_pkg;
 	import params_pkg::*;
 
-	typedef enum logic {
+	typedef enum logic [1:0] {
 		IMM_TYPE_I,
+		IMM_TYPE_J,
 		IMM_TYPE_U
 	} imm_type_e;
 
@@ -76,6 +77,11 @@ package control_unit_pkg;
 		FPU_OP2_SEL_RS3
 	} fpu_op2_sel_e;
 
+	typedef enum logic {
+		BJ_TYPE_NONE,
+		BJ_TYPE_JAL
+	} bj_type_e;
+
 	localparam int N_HAZARDS = 2;
 	localparam int W_HAZARDS = $clog2(N_HAZARDS);
 	localparam int I_HAZARDS_FFLAGS = 0;
@@ -113,6 +119,7 @@ package control_unit_pkg;
 		fpu_op0_sel_e fpu_op0_sel;
 		fpu_op1_sel_e fpu_op1_sel;
 		fpu_op2_sel_e fpu_op2_sel;
+		bj_type_e bj_type;
 	} instr_s;
 
 endpackage

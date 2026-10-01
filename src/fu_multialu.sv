@@ -1,5 +1,7 @@
 `default_nettype none
 
+// Function Unit - MultiALU
+
 // TODO: Seperate scalar operations into a different FU
 
 module fu_multialu

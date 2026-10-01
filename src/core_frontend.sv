@@ -76,14 +76,14 @@ module core_frontend
 );
 
     // Pipeline control
-
     logic dp_in_handshake_w;
     logic ra_sb_busy_w, ra_hsb_busy_w;
+    logic if_delay_slot;
 
     // - Indicate whether a stage contains a valid instruction.
     logic if_stage_valid_r, id_stage_valid_r, ra_stage_valid_r, dp_stage_valid_r;
 
-    // - Indicate whether a stage should stall.
+    // - Indicate whether a stage should stall. These stages will send bubbles to the next stages.
     logic ws_stage_stall_w, if_stage_stall_w, id_stage_stall_w, ra_stage_stall_w, dp_stage_stall_w;
 
     assign ws_stage_stall_w = if_stage_stall_w;
@@ -92,6 +92,14 @@ module core_frontend
     assign ra_stage_stall_w = dp_stage_stall_w || (ra_stage_valid_r && (ra_sb_busy_w || ra_hsb_busy_w));
     assign dp_stage_stall_w = dp_stage_valid_r && !dp_in_handshake_w;
 
+    // - Indicate whether a stage should be flushed. For each flushed stage, in the next cycle, NEXT stage will contain a bubble.
+    logic ws_stage_flush_w, if_stage_flush_w, id_stage_flush_w, ra_stage_flush_w;
+
+    assign ws_stage_flush_w = '0;
+    assign if_stage_flush_w = if_delay_slot;
+    assign id_stage_flush_w = '0;
+    assign ra_stage_flush_w = '0;
+
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             if_stage_valid_r <= '0;
@@ -99,10 +107,10 @@ module core_frontend
             ra_stage_valid_r <= '0;
             dp_stage_valid_r <= '0;
         end else begin
-            if (!if_stage_stall_w) if_stage_valid_r <= !ws_stage_stall_w;
-            if (!id_stage_stall_w) id_stage_valid_r <= if_stage_valid_r & !if_stage_stall_w;
-            if (!ra_stage_stall_w) ra_stage_valid_r <= id_stage_valid_r & !id_stage_stall_w;
-            if (!dp_stage_stall_w) dp_stage_valid_r <= ra_stage_valid_r & !ra_stage_stall_w;
+            if (!if_stage_stall_w) if_stage_valid_r <= !ws_stage_stall_w & !ws_stage_flush_w;
+            if (!id_stage_stall_w) id_stage_valid_r <= if_stage_valid_r & !if_stage_stall_w & !if_stage_flush_w;
+            if (!ra_stage_stall_w) ra_stage_valid_r <= id_stage_valid_r & !id_stage_stall_w & !id_stage_flush_w;
+            if (!dp_stage_stall_w) dp_stage_valid_r <= ra_stage_valid_r & !ra_stage_stall_w & !ra_stage_flush_w;
         end
     end
 
@@ -112,6 +120,8 @@ module core_frontend
     warp_id_t if_warp_id_r;
 
     // - Instruction Decode stage signals
+    pc_t id_jump_addr_w;
+    logic id_jump_w;
     pc_t id_pc_r;
     simd_mask_t id_mask_r;
     logic [31:2] id_undec_instr32_w;
@@ -150,25 +160,36 @@ module core_frontend
     end
 
     // Instruction Fetch
-    logic [N_WARPS-1:0][RLEN-1:Z_PC] u_thread_scheduler_pc_w;
-    logic [N_WARPS-1:0][N_THREADS-1:0] u_thread_scheduler_mask_w;
+    pc_t [N_WARPS-1:0] u_thread_scheduler_pc_w;
+    simd_mask_t [N_WARPS-1:0] u_thread_scheduler_mask_w;
 
-    logic [RLEN-1:Z_PC] if_pc_w;
-    logic [N_THREADS-1:0] if_mask_w;
+    pc_t if_pc_w;
+    simd_mask_t if_mask_w;
 
     assign if_pc_w = u_thread_scheduler_pc_w[if_warp_id_r];
     assign if_mask_w = u_thread_scheduler_mask_w[if_warp_id_r];
 
+    pc_t if_pc_p1_w;
+    assign if_pc_p1_w = if_pc_w + 1;
+
+    assign if_delay_slot = id_jump_w && (if_warp_id_r == id_warp_id_r);
+
     // - Thread Schedulers
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin : gen_thread_schedulers
+            pc_t pc_w;
+            simd_mask_t mask_w;
+
+            assign u_thread_scheduler_pc_w[I] = pc_w;
+            assign u_thread_scheduler_mask_w[I] = mask_w;
+
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
                 .rst_n(rst_n), // FIXME: start_i
                 .en(if_stage_valid_r && !if_stage_stall_w && (if_warp_id_r == I)),
 
                 // INFO: Hazards are now managed by the scoreboard. Therefore, increase so long as there is no branch/jump.
-                .pc_inc_i(1), // FIXME: branch/jump should clear this.
+                .pc_next_i(id_jump_w ? id_jump_addr_w : if_pc_p1_w),
                 .yield_i(),
 
                 .barr_sync_i(),
@@ -184,8 +205,8 @@ module core_frontend
                 .pc_branch_i(),
                 .mask_branch_i(),
 
-                .pc_o(u_thread_scheduler_pc_w[I]),
-                .mask_o(u_thread_scheduler_mask_w[I])
+                .pc_o(pc_w),
+                .mask_o(mask_w)
             );
         end
     endgenerate
@@ -236,6 +257,21 @@ module core_frontend
         .pc_i(id_pc_r),
         .instr_o(id_instr_w)
     );
+
+    // - Branch/Jump
+
+    assign id_jump_addr_w = id_pc_r + id_instr_w.imm[RLEN-1:Z_PC];
+    always_comb begin
+        id_jump_w = 'x;
+        if (id_stage_valid_r) begin
+            unique case (id_instr_w.bj_type)
+                BJ_TYPE_NONE: id_jump_w = 0;
+                BJ_TYPE_JAL: id_jump_w = 1;
+            endcase
+        end else begin
+            id_jump_w = 0;
+        end
+    end
 
     // - Pipeline Registers
 
