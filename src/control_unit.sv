@@ -1276,6 +1276,156 @@ module control_unit
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_BEQ;
             end
+            30'b?????????????????001?????11000: begin // BNE
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "bne $1, $2, $p";
+                `endif
+                imm_type_w = IMM_TYPE_B;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_BJU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_BNE;
+            end
+            30'b?????????????????100?????11000: begin // BLT
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "blt $1, $2, $p";
+                `endif
+                imm_type_w = IMM_TYPE_B;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_BJU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_BLT;
+            end
+            30'b?????????????????101?????11000: begin // BGE
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "bge $1, $2, $p";
+                `endif
+                imm_type_w = IMM_TYPE_B;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_BJU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_BGE;
+            end
+            30'b?????????????????110?????11000: begin // BLTU
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "bltu $1, $2, $p";
+                `endif
+                imm_type_w = IMM_TYPE_B;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_BJU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_BLTU;
+            end
+            30'b?????????????????111?????11000: begin // BGEU
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "bgeu $1, $2, $p";
+                `endif
+                imm_type_w = IMM_TYPE_B;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_BJU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_BGEU;
+            end
             30'b?????00??????????????????10000: begin // FMADD_S
                 `ifndef SYNTHESIS
                 sim__disasm_format_w = "fmadd.s $d, $1, $2, $3, $r";

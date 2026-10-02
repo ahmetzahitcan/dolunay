@@ -20,7 +20,15 @@ module fu_bju
 
     // FIXME: If I ever switch to true OoO, these have to be moved to the commit stage.
     output logic branch_complete_o,
-    output simd_mask_t branch_mask_o
+    output simd_mask_t branch_mask_o,
+    output branch_type_e branch_type_o,
+    // Identity/target of the resolving branch, taken straight from the
+    // operation. The front-end must not guess these from its decode stage:
+    // with more than one warp the decode stage may hold a different warp by
+    // the time the branch resolves.
+    output warp_id_t branch_warp_id_o,
+    output pc_t branch_pc_o,
+    output pc_t branch_target_o
 );
 
     fu_operation_s operation_w;
@@ -56,6 +64,11 @@ module fu_bju
                 BJ_TYPE_NONE: branch_mask_w[i] = 'x;
                 BJ_TYPE_JAL: branch_mask_w[i] = 'x;
                 BJ_TYPE_BEQ: branch_mask_w[i] = operation_w.rs1_data[i] == operation_w.rs2_data[i];
+                BJ_TYPE_BNE: branch_mask_w[i] = operation_w.rs1_data[i] != operation_w.rs2_data[i];
+                BJ_TYPE_BLT: branch_mask_w[i] = signed'(operation_w.rs1_data[i]) < signed'(operation_w.rs2_data[i]);
+                BJ_TYPE_BGE: branch_mask_w[i] = signed'(operation_w.rs1_data[i]) >= signed'(operation_w.rs2_data[i]);
+                BJ_TYPE_BLTU: branch_mask_w[i] = unsigned'(operation_w.rs1_data[i]) < unsigned'(operation_w.rs2_data[i]);
+                BJ_TYPE_BGEU: branch_mask_w[i] = unsigned'(operation_w.rs1_data[i]) >= unsigned'(operation_w.rs2_data[i]);
             endcase
         end
     end
@@ -67,11 +80,36 @@ module fu_bju
             BJ_TYPE_NONE: branch_w = 0;
             BJ_TYPE_JAL: branch_w = 0;
             BJ_TYPE_BEQ: branch_w = 1;
+            BJ_TYPE_BNE: branch_w = 1;
+            BJ_TYPE_BLT: branch_w = 1;
+            BJ_TYPE_BGE: branch_w = 1;
+            BJ_TYPE_BLTU: branch_w = 1;
+            BJ_TYPE_BGEU: branch_w = 1;
         endcase
     end
 
+    // Only the threads that are active for this operation matter, so mask the
+    // per-thread comparison results with the operation's active thread mask.
+    // Doing the classification here (rather than in the front-end) guarantees
+    // it uses the mask the branch itself executed with, which is not
+    // necessarily the mask currently sitting in the decode stage.
+    simd_mask_t taken_mask_w;
+    assign taken_mask_w = branch_mask_w & operation_w.mask;
+
+    branch_type_e branch_type_w;
+    always_comb begin
+        branch_type_w = BR_DIVERGENT;
+        if (taken_mask_w == operation_w.mask) branch_type_w = BR_UNIFORM_ALL;
+        if (taken_mask_w == '0) branch_type_w = BR_UNIFORM_NONE;
+    end
+
     assign branch_complete_o = operation_strobe_w && branch_w;
-    assign branch_mask_o = branch_mask_w;
+    assign branch_mask_o = taken_mask_w;
+    assign branch_type_o = branch_type_w;
+
+    assign branch_warp_id_o = operation_w.warp_id;
+    assign branch_pc_o      = operation_w.pc;
+    assign branch_target_o  = operation_w.pc + operation_w.instr.imm[RLEN-1:Z_PC];
 
     assign result_w = '{
         seq: operation_w.seq,

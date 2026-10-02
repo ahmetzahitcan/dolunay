@@ -30,6 +30,16 @@ package core_pkg;
 
     typedef logic [N_HAZARDS-1:0] hazard_mask_t;
 
+    // Classification of a branch with respect to the active thread mask.
+    //   BR_UNIFORM_ALL : every active thread takes the branch
+    //   BR_UNIFORM_NONE: no active thread takes the branch
+    //   BR_DIVERGENT   : some active threads take the branch, others do not
+    typedef enum logic [1:0] {
+        BR_UNIFORM_ALL,
+        BR_UNIFORM_NONE,
+        BR_DIVERGENT
+    } branch_type_e;
+
 endpackage
 
 `default_nettype wire

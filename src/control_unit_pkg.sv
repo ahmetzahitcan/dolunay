@@ -78,9 +78,14 @@ package control_unit_pkg;
 		FPU_OP2_SEL_RS3
 	} fpu_op2_sel_e;
 
-	typedef enum logic [1:0] {
+	typedef enum logic [2:0] {
 		BJ_TYPE_NONE,
 		BJ_TYPE_BEQ,
+		BJ_TYPE_BNE,
+		BJ_TYPE_BLT,
+		BJ_TYPE_BGE,
+		BJ_TYPE_BLTU,
+		BJ_TYPE_BGEU,
 		BJ_TYPE_JAL
 	} bj_type_e;
 

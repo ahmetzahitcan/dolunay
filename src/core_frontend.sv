@@ -76,7 +76,11 @@ module core_frontend
 
     // Branch interface
     input wire logic branch_complete_i,
-    input wire simd_mask_t branch_mask_i
+    input wire simd_mask_t branch_mask_i,
+    input wire branch_type_e branch_type_i,
+    input wire warp_id_t branch_warp_id_i,
+    input wire pc_t branch_pc_i,
+    input wire pc_t branch_target_i
 );
 
     // Pipeline control
@@ -87,8 +91,6 @@ module core_frontend
 
     // - Branching signals
     logic branching_r;
-    pc_t branch_addr_r;
-    warp_id_t branch_warp_id_r;
 
     // - Indicate whether a stage contains a valid instruction.
     logic if_stage_valid_r, id_stage_valid_r, ra_stage_valid_r, dp_stage_valid_r;
@@ -106,7 +108,7 @@ module core_frontend
 
     assign ws_stage_stall_w = if_stage_stall_w;
     assign if_stage_stall_w = !ws_stage_flush_w && id_stage_stall_w;
-    assign id_stage_stall_w = !if_stage_flush_w && (ra_stage_stall_w || (id_stage_valid_r && branching_r));
+    assign id_stage_stall_w = !if_stage_flush_w && (ra_stage_stall_w || (id_stage_valid_r && branching_r && !id_branching_w));
     assign ra_stage_stall_w = !id_stage_flush_w && (dp_stage_stall_w || (ra_stage_valid_r && (ra_sb_busy_w || ra_hsb_busy_w)));
     assign dp_stage_stall_w = !ra_stage_flush_w && (dp_stage_valid_r && !dp_in_handshake_w);
 
@@ -183,20 +185,8 @@ module core_frontend
     pc_t if_pc_p1_w;
     assign if_pc_p1_w = if_pc_w + 1;
 
-    enum logic[1:0] {
-        BR_UNIFORM_ALL,
-        BR_UNIFORM_NONE,
-        BR_DIVERGENT
-    } branch_type_w;
-
-    always_comb begin
-        branch_type_w = BR_DIVERGENT;
-        if (branch_mask_i == id_mask_r) branch_type_w = BR_UNIFORM_ALL;
-        if (branch_mask_i == 0) branch_type_w = BR_UNIFORM_NONE;
-    end
-
     assign if_delay_slot_w = (id_jump_w && if_warp_id_r == id_warp_id_r) ||
-        (branch_complete_i && branch_type_w == BR_UNIFORM_ALL && if_warp_id_r == branch_warp_id_r);
+        (branch_complete_i && branch_type_i == BR_UNIFORM_ALL && if_warp_id_r == branch_warp_id_i);
 
     logic split_w;
     pc_t pc_next_w;
@@ -208,21 +198,21 @@ module core_frontend
         split_addr_w = 'x;
 
         if (branch_complete_i) begin
-            unique case (branch_type_w)
+            unique case (branch_type_i)
                 BR_UNIFORM_ALL: begin
-                    pc_next_w = branch_addr_r;
+                    pc_next_w = branch_target_i;
                     split_w = 0;
                     split_addr_w = 'x;
                 end
                 BR_UNIFORM_NONE: begin
-                    pc_next_w = if_pc_w;
+                    pc_next_w = branch_pc_i + 1;
                     split_w = 0;
                     split_addr_w = 'x;
                 end
                 BR_DIVERGENT: begin
-                    pc_next_w = if_pc_w;
+                    pc_next_w = branch_pc_i + 1;
                     split_w = 1;
-                    split_addr_w = branch_addr_r;
+                    split_addr_w = branch_target_i;
                 end
             endcase
         end else begin
@@ -248,7 +238,7 @@ module core_frontend
             assign u_thread_scheduler_mask_w[I] = mask_w;
 
             logic en;
-            assign en = (branch_complete_i && branch_warp_id_r == I) ||
+            assign en = (branch_complete_i && branch_warp_id_i == I) ||
                 (if_stage_valid_r && !if_stage_stall_w && (if_warp_id_r == I));
 
             thread_scheduler u_thread_scheduler(
@@ -327,7 +317,7 @@ module core_frontend
 
     // - Branch/Jump
 
-    assign id_delay_slot_w = branch_complete_i && branch_type_w == BR_UNIFORM_ALL && id_warp_id_r == branch_warp_id_r;
+    assign id_delay_slot_w = branch_complete_i && branch_type_i == BR_UNIFORM_ALL && id_warp_id_r == branch_warp_id_i;
     assign id_jump_addr_w = id_pc_r + id_instr_w.imm[RLEN-1:Z_PC];
 
     always_comb begin
@@ -337,6 +327,11 @@ module core_frontend
                 BJ_TYPE_NONE: id_jump_w = 0;
                 BJ_TYPE_JAL: id_jump_w = 1;
                 BJ_TYPE_BEQ: id_jump_w = 0;
+                BJ_TYPE_BNE: id_jump_w = 0;
+                BJ_TYPE_BLT: id_jump_w = 0;
+                BJ_TYPE_BGE: id_jump_w = 0;
+                BJ_TYPE_BLTU: id_jump_w = 0;
+                BJ_TYPE_BGEU: id_jump_w = 0;
             endcase
         end else begin
             id_jump_w = 0;
@@ -352,6 +347,11 @@ module core_frontend
                 BJ_TYPE_NONE: id_branching_w = 0;
                 BJ_TYPE_JAL: id_branching_w = 0;
                 BJ_TYPE_BEQ: id_branching_w = 1;
+                BJ_TYPE_BNE: id_branching_w = 1;
+                BJ_TYPE_BLT: id_branching_w = 1;
+                BJ_TYPE_BGE: id_branching_w = 1;
+                BJ_TYPE_BLTU: id_branching_w = 1;
+                BJ_TYPE_BGEU: id_branching_w = 1;
             endcase
         end else begin
             id_branching_w = 0;
@@ -361,8 +361,6 @@ module core_frontend
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             branching_r <= 0;
-            branch_addr_r <= 'x;
-            branch_warp_id_r <= 'x;
         end else begin
             unique0 if (id_branching_w && branch_complete_i) begin
                 branching_r <= 1;
@@ -370,11 +368,6 @@ module core_frontend
                 branching_r <= 1;
             end else if (!id_branching_w && branch_complete_i) begin
                 branching_r <= 0;
-            end
-
-            if (id_branching_w && (branch_complete_i || !branching_r)) begin
-                branch_addr_r <= id_jump_addr_w;
-                branch_warp_id_r <= id_warp_id_r;
             end
         end
     end
