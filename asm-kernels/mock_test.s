@@ -3,7 +3,6 @@
 
 
 j branch_test
-nop
 
 .rept 100
 .word 0xFFFFFFFF

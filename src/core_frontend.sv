@@ -195,19 +195,48 @@ module core_frontend
         if (branch_mask_i == 0) branch_type_w = BR_UNIFORM_NONE;
     end
 
-    logic br_jump_w;
-    assign br_jump_w = branch_complete_i && branch_type_w == BR_UNIFORM_ALL;
-
-    logic jump_w; // FIXME: there has to be a better name here.
-    assign jump_w = id_jump_w || br_jump_w;
-
-    pc_t jump_addr_w;
-    assign jump_addr_w = branching_r ? branch_addr_r : id_jump_addr_w;
-
-    assign if_delay_slot_w = (id_jump_w && (if_warp_id_r == id_warp_id_r)) || (br_jump_w && (if_warp_id_r == branch_warp_id_r));
+    assign if_delay_slot_w = (id_jump_w && if_warp_id_r == id_warp_id_r) ||
+        (branch_complete_i && branch_type_w == BR_UNIFORM_ALL && if_warp_id_r == branch_warp_id_r);
 
     logic split_w;
-    assign split_w = branch_complete_i && branch_type_w == BR_DIVERGENT;
+    pc_t pc_next_w;
+    pc_t split_addr_w;
+
+    always_comb begin
+        pc_next_w = 'x;
+        split_w = 'x;
+        split_addr_w = 'x;
+
+        if (branch_complete_i) begin
+            unique case (branch_type_w)
+                BR_UNIFORM_ALL: begin
+                    pc_next_w = branch_addr_r;
+                    split_w = 0;
+                    split_addr_w = 'x;
+                end
+                BR_UNIFORM_NONE: begin
+                    pc_next_w = if_pc_w;
+                    split_w = 0;
+                    split_addr_w = 'x;
+                end
+                BR_DIVERGENT: begin
+                    pc_next_w = if_pc_w;
+                    split_w = 1;
+                    split_addr_w = branch_addr_r;
+                end
+            endcase
+        end else begin
+            if (id_jump_w) begin
+                pc_next_w = id_jump_addr_w;
+                split_w = 0;
+                split_addr_w = 'x;
+            end else begin
+                pc_next_w = if_pc_p1_w;
+                split_w = 0;
+                split_addr_w = 'x;
+            end
+        end
+    end
 
     // - Thread Schedulers
     generate
@@ -227,12 +256,11 @@ module core_frontend
                 .rst_n(rst_n), // FIXME: start_i
                 .en(en),
 
-                // INFO: Hazards are now managed by the scoreboard. Therefore, increase so long as there is no branch/jump.
-                .pc_next_i(jump_w ? jump_addr_w : if_pc_p1_w),
+                .pc_next_i(pc_next_w),
                 .yield_i(0),
 
                 .split_i(split_w),
-                .split_pc_i(jump_addr_w),
+                .split_pc_i(split_addr_w),
                 .split_mask_i(branch_mask_i),
 /*
                 .barr_sync_i(),
@@ -299,7 +327,7 @@ module core_frontend
 
     // - Branch/Jump
 
-    assign id_delay_slot_w = br_jump_w && (id_warp_id_r == branch_warp_id_r);
+    assign id_delay_slot_w = branch_complete_i && branch_type_w == BR_UNIFORM_ALL && id_warp_id_r == branch_warp_id_r;
     assign id_jump_addr_w = id_pc_r + id_instr_w.imm[RLEN-1:Z_PC];
 
     always_comb begin
