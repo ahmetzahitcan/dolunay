@@ -28,7 +28,7 @@ module fu_fpnew
         fpu_operands = 'x;
         if (in_valid_i) begin
             for (integer I = 0; I < N_THREADS; I++) begin
-                unique case(in_operation_i.instr.fpu_op0_sel)
+                unique case(in_operation_i.instr.fpu_op0_sel) // FIXME: Vivado gives unnecessary warnings, even when these unique cases don't execute.
                     FPU_OP0_SEL_RS1: fpu_operands[0][I*RLEN +: RLEN] = in_operation_i.rs1_data[I];
                 endcase
                 unique case(in_operation_i.instr.fpu_op1_sel)
