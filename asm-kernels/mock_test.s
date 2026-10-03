@@ -16,7 +16,7 @@ j .
 1:
 li x3, 1
 beqz x3, 3f
-andi x4, x4, 1
+andi x4, x4, 1 # Uninitialized registers are initialized as (WARP_ID << 16) | THREAD_ID in the simulation.
 beqz x4, 2f
 li x1, 0
 j .

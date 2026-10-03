@@ -90,7 +90,7 @@ module core_frontend
     logic id_delay_slot_w;
 
     // - Branching signals
-    logic branching_r;
+    logic [N_WARPS-1:0] branching_r;
 
     // - Indicate whether a stage contains a valid instruction.
     logic if_stage_valid_r, id_stage_valid_r, ra_stage_valid_r, dp_stage_valid_r;
@@ -108,7 +108,7 @@ module core_frontend
 
     assign ws_stage_stall_w = if_stage_stall_w;
     assign if_stage_stall_w = !ws_stage_flush_w && id_stage_stall_w;
-    assign id_stage_stall_w = !if_stage_flush_w && (ra_stage_stall_w || (id_stage_valid_r && branching_r && !id_branching_w));
+    assign id_stage_stall_w = !if_stage_flush_w && (ra_stage_stall_w || (id_stage_valid_r && |branching_r));
     assign ra_stage_stall_w = !id_stage_flush_w && (dp_stage_stall_w || (ra_stage_valid_r && (ra_sb_busy_w || ra_hsb_busy_w)));
     assign dp_stage_stall_w = !ra_stage_flush_w && (dp_stage_valid_r && !dp_in_handshake_w);
 
@@ -238,7 +238,8 @@ module core_frontend
             assign u_thread_scheduler_mask_w[I] = mask_w;
 
             logic en;
-            assign en = (branch_complete_i && branch_warp_id_i == I) ||
+            assign en = branching_r[I] ?
+                (branch_complete_i && branch_warp_id_i == I) :
                 (if_stage_valid_r && !if_stage_stall_w && (if_warp_id_r == I));
 
             thread_scheduler u_thread_scheduler(
@@ -360,14 +361,17 @@ module core_frontend
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            branching_r <= 0;
+            branching_r <= '0;
         end else begin
-            unique0 if (id_branching_w && branch_complete_i) begin
-                branching_r <= 1;
-            end else if (id_branching_w && !branch_complete_i) begin
-                branching_r <= 1;
-            end else if (!id_branching_w && branch_complete_i) begin
-                branching_r <= 0;
+            // branching_r is per-warp: update each warp's bit independently, so
+            // that a branch issuing in decode for one warp and a branch
+            // resolving for another warp in the same cycle are both honoured.
+            for (int w = 0; w < N_WARPS; w++) begin
+                if (id_branching_w && id_warp_id_r == w) begin
+                    branching_r[w] <= 1'b1;   // a branch is now in decode for warp w
+                end else if (branch_complete_i && branch_warp_id_i == w) begin
+                    branching_r[w] <= 1'b0;   // warp w's branch resolved
+                end
             end
         end
     end
