@@ -290,7 +290,7 @@ module core_top
         .out_result_o   (fu_result_w[FUNCTION_UNIT_ALU])
     );
 
-    fpnew_pkg::status_t [N_THREADS-1:0] fflags_w; // FIXME: Put this in a better place lol
+    fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_w; // FIXME: Put this in a better place lol
 
     fu_csru u_csru (
     	.clk            (clk),
