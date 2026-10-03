@@ -85,8 +85,8 @@ module control_unit
                 instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs1_used = 1'b1;
                 instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
-                instr_o.rs2_used = 1'b0;
-                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
@@ -115,8 +115,8 @@ module control_unit
                 instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs1_used = 1'b1;
                 instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
-                instr_o.rs2_used = 1'b0;
-                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs3_used = 1'b0;
                 instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
                 instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;

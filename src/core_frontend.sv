@@ -82,55 +82,11 @@ module core_frontend
     input wire pc_t branch_pc_i,
     input wire pc_t branch_target_i
 );
-
-    // Pipeline control
-    logic dp_in_handshake_w;
-    logic ra_sb_busy_w, ra_hsb_busy_w;
-    logic if_delay_slot_w;
-    logic id_delay_slot_w;
-
-    // - Branching signals
-    logic [N_WARPS-1:0] branching_r;
-
-    // - Indicate whether a stage contains a valid instruction.
-    logic if_stage_valid_r, id_stage_valid_r, ra_stage_valid_r, dp_stage_valid_r;
-
-    // - Indicate whether a stage should be flushed. For each flushed stage, in the next cycle, NEXT stage will contain a bubble.
-    logic ws_stage_flush_w, if_stage_flush_w, id_stage_flush_w, ra_stage_flush_w;
-
-    assign ws_stage_flush_w = '0;
-    assign if_stage_flush_w = if_delay_slot_w;
-    assign id_stage_flush_w = id_delay_slot_w;
-    assign ra_stage_flush_w = '0;
-
-    // - Indicate whether a stage should stall. These stages will send bubbles to the next stages.
-    logic ws_stage_stall_w, if_stage_stall_w, id_stage_stall_w, ra_stage_stall_w, dp_stage_stall_w;
-
-    assign ws_stage_stall_w = if_stage_stall_w;
-    assign if_stage_stall_w = !ws_stage_flush_w && id_stage_stall_w;
-    assign id_stage_stall_w = !if_stage_flush_w && (ra_stage_stall_w || (id_stage_valid_r && |branching_r));
-    assign ra_stage_stall_w = !id_stage_flush_w && (dp_stage_stall_w || (ra_stage_valid_r && (ra_sb_busy_w || ra_hsb_busy_w)));
-    assign dp_stage_stall_w = !ra_stage_flush_w && (dp_stage_valid_r && !dp_in_handshake_w);
-
-
-    always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            if_stage_valid_r <= '0;
-            id_stage_valid_r <= '0;
-            ra_stage_valid_r <= '0;
-            dp_stage_valid_r <= '0;
-        end else begin
-            if (!if_stage_stall_w) if_stage_valid_r <= !ws_stage_stall_w & !ws_stage_flush_w;
-            if (!id_stage_stall_w) id_stage_valid_r <= if_stage_valid_r & !if_stage_stall_w & !if_stage_flush_w;
-            if (!ra_stage_stall_w) ra_stage_valid_r <= id_stage_valid_r & !id_stage_stall_w & !id_stage_flush_w;
-            if (!dp_stage_stall_w) dp_stage_valid_r <= ra_stage_valid_r & !ra_stage_stall_w & !ra_stage_flush_w;
-        end
-    end
-
     // Cross-stage signals
 
     // - Instruction Fetch stage signals
     warp_id_t if_warp_id_r;
+    logic if_delay_slot_w;
 
     // - Instruction Decode stage signals
     pc_t id_jump_addr_w;
@@ -139,12 +95,14 @@ module core_frontend
     simd_mask_t id_mask_r;
     logic [31:2] id_undec_instr32_w;
     warp_id_t id_warp_id_r;
+    logic id_delay_slot_w;
 
     // - Register Access stage signals
     pc_t ra_pc_r;
     simd_mask_t ra_mask_r;
     instr_s ra_instr_r;
     warp_id_t ra_warp_id_r;
+    logic ra_sb_busy_w, ra_hsb_busy_w;
 
     // - Dispatch stage signals
     simd_data_t dp_rs1_data_w;
@@ -155,6 +113,67 @@ module core_frontend
     instr_s dp_instr_r;
     warp_id_t dp_warp_id_r;
     pc_t dp_pc_r;
+    logic dp_in_handshake_w;
+
+    // Pipeline control
+
+    // - Branching signals
+    logic [N_WARPS-1:0] branching_r;
+
+    // - Indicate whether a stage contains a valid instruction.
+    logic if_stage_valid_r, id_stage_valid_r, ra_stage_valid_r, dp_stage_valid_r;
+
+    // - Indicate whether a stage should be flushed. Flushed stages will fail their instructions,
+    //   and in the next cycle, NEXT stage will contain a bubble.
+    // - No reason to flush WS because all it does is generate a warp ID.
+    logic if_stage_flush_w, id_stage_flush_w, ra_stage_flush_w, dp_stage_flush_w;
+
+    // - Indicate whether a warp/stage combination failed to execute its instruction. PC and seq should be rolled back accordingly.
+    logic [N_WARPS-1:0] if_stage_fail_w, id_stage_fail_w, ra_stage_fail_w, dp_stage_fail_w;
+
+    // INFO: So the relationship between flushing and failing is complex.
+    //      Obviously a flushed instruction will fail.
+    //      However, failing an instruction means that any instructions after it that were in the pipeline must also be flushed.
+    //      But, this does not mean any instruction in the previous stages.
+    //      Rather, it means instructions from the same warp.
+
+    always_comb begin
+        for (int i = 0; i < N_WARPS; i++) begin
+            if_stage_fail_w[i] = if_stage_valid_r && if_stage_flush_w && if_warp_id_r == warp_id_t'(i);
+            id_stage_fail_w[i] = id_stage_valid_r && id_stage_flush_w && id_warp_id_r == warp_id_t'(i);
+            ra_stage_fail_w[i] = ra_stage_valid_r && ra_stage_flush_w && ra_warp_id_r == warp_id_t'(i);
+            dp_stage_fail_w[i] = dp_stage_valid_r && dp_stage_flush_w && dp_warp_id_r == warp_id_t'(i);
+        end
+    end
+
+    assign if_stage_flush_w = if_delay_slot_w ||
+        id_stage_fail_w[if_warp_id_r] ||
+        ra_stage_fail_w[if_warp_id_r] ||
+        dp_stage_fail_w[if_warp_id_r];
+
+    assign id_stage_flush_w = id_delay_slot_w ||
+        ra_stage_fail_w[id_warp_id_r] ||
+        dp_stage_fail_w[id_warp_id_r];
+
+    assign ra_stage_flush_w = ra_sb_busy_w ||
+        ra_hsb_busy_w ||
+        dp_stage_fail_w[ra_warp_id_r];
+
+    assign dp_stage_flush_w = !dp_in_handshake_w;
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            if_stage_valid_r <= 0;
+            id_stage_valid_r <= 0;
+            ra_stage_valid_r <= 0;
+            dp_stage_valid_r <= 0;
+        end else begin
+            if_stage_valid_r <= 1;
+            id_stage_valid_r <= if_stage_valid_r & !if_stage_flush_w;
+            ra_stage_valid_r <= id_stage_valid_r & !id_stage_flush_w;
+            dp_stage_valid_r <= ra_stage_valid_r & !ra_stage_flush_w;
+        end
+    end
 
     // Warp Select
     warp_id_t ws_warp_id_w;
@@ -162,14 +181,12 @@ module core_frontend
     warp_scheduler u_warp_scheduler(
         .clk(clk),
         .rst_n(rst_n),
-        .stall_i(ws_stage_stall_w),
+        .stall_i('0), // TODO: get rid of this entirely
         .warp_id_o(ws_warp_id_w)
     );
 
     always_ff @( posedge clk ) begin
-        if (!if_stage_stall_w) begin
-            if_warp_id_r <= ws_warp_id_w;
-        end
+        if_warp_id_r <= ws_warp_id_w;
     end
 
     // Instruction Fetch
@@ -182,16 +199,17 @@ module core_frontend
     assign if_pc_w = u_thread_scheduler_pc_w[if_warp_id_r];
     assign if_mask_w = u_thread_scheduler_mask_w[if_warp_id_r];
 
-    pc_t if_pc_p1_w;
-    assign if_pc_p1_w = if_pc_w + 1;
-
     assign if_delay_slot_w = (id_jump_w && if_warp_id_r == id_warp_id_r) ||
         (branch_complete_i && branch_type_i == BR_UNIFORM_ALL && if_warp_id_r == branch_warp_id_i);
 
     logic split_w;
-    pc_t pc_next_w;
+    // pc_t pc_next_w;
     pc_t split_addr_w;
 
+    assign split_w = 0; // FIXME: disabling branching for now
+    assign split_addr_w = 'x;
+
+    /*
     always_comb begin
         pc_next_w = 'x;
         split_w = 'x;
@@ -205,12 +223,12 @@ module core_frontend
                     split_addr_w = 'x;
                 end
                 BR_UNIFORM_NONE: begin
-                    pc_next_w = branch_pc_i + 1;
+                    pc_next_w = branch_pc_i + 1; // FIXME: Wait, these are p1? Analyze why.
                     split_w = 0;
                     split_addr_w = 'x;
                 end
                 BR_DIVERGENT: begin
-                    pc_next_w = branch_pc_i + 1;
+                    pc_next_w = branch_pc_i + 1; // FIXME: Wait, these are p1? Analyze why.
                     split_w = 1;
                     split_addr_w = branch_target_i;
                 end
@@ -227,7 +245,7 @@ module core_frontend
             end
         end
     end
-
+    */
     // - Thread Schedulers
     generate
         for (genvar I = 0; I < N_WARPS; I++) begin : gen_thread_schedulers
@@ -238,9 +256,34 @@ module core_frontend
             assign u_thread_scheduler_mask_w[I] = mask_w;
 
             logic en;
-            assign en = branching_r[I] ?
-                (branch_complete_i && branch_warp_id_i == I) :
-                (if_stage_valid_r && !if_stage_stall_w && (if_warp_id_r == I));
+            assign en = 1; // always active for now, apparently. if needed, i'll get rid of en entirely.
+
+            localparam int N_ROLLBACK_TABLE = 16;
+            localparam int W_ROLLBACK_TABLE = $clog2(N_ROLLBACK_TABLE);
+
+            pc_t pc_rollback_table_w [0:N_ROLLBACK_TABLE];
+            pc_t pc_p1_rollback_table_w [0:N_ROLLBACK_TABLE];
+
+            always_comb begin
+                for (int j = 0; j < N_ROLLBACK_TABLE; j++) begin
+                    automatic int rollback_amount = $countones(j);
+
+                    pc_rollback_table_w[j] = pc_w - rollback_amount[RLEN-Z_PC-1:0];
+                    pc_p1_rollback_table_w[j] = pc_rollback_table_w[j] + 1;
+                end
+            end
+
+            logic [W_ROLLBACK_TABLE-1:0] rollback_table_idx_w;
+            assign rollback_table_idx_w = {if_stage_fail_w[I], id_stage_fail_w[I], ra_stage_fail_w[I], dp_stage_fail_w[I]};
+
+            pc_t pc_next_w;
+            always_comb begin
+                if (if_stage_valid_r && if_warp_id_r == I) begin
+                    pc_next_w = pc_p1_rollback_table_w[rollback_table_idx_w];
+                end else begin
+                    pc_next_w = pc_rollback_table_w[rollback_table_idx_w];
+                end
+            end
 
             thread_scheduler u_thread_scheduler(
                 .clk(clk),
@@ -272,33 +315,14 @@ module core_frontend
     // - Instruction Memory
 
     assign instr_addr_o = if_pc_w[W_IROM_ADDR-1:Z_PC];
-
-    logic [31:0] undec_instr32_skid_r;
-
-    logic id_stage_stall_skid_r;
-    always_ff @(posedge clk) begin
-        if (!rst_n) id_stage_stall_skid_r <= 1'b0;
-        else        id_stage_stall_skid_r <= id_stage_stall_w;
-    end
-
-    always_ff @(posedge clk) begin
-        if (!id_stage_stall_skid_r)      // capture the correct word at stall onset
-            undec_instr32_skid_r <= undec_instr32_i;
-    end
-
-    assign id_undec_instr32_w = id_stage_stall_skid_r
-                           ? undec_instr32_skid_r[31:2]
-                           : undec_instr32_i[31:2];      // first stalled cycle still uses the live word
-
+    assign id_undec_instr32_w = undec_instr32_i[31:2];      // first stalled cycle still uses the live word
 
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        if (!id_stage_stall_w) begin
-            id_pc_r <= if_pc_w;
-            id_mask_r <= if_mask_w;
-            id_warp_id_r <= if_warp_id_r;
-        end
+        id_pc_r <= if_pc_w;
+        id_mask_r <= if_mask_w;
+        id_warp_id_r <= if_warp_id_r;
     end
 
     // Instruction Decode
@@ -379,12 +403,10 @@ module core_frontend
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        if (!ra_stage_stall_w) begin
-            ra_pc_r <= id_pc_r;
-            ra_mask_r <= id_mask_r;
-            ra_warp_id_r <= id_warp_id_r;
-            ra_instr_r <= id_instr_w;
-        end
+        ra_pc_r <= id_pc_r;
+        ra_mask_r <= id_mask_r;
+        ra_warp_id_r <= id_warp_id_r;
+        ra_instr_r <= id_instr_w;
     end
 
     // Register Access
@@ -392,16 +414,53 @@ module core_frontend
     // - Sequence generation
 
     seq_t ra_seq_list_r [0:N_WARPS-1];
+    seq_t ra_seq_list_next_w [0:N_WARPS-1];
+
+    generate
+        for (genvar I = 0; I < N_WARPS; I++) begin : gen_ra_seq_list
+            localparam int N_ROLLBACK_TABLE = 4;
+            localparam int W_ROLLBACK_TABLE = $clog2(N_ROLLBACK_TABLE);
+
+            seq_t seq_w;
+            assign seq_w = ra_seq_list_r[I];
+
+            seq_t seq_rollback_table_w [0:N_ROLLBACK_TABLE-1];
+            seq_t seq_p1_rollback_table_w [0:N_ROLLBACK_TABLE-1];
+            always_comb begin
+                for (int j = 0; j < N_ROLLBACK_TABLE; j++) begin
+                    automatic int rollback_amount = $countones(j);
+
+                    seq_rollback_table_w[j] = seq_w - rollback_amount[W_ROB_ADDR-1:0];
+                    seq_p1_rollback_table_w[j] = seq_rollback_table_w[j] + 1;
+                end
+            end
+
+            logic [W_ROLLBACK_TABLE-1:0] rollback_table_idx_w;
+            assign rollback_table_idx_w = {ra_stage_fail_w[I], dp_stage_fail_w[I]};
+
+            seq_t seq_next_w;
+            always_comb begin
+                if (ra_stage_valid_r && ra_warp_id_r == I) begin
+                    seq_next_w = seq_p1_rollback_table_w[rollback_table_idx_w];
+                end else begin
+                    seq_next_w = seq_rollback_table_w[rollback_table_idx_w];
+                end
+            end
+
+            assign ra_seq_list_next_w[I] = seq_next_w;
+        end
+    endgenerate
+
     seq_t ra_seq_w;
-    assign ra_seq_w = ra_seq_list_r[id_warp_id_r];
+    assign ra_seq_w = ra_seq_list_r[ra_warp_id_r];
 
     always_ff @( posedge clk ) begin
-        if (!rst_n) begin
-            for (int i = 0; i < N_WARPS; i++) begin
+        for (int i = 0; i < N_WARPS; i++) begin
+            if (!rst_n) begin
                 ra_seq_list_r[i] <= '0;
+            end else begin
+                ra_seq_list_r[i] <= ra_seq_list_next_w[i];
             end
-        end else if (ra_stage_valid_r && !ra_stage_stall_w) begin
-            ra_seq_list_r[id_warp_id_r] <= ra_seq_w + 1;
         end
     end
 
@@ -418,25 +477,9 @@ module core_frontend
     assign rf_rs3_idx_o = ra_instr_r.rs3_idx;
     assign rf_rs3_regfile_o = ra_instr_r.rs3_regfile;
 
-    simd_data_t dp_rs1_data_skid_r, dp_rs2_data_skid_r, dp_rs3_data_skid_r;
-    logic       dp_stage_stall_skid_r;
-
-    always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            dp_stage_stall_skid_r <= 1'b0;
-        end else begin
-            dp_stage_stall_skid_r <= dp_stage_stall_w;
-            if (!dp_stage_stall_skid_r) begin
-                dp_rs1_data_skid_r <= rf_rs1_data_i;
-                dp_rs2_data_skid_r <= rf_rs2_data_i;
-                dp_rs3_data_skid_r <= rf_rs3_data_i;
-            end
-        end
-    end
-
-    assign dp_rs1_data_w = dp_stage_stall_skid_r ? dp_rs1_data_skid_r : rf_rs1_data_i;
-    assign dp_rs2_data_w = dp_stage_stall_skid_r ? dp_rs2_data_skid_r : rf_rs2_data_i;
-    assign dp_rs3_data_w = dp_stage_stall_skid_r ? dp_rs3_data_skid_r : rf_rs3_data_i;
+    assign dp_rs1_data_w = rf_rs1_data_i;
+    assign dp_rs2_data_w = rf_rs2_data_i;
+    assign dp_rs3_data_w = rf_rs3_data_i;
 
     // - Register Scoreboard
 
@@ -523,13 +566,11 @@ module core_frontend
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
-        if (!dp_stage_stall_w) begin
-            dp_instr_r <= ra_instr_r;
-            dp_warp_id_r <= ra_warp_id_r;
-            dp_pc_r <= ra_pc_r;
-            dp_mask_r <= ra_mask_r;
-            dp_seq_r <= ra_seq_w;
-        end
+        dp_instr_r <= ra_instr_r;
+        dp_warp_id_r <= ra_warp_id_r;
+        dp_pc_r <= ra_pc_r;
+        dp_mask_r <= ra_mask_r;
+        dp_seq_r <= ra_seq_w;
     end
 
     // Dispatch

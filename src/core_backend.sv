@@ -62,9 +62,6 @@ module core_backend
     // Writeback stage registers
     fu_result_s wb_fu_result_r;
 
-    // ROB registers
-    fu_result_s rob_fu_result_r;
-
     // Commit stage registers
     fu_result_s cm_fu_result_r;
 
@@ -118,12 +115,6 @@ module core_backend
 
     assign rf_write_data_o = wb_fu_result_r.use_uwb ? uwb_result_as_simd_w : wb_fu_result_r.wb_result;
 
-    always_ff @(posedge clk) begin
-        if (!rob_stall_w) begin
-            rob_fu_result_r <= wb_fu_result_r;
-        end
-    end
-
     // ROB
 
     fu_result_s rob_r [0:N_WARPS-1][0:ROB_SIZE-1];
@@ -147,9 +138,12 @@ module core_backend
             rob_valid_r <= '0;
             rob_head_r <= '0;
         end else begin
-            if (!rob_stall_w) begin
-                rob_r[rob_fu_result_r.warp_id][rob_fu_result_r.seq] <= rob_fu_result_r;
-                rob_valid_r[rob_fu_result_r.warp_id][rob_fu_result_r.seq] <= 1;
+            if (wb_stage_valid_r && !rob_stall_w) begin
+                assert (!rob_valid_r[wb_fu_result_r.warp_id][wb_fu_result_r.seq])
+                    else $error("rob_valid_r[%0d][%0d] is already set, two operations might be sharing seq", wb_fu_result_r.warp_id, wb_fu_result_r.seq);
+
+                rob_r[wb_fu_result_r.warp_id][wb_fu_result_r.seq] <= wb_fu_result_r;
+                rob_valid_r[wb_fu_result_r.warp_id][wb_fu_result_r.seq] <= 1;
             end
 
             if (!cm_stage_stall_w) begin
