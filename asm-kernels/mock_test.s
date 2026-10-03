@@ -15,9 +15,11 @@ li x6, 1
 czero.eqz x7, x6, x5
 csrrw x8, fflags, x0
 
+long_loop:
 .rept 1000
 nop
 .endr
+jal x9, long_loop
 
 branch_test:
 li x2, 0

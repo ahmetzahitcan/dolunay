@@ -278,7 +278,9 @@ module core_frontend
 
             pc_t pc_next_w;
             always_comb begin
-                if (if_stage_valid_r && if_warp_id_r == I) begin
+                if (id_stage_valid_r && id_jump_w && id_warp_id_r == I) begin
+                    pc_next_w = id_jump_addr_w;
+                end else if (if_stage_valid_r && if_warp_id_r == I) begin
                     pc_next_w = pc_p1_rollback_table_w[rollback_table_idx_w];
                 end else begin
                     pc_next_w = pc_rollback_table_w[rollback_table_idx_w];
