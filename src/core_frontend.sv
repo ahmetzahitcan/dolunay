@@ -367,9 +367,9 @@ module core_frontend
             // that a branch issuing in decode for one warp and a branch
             // resolving for another warp in the same cycle are both honoured.
             for (int w = 0; w < N_WARPS; w++) begin
-                if (id_branching_w && id_warp_id_r == w) begin
+                if (id_branching_w && id_warp_id_r == warp_id_t'(w)) begin
                     branching_r[w] <= 1'b1;   // a branch is now in decode for warp w
-                end else if (branch_complete_i && branch_warp_id_i == w) begin
+                end else if (branch_complete_i && branch_warp_id_i == warp_id_t'(w)) begin
                     branching_r[w] <= 1'b0;   // warp w's branch resolved
                 end
             end
