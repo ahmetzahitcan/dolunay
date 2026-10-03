@@ -21,12 +21,12 @@
 // How it is run
 // -------------
 //   The DUT is core_top, run against the assembled program in irom.mem
-//   (produced by asm-kernels/generate.sh branch_test.s).  Three warp modes are
-//   exercised, each compiled with a different define:
+//   (produced by asm-kernels/generate.sh branch_test.s).  The number of active
+//   warps is selected at compile time with:
 //
-//       SINGLE_WARP  -> 1 active warp   -> sim/tb_branch_single.fst
-//       TWO_WARP     -> 2 active warps  -> sim/tb_branch_two.fst
-//       FOUR_WARP    -> 4 active warps  -> sim/tb_branch_four.fst
+//       +define+FORCE_WARP_COUNT=N   (N = 1, 2, 4, ...)
+//
+//   which is also used to name the waveform (sim/tb_branch_<N>warp.fst).
 //
 //   See tb/run_branch.sh.
 // =============================================================================
@@ -48,24 +48,16 @@ module tb_branch;
     always #5 clk = ~clk;
 
     // -----------------------------------------------------------------------
-    // Active warp count / waveform file, selected at compile time.
+    // Active warp count, selected at compile time.
     // -----------------------------------------------------------------------
-`ifdef SINGLE_WARP
-    localparam int          ACTIVE_WARPS = 1;
-    localparam string       WAVE_FILE    = "sim/tb_branch_single.fst";
-`elsif TWO_WARP
-    localparam int          ACTIVE_WARPS = 2;
-    localparam string       WAVE_FILE    = "sim/tb_branch_two.fst";
-`elsif FOUR_WARP
-    localparam int          ACTIVE_WARPS = 4;
-    localparam string       WAVE_FILE    = "sim/tb_branch_four.fst";
+`ifdef FORCE_WARP_COUNT
+    localparam int          ACTIVE_WARPS = `FORCE_WARP_COUNT;
 `else
     localparam int          ACTIVE_WARPS = N_WARPS;
-    localparam string       WAVE_FILE    = "sim/tb_branch_full.fst";
 `endif
 
     initial begin
-        $dumpfile(WAVE_FILE);
+        $dumpfile($sformatf("sim/tb_branch_%0dwarp.fst", ACTIVE_WARPS));
         $dumpvars(0, tb_branch);
     end
 
@@ -345,7 +337,7 @@ module tb_branch;
             $display(" RESULT: PASS");
         else
             $display(" RESULT: FAIL");
-        $display(" waveform: %s", WAVE_FILE);
+        $display(" waveform: %s", $sformatf("sim/tb_branch_%0dwarp.fst", ACTIVE_WARPS));
         $display("=================================================\n");
 
         $finish;

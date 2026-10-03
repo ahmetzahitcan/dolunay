@@ -22,15 +22,11 @@ module warp_scheduler
         end
     end
 
-`ifdef SINGLE_WARP
-    // Only warp 0 is active.
-    assign warp_id_o = '0;
-`elsif TWO_WARP
-    // Only warps 0 and 1 are active.
-    assign warp_id_o = { {(W_WARPS-1){1'b0}}, current_warp_r[0] };
-`elsif FOUR_WARP
-    // Only warps 0..3 are active.
-    assign warp_id_o = { {(W_WARPS-2){1'b0}}, current_warp_r[1:0] };
+`ifdef FORCE_WARP_COUNT
+    // Only warps [0, FORCE_WARP_COUNT) are scheduled. The round-robin counter
+    // still runs over the full range, so take it modulo the active count.
+    localparam int unsigned FORCE_WARP_COUNT_VAL = `FORCE_WARP_COUNT;
+    assign warp_id_o = warp_id_t'(current_warp_r % FORCE_WARP_COUNT_VAL);
 `else
     assign warp_id_o = current_warp_r;
 `endif
