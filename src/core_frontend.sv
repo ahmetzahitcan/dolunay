@@ -84,6 +84,9 @@ module core_frontend
 );
     // Cross-stage signals
 
+    // - Warp Select stage signals
+    logic ws_warp_valid_w;
+
     // - Instruction Fetch stage signals
     warp_id_t if_warp_id_r;
     logic if_delay_slot_w;
@@ -171,7 +174,7 @@ module core_frontend
             ra_stage_valid_r <= 0;
             dp_stage_valid_r <= 0;
         end else begin
-            if_stage_valid_r <= 1;
+            if_stage_valid_r <= ws_warp_valid_w;
             id_stage_valid_r <= if_stage_valid_r & !if_stage_flush_w;
             ra_stage_valid_r <= id_stage_valid_r & !id_stage_flush_w;
             dp_stage_valid_r <= ra_stage_valid_r & !ra_stage_flush_w;
@@ -184,8 +187,9 @@ module core_frontend
     warp_scheduler u_warp_scheduler(
         .clk(clk),
         .rst_n(rst_n),
-        .stall_i('0), // TODO: get rid of this entirely
-        .warp_id_o(ws_warp_id_w)
+        .ready_i('1), // TODO: un-ready stalling warps
+        .warp_id_o(ws_warp_id_w),
+        .warp_valid_o(ws_warp_valid_w)
     );
 
     always_ff @( posedge clk ) begin
