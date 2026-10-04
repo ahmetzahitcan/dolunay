@@ -29,29 +29,25 @@ module scoreboard
     input wire logic clk,
     input wire logic rst_n,
 
-    // Warp IDs
-    input wire warp_id_t frontend_warp_id_i,
-    input wire warp_id_t backend_warp_id_i,
-
-    // Frontend-check ports
+    // Check ports
     input wire  entry_id_t chk_id_i [0:N_CHECK_PORTS-1],
     input wire  logic chk_en_i [0:N_CHECK_PORTS-1],
     output logic chk_busy_o [0:N_CHECK_PORTS-1],
 
-    // Frontend-acquire port
-    input wire  entry_id_t        acq_id_i,
+    // Acquire port
+    input wire  entry_id_t acq_id_i,
     input wire  seq_t   acq_seq_i,
     input wire  logic acq_en_i,
 
-    // Backend-release port
-    input wire  entry_id_t        rel_id_i,
+    // Release port
+    input wire  entry_id_t rel_id_i,
     input wire  seq_t   rel_seq_i,
     input wire  logic rel_en_i,
     output logic rel_valid_o
 );
 
-    logic [N_WARPS-1:0][N_ENTRIES-1:0] busy_r;
-    seq_t seq_r [0:N_WARPS-1][0:N_ENTRIES-1];
+    logic [N_ENTRIES-1:0] busy_r;
+    seq_t seq_r [0:N_ENTRIES-1];
 
     logic chk_busy_w [0:N_CHECK_PORTS-1];
     logic rel_valid_w;
@@ -59,12 +55,12 @@ module scoreboard
     always_comb begin
         for (int i = 0; i < N_CHECK_PORTS; i++) begin
             chk_busy_w[i] = chk_en_i[i] &&
-                busy_r[frontend_warp_id_i][chk_id_i[i]];
+                busy_r[chk_id_i[i]];
         end
 
         rel_valid_w = rel_en_i &&
-            busy_r[backend_warp_id_i][rel_id_i] &&
-            rel_seq_i == seq_r[backend_warp_id_i][rel_id_i];
+            busy_r[rel_id_i] &&
+            rel_seq_i == seq_r[rel_id_i];
     end
 
     always_ff @(posedge clk) begin
@@ -72,19 +68,19 @@ module scoreboard
             busy_r <= '0;
         end else begin
             if (rel_en_i) begin
-                assert (busy_r[backend_warp_id_i][rel_id_i] || rel_seq_i != seq_r[backend_warp_id_i][rel_id_i])
-                    else $warning("Release operation on non-busy entry! Entry: %d-%d", backend_warp_id_i, rel_id_i);
-                assert (!$isunknown(seq_r[backend_warp_id_i][rel_id_i]))
-                    else $error("Release operation on invalid seq! Entry: %d-%d", backend_warp_id_i, rel_id_i);
+                assert (busy_r[rel_id_i] || rel_seq_i != seq_r[rel_id_i])
+                    else $warning("Release operation on non-busy entry! Entry: %d", rel_id_i);
+                assert (!$isunknown(seq_r[rel_id_i]))
+                    else $error("Release operation on invalid seq! Entry: %d", rel_id_i);
 
-                if (rel_seq_i == seq_r[backend_warp_id_i][rel_id_i]) begin
-                    busy_r[backend_warp_id_i][rel_id_i] <= 0;
+                if (rel_seq_i == seq_r[rel_id_i]) begin
+                    busy_r[rel_id_i] <= 0;
                 end
             end
 
             if (acq_en_i) begin
-                seq_r[frontend_warp_id_i][acq_id_i] <= acq_seq_i;
-                busy_r[frontend_warp_id_i][acq_id_i] <= 1;
+                seq_r[acq_id_i] <= acq_seq_i;
+                busy_r[acq_id_i] <= 1;
             end
         end
     end
