@@ -16,3 +16,4 @@ bender.verilator
 *.vcd
 *.fst
 tmp/
+.Xil/Vivado-219773-fedora/
