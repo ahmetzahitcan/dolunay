@@ -23,7 +23,7 @@ module scoreboard
 #(
     // FIXME: slang cannot generate proper warnings unless these are set to a default value.
     parameter int N_ENTRIES = 1,
-    parameter int N_CHECK_PORTS = 3,
+    parameter int N_CHK_PORTS = 3,
     parameter int N_ACQ_PORTS = 2,
     parameter int N_REL_PORTS = 1,
 
@@ -34,9 +34,9 @@ module scoreboard
     input wire logic rst_n,
 
     // Check ports
-    input wire  entry_id_t chk_id_i [0:N_CHECK_PORTS-1],
-    input wire  logic chk_en_i [0:N_CHECK_PORTS-1],
-    output logic chk_busy_o [0:N_CHECK_PORTS-1],
+    input wire  entry_id_t chk_id_i [0:N_CHK_PORTS-1],
+    input wire  logic chk_en_i [0:N_CHK_PORTS-1],
+    output logic chk_busy_o [0:N_CHK_PORTS-1],
 
     // Acquire ports
     input wire  entry_id_t acq_id_i [0:N_ACQ_PORTS-1],
@@ -56,11 +56,11 @@ module scoreboard
     logic [N_ENTRIES-1:0] busy_r;
     seq_t seq_r [0:N_ENTRIES-1];
 
-    logic chk_busy_w [0:N_CHECK_PORTS-1];
+    logic chk_busy_w [0:N_CHK_PORTS-1];
     logic rel_valid_w [0:N_REL_PORTS-1];
 
     always_comb begin
-        for (int i = 0; i < N_CHECK_PORTS; i++) begin
+        for (int i = 0; i < N_CHK_PORTS; i++) begin
             chk_busy_w[i] = chk_en_i[i] &&
                 busy_r[chk_id_i[i]];
         end
@@ -77,10 +77,12 @@ module scoreboard
         end else begin
             for (int i = 0; i < N_REL_PORTS; i++) begin
                 if (rel_en_i[i]) begin
+                    `ifndef SYNTHESIS // INFO: This ifndef is necessary because synthesizer doesn't like $isunknown
                     assert (busy_r[rel_id_i[i]] || rel_seq_i[i] != seq_r[rel_id_i[i]])
                         else $warning("Release operation on non-busy entry! Entry: %d", rel_id_i[i]);
                     assert (!$isunknown(seq_r[rel_id_i[i]]))
                         else $error("Release operation on invalid seq! Entry: %d", rel_id_i[i]);
+                    `endif
 
                     if (rel_seq_i[i] == seq_r[rel_id_i[i]]) begin
                         busy_r[rel_id_i[i]] <= 0;

@@ -5,11 +5,11 @@ module core_top
     import control_unit_pkg::*;
     import core_pkg::*;
 # (
-    parameter int WRAM_SIZE,
+    parameter int WRAM_SIZE = 65536,
     localparam int WRAM_DEPTH = WRAM_SIZE / ADDR_ALIGN,
     localparam int W_WRAM_ADDR = $clog2(WRAM_SIZE),
 
-    parameter int IROM_SIZE,
+    parameter int IROM_SIZE = 65536,
     localparam int IROM_DEPTH = IROM_SIZE / ADDR_ALIGN,
     localparam int W_IROM_ADDR = $clog2(IROM_SIZE)
 ) (
@@ -70,6 +70,14 @@ module core_top
     hazard_mask_t hsb_acq_mask_w;
     seq_t hsb_acq_seq_w;
 
+    hazard_mask_t hsb_acq_old_busy_w;
+    seq_t hsb_acq_old_seq_w [0:N_HAZARDS-1];
+
+    warp_id_t hsb_dacq_warp_id_w;
+    hazard_mask_t hsb_dacq_mask_w;
+    seq_t hsb_dacq_seq_w [0:N_HAZARDS-1];
+    hazard_mask_t hsb_dacq_empty_w;
+
     hazard_mask_t hsb_rel_mask_w;
     seq_t hsb_rel_seq_w;
     hazard_mask_t hsb_rel_valid_w;
@@ -85,6 +93,12 @@ module core_top
         .acq_group_id_i    (hsb_frontend_warp_id_w),
     	.acq_mask_i        (hsb_acq_mask_w),
     	.acq_seq_i         (hsb_acq_seq_w),
+        .acq_old_busy_o    (hsb_acq_old_busy_w),
+        .acq_old_seq_o     (hsb_acq_old_seq_w),
+        .dacq_group_id_i   (hsb_dacq_warp_id_w),
+        .dacq_mask_i       (hsb_dacq_mask_w),
+        .dacq_seq_i        (hsb_dacq_seq_w),
+        .dacq_empty_i      (hsb_dacq_empty_w),
         .rel_group_id_i    (hsb_backend_warp_id_w),
     	.rel_mask_i        (hsb_rel_mask_w),
     	.rel_seq_i         (hsb_rel_seq_w),
@@ -94,6 +108,7 @@ module core_top
     // - Registers Scoreboard
 
     warp_id_t sb_frontend_warp_id_w;
+    warp_id_t sb_frontend_dacq_warp_id_w;
     warp_id_t sb_backend_warp_id_w;
 
     reg_id_t sb_chk1_idx_w;
@@ -115,6 +130,14 @@ module core_top
     regfile_sel_e sb_acq_regfile_w;
     seq_t sb_acq_seq_w;
     logic sb_acq_en_w;
+    seq_t sb_acq_old_seq_w;
+    logic sb_acq_old_busy_w;
+
+    reg_id_t sb_dacq_idx_w;
+    regfile_sel_e sb_dacq_regfile_w;
+    seq_t sb_dacq_seq_w;
+    logic sb_dacq_en_w;
+    logic sb_dacq_empty_w;
 
     reg_id_t sb_rel_idx_w;
     regfile_sel_e sb_rel_regfile_w;
@@ -130,10 +153,16 @@ module core_top
     assign sb_chk2_busy_w = sb_chk_busy_w[1];
     assign sb_chk3_busy_w = sb_chk_busy_w[2];
 
+    seq_t sb_acq_old_seq_list_w [0:1];
+    logic sb_acq_old_busy_list_w [0:1];
+
+    assign sb_acq_old_seq_w = sb_acq_old_seq_list_w[0];
+    assign sb_acq_old_busy_w = sb_acq_old_busy_list_w[0];
+
     scoreboard #(
         .N_ENTRIES(N_WARPS * N_REGISTERS * N_REGFILES),
-        .N_CHECK_PORTS(3),
-        .N_ACQ_PORTS(1),
+        .N_CHK_PORTS(3),
+        .N_ACQ_PORTS(2),
         .N_REL_PORTS(1)
     ) u_reg_scoreboard (
         .clk(clk),
@@ -147,12 +176,15 @@ module core_top
         .chk_en_i({sb_chk1_en_w, sb_chk2_en_w, sb_chk3_en_w}),
         .chk_busy_o(sb_chk_busy_w),
 
-        .acq_id_i({{sb_frontend_warp_id_w, sb_acq_idx_w, sb_acq_regfile_w}}),
-        .acq_seq_i({sb_acq_seq_w}),
-        .acq_en_i({sb_acq_en_w}),
-        .acq_empty_i({0}), // TODO
-        .acq_old_seq_o(),
-        .acq_old_busy_o(),
+        .acq_id_i({
+            {sb_frontend_warp_id_w, sb_acq_idx_w, sb_acq_regfile_w},
+            {sb_frontend_dacq_warp_id_w, sb_dacq_idx_w, sb_dacq_regfile_w}
+        }),
+        .acq_seq_i({sb_acq_seq_w, sb_dacq_seq_w}),
+        .acq_en_i({sb_acq_en_w, sb_dacq_en_w}),
+        .acq_empty_i({0, sb_dacq_empty_w}),
+        .acq_old_seq_o(sb_acq_old_seq_list_w),
+        .acq_old_busy_o(sb_acq_old_busy_list_w),
 
         .rel_id_i({{sb_backend_warp_id_w, sb_rel_idx_w, sb_rel_regfile_w}}),
         .rel_seq_i({sb_rel_seq_w}),
@@ -257,11 +289,26 @@ module core_top
         .sb_acq_regfile_o(sb_acq_regfile_w),
         .sb_acq_seq_o(sb_acq_seq_w),
         .sb_acq_en_o(sb_acq_en_w),
+        .sb_acq_old_seq_i(sb_acq_old_seq_w),
+        .sb_acq_old_busy_i(sb_acq_old_busy_w),
+
+        .sb_dacq_warp_id_o(sb_frontend_dacq_warp_id_w),
+        .sb_dacq_idx_o(sb_dacq_idx_w),
+        .sb_dacq_regfile_o(sb_dacq_regfile_w),
+        .sb_dacq_seq_o(sb_dacq_seq_w),
+        .sb_dacq_en_o(sb_dacq_en_w),
+        .sb_dacq_empty_o(sb_dacq_empty_w),
 
         .hsb_warp_id_o(hsb_frontend_warp_id_w),
         .hsb_acq_mask_o(hsb_acq_mask_w),
         .hsb_acq_seq_o(hsb_acq_seq_w),
         .hsb_busy_i(hsb_busy_w),
+        .hsb_acq_old_busy_i(hsb_acq_old_busy_w),
+        .hsb_acq_old_seq_i(hsb_acq_old_seq_w),
+        .hsb_dacq_warp_id_o(hsb_dacq_warp_id_w),
+        .hsb_dacq_mask_o(hsb_dacq_mask_w),
+        .hsb_dacq_seq_o(hsb_dacq_seq_w),
+        .hsb_dacq_empty_o(hsb_dacq_empty_w),
 
         .branch_complete_i(branch_complete_w),
         .branch_mask_i(branch_mask_w),

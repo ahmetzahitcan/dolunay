@@ -22,7 +22,8 @@ verilator --binary --timing $TRACE -Wall -Wno-fatal \
     "$FPNEW" \
     src/params_pkg.sv src/control_unit_pkg.sv src/core_pkg.sv \
     src/immediate_decoder.sv src/sim__instr_formatter.sv src/control_unit.sv \
-    src/warp_scheduler.sv src/thread_scheduler.sv src/core_frontend.sv \
+    src/warp_scheduler.sv src/thread_scheduler.sv src/priority_encoder.sv \
+    src/scoreboard.sv src/scoreboard_mask.sv src/core_frontend.sv \
     tb/tb_config_pkg.sv tb/tb_core_frontend.sv
 
 ./sim/obj_core_frontend/tb_core_frontend_sim

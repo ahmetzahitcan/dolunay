@@ -68,11 +68,27 @@ module core_frontend
     output regfile_sel_e sb_acq_regfile_o,
     output seq_t sb_acq_seq_o,
     output logic sb_acq_en_o,
+    input wire seq_t sb_acq_old_seq_i,
+    input wire logic sb_acq_old_busy_i,
+
+    output warp_id_t sb_dacq_warp_id_o, // Drop acquire port
+    output reg_id_t sb_dacq_idx_o,
+    output regfile_sel_e sb_dacq_regfile_o,
+    output seq_t sb_dacq_seq_o,
+    output logic sb_dacq_en_o,
+    output logic sb_dacq_empty_o,
 
     output warp_id_t hsb_warp_id_o,
     input wire hazard_mask_t hsb_busy_i,
     output hazard_mask_t hsb_acq_mask_o,
     output seq_t hsb_acq_seq_o,
+    input wire hazard_mask_t hsb_acq_old_busy_i,
+    input wire seq_t hsb_acq_old_seq_i [0:N_HAZARDS-1],
+
+    output warp_id_t hsb_dacq_warp_id_o,
+    output hazard_mask_t hsb_dacq_mask_o,
+    output seq_t hsb_dacq_seq_o [0:N_HAZARDS-1],
+    output hazard_mask_t hsb_dacq_empty_o,
 
     // Branch interface
     input wire logic branch_complete_i,
@@ -558,6 +574,37 @@ module core_frontend
 
     assign hsb_acq_seq_o = ra_seq_w;
 
+    // - Hazards Scoreboard drop-acquire
+
+    // A DP-flushed instruction must undo the hazard entries it acquired in
+    // register access. Otherwise, when it is replayed, the register-access
+    // check would observe its own stale acquire and the instruction would wait
+    // on itself (any resource it reads and writes). Restore the busy/seq state
+    // captured at acquire time instead.
+
+    assign hsb_dacq_warp_id_o = dp_warp_id_r;
+
+    always_comb begin
+        hsb_dacq_mask_o = '0;
+        if (dp_stage_valid_r && dp_stage_flush_w) begin
+            for (int i = 0; i < N_HAZARDS; i++) begin
+                unique case(dp_instr_r.hazards[i])
+                    HAZARDS_IGN: hsb_dacq_mask_o[i] = 0;
+                    HAZARDS_AQ: hsb_dacq_mask_o[i] = 1;
+                    HAZARDS_CK: hsb_dacq_mask_o[i] = 0;
+                    HAZARDS_CKAQ: hsb_dacq_mask_o[i] = 1;
+                endcase
+            end
+        end
+    end
+
+    always_comb begin
+        for (int i = 0; i < N_HAZARDS; i++) begin
+            hsb_dacq_seq_o[i] = hsb_acq_old_seq_i[i];
+            hsb_dacq_empty_o[i] = !hsb_acq_old_busy_i[i];
+        end
+    end
+
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
@@ -603,6 +650,18 @@ module core_frontend
 
     assign fu_in_ready_w = fu_in_ready_i;
     assign fu_in_valid_o = fu_in_valid_w;
+
+    // Drop-acquire
+
+    assign sb_dacq_warp_id_o = dp_warp_id_r;
+    assign sb_dacq_idx_o = dp_instr_r.rd_idx;
+    assign sb_dacq_regfile_o = dp_instr_r.rd_regfile;
+    assign sb_dacq_seq_o = sb_acq_old_seq_i;
+    assign sb_dacq_empty_o = !sb_acq_old_busy_i;
+    assign sb_dacq_en_o = dp_stage_valid_r &&
+        dp_stage_flush_w &&
+        dp_instr_r.rd_used &&
+        !(dp_instr_r.rd_idx == 0 && dp_instr_r.rd_regfile == REGFILE_SEL_I);
 
 endmodule
 
