@@ -1,5 +1,5 @@
 // =============================================================================
-// tb_core_issue.sv — Self-checking testbench for src/core_issue.sv
+// tb_core_frontend.sv — Self-checking testbench for src/core_frontend.sv
 // =============================================================================
 //
 // What is verified
@@ -8,14 +8,15 @@
 //     operations arrive in program order, carrying the correct pc, warp id,
 //     thread mask, decoded instruction and register-file operand data.
 //   * Instruction decode: the word decoded for a given pc is the program word at
-//     that pc, and it stays stable across stalls.
+//     that pc, including after the instruction is replayed.
 //   * Register-access / scoreboard interface: the register-file read addresses,
 //     the scoreboard check ports and the acquire port mirror the instruction in
 //     register access (index / regfile / enable), the acquire sequence number
-//     walks in step with the program, and a busy register stalls the stage
-//     without dropping or duplicating an instruction.
-//   * Function-unit handshake: one-hot valid, operation held stable while the
-//     FU is not ready, exactly one dispatch per instruction on resume.
+//     walks in step with the program, and a busy register flushes the stage so
+//     the instruction is replayed, without dropping or duplicating a dispatch.
+//   * Function-unit handshake (stall-less): one-hot valid, exactly one dispatch
+//     per instruction. Back-pressure is handled by replay, not by holding: an
+//     operation whose FU is not ready is abandoned (flushed) and replayed later.
 //   * No unknown (`X`) values ever reach a dispatched operation.
 //
 // How it is modelled
@@ -31,8 +32,15 @@
 //       - FU model : `fu_in_ready_i` is TB-controlled to inject back-pressure.
 //   * A second `control_unit` instance per stage acts as a golden decoder. Each
 //     is fed the program word at the pc the DUT itself claims to be working on,
-//     so the checks validate that core_issue routes a correctly-decoded
+//     so the checks validate that core_frontend routes a correctly-decoded
 //     instruction through its stages — independent of any given ISA behaviour.
+//   * The front-end pipeline is stall-less: a stage never holds an instruction.
+//     When a stage cannot proceed — register access sees a busy scoreboard
+//     operand, or the dispatch stage's FU is not ready — the offending
+//     instruction (and any younger instructions of the same warp behind it)
+//     fail, and the per-warp pc/sequence are rolled back so exactly those
+//     instructions are replayed on later cycles. This TB therefore checks for
+//     flush-and-replay, not for operations held across a stall.
 //
 // Notes
 // -----
@@ -47,7 +55,7 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-module tb_core_issue;
+module tb_core_frontend;
     import params_pkg::*;
     import control_unit_pkg::*;
     import core_pkg::*;
@@ -65,13 +73,13 @@ module tb_core_issue;
     //
     // Compile with tracing enabled to get a waveform: add
     //   --trace-fst --trace-structs -DWAVE
-    // to the build. The dump is written to sim/tb_core_issue.fst
+    // to the build. The dump is written to sim/tb_core_frontend.fst
     // (sim/ is git-ignored).
     // -----------------------------------------------------------------------
 `ifdef WAVE
     initial begin
-        $dumpfile("sim/tb_core_issue.fst");
-        $dumpvars(0, tb_core_issue);
+        $dumpfile("sim/tb_core_frontend.fst");
+        $dumpvars(0, tb_core_frontend);
     end
 `endif
 
@@ -172,6 +180,12 @@ module tb_core_issue;
         end
     end
 
+    // Expected scoreboard check/acquire enable for an operand: the operand must
+    // be used and must not be integer x0 (which is never busy / never acquired).
+    function automatic logic sb_operand_en(input logic used, input reg_id_t idx, input regfile_sel_e rf);
+        return used && !(idx == 0 && rf == REGFILE_SEL_I);
+    endfunction
+
     // -----------------------------------------------------------------------
     // Scoreboard model — a busy table the TB can poke, plus x0 special-casing.
     // -----------------------------------------------------------------------
@@ -246,7 +260,7 @@ module tb_core_issue;
     // them).
     int  disp_base   = 0;
     int  disp_before = 0;
-    fu_operation_s held_op;
+    int  replay_pc   = 0;
     bit  wait_ok;
 
     task automatic fail(input string label);
@@ -257,26 +271,13 @@ module tb_core_issue;
     // -----------------------------------------------------------------------
     // Per-cycle checker
     // -----------------------------------------------------------------------
-    logic       prev_valid;
-    logic       prev_stalled;
-    fu_operation_s prev_op;
-
-    initial begin
-        prev_valid   = 1'b0;
-        prev_stalled = 1'b0;
-        prev_op      = '0;
-    end
 
     always @(negedge clk) begin
         fu_operation_s opw;
         instr_s     raref;
         logic       handshake;
 
-        if (!rst_n) begin
-            prev_valid   <= 1'b0;
-            prev_stalled <= 1'b0;
-            prev_op      <= '0;
-        end else begin
+        if (rst_n) begin
             // ---------------- Dispatch / function-unit interface ----------------
             opw = fu_in_operation_o;
 
@@ -387,28 +388,30 @@ module tb_core_issue;
                 if (rf_read_warp_id_o !== dut.ra_warp_id_r)
                     fail($sformatf("rf_read_warp_id mismatch at pc=%0d", dut.ra_pc_r));
 
-                // Scoreboard check ports mirror the instruction, gated by usage.
+                // Scoreboard check ports mirror the instruction, gated by usage
+                // and the x0 special-case (x0 is never checked busy).
                 checks++;
                 if (sb_chk1_idx_o !== raref.rs1_idx || sb_chk1_regfile_o !== raref.rs1_regfile
-                    || sb_chk1_en_o !== raref.rs1_used)
+                    || sb_chk1_en_o !== sb_operand_en(raref.rs1_used, raref.rs1_idx, raref.rs1_regfile))
                     fail($sformatf("sb_chk1 mismatch at pc=%0d", dut.ra_pc_r));
                 checks++;
                 if (sb_chk2_idx_o !== raref.rs2_idx || sb_chk2_regfile_o !== raref.rs2_regfile
-                    || sb_chk2_en_o !== raref.rs2_used)
+                    || sb_chk2_en_o !== sb_operand_en(raref.rs2_used, raref.rs2_idx, raref.rs2_regfile))
                     fail($sformatf("sb_chk2 mismatch at pc=%0d", dut.ra_pc_r));
                 checks++;
                 if (sb_chk3_idx_o !== raref.rs3_idx || sb_chk3_regfile_o !== raref.rs3_regfile
-                    || sb_chk3_en_o !== raref.rs3_used)
+                    || sb_chk3_en_o !== sb_operand_en(raref.rs3_used, raref.rs3_idx, raref.rs3_regfile))
                     fail($sformatf("sb_chk3 mismatch at pc=%0d", dut.ra_pc_r));
 
                 checks++;
                 if (dut.ra_sb_busy_w !== (sb_chk1_busy_i | sb_chk2_busy_i | sb_chk3_busy_i))
                     fail("ra_sb_busy_w does not equal the OR of the check ports");
 
-                // Acquire port mirrors the instruction, gated by hazard / rd usage.
+                // Acquire port mirrors the instruction, gated by hazard / rd usage
+                // and the x0 special-case (x0 is never acquired).
                 checks++;
                 if (sb_acq_idx_o !== raref.rd_idx || sb_acq_regfile_o !== raref.rd_regfile
-                    || sb_acq_en_o !== (!dut.ra_sb_busy_w && raref.rd_used))
+                    || sb_acq_en_o !== (!dut.ra_sb_busy_w && sb_operand_en(raref.rd_used, raref.rd_idx, raref.rd_regfile)))
                     fail($sformatf("sb_acq mismatch at pc=%0d", dut.ra_pc_r));
                 // The acquire sequence tags the instruction in register access.
                 // With no branches the pc advances by one per instruction, so for
@@ -420,10 +423,15 @@ module tb_core_issue;
                 if (sb_warp_id_o !== dut.ra_warp_id_r)
                     fail($sformatf("sb_warp_id mismatch at pc=%0d", dut.ra_pc_r));
 
-                // A busy operand must stall register access.
+                // A busy operand must flush register access (this design is
+                // stall-less): the instruction cannot proceed, so the stage
+                // fails and the instruction is replayed on a later cycle.
                 checks++;
-                if (dut.ra_sb_busy_w && !dut.ra_stage_stall_w)
-                    fail($sformatf("scoreboard busy did not stall register access at pc=%0d", dut.ra_pc_r));
+                if (dut.ra_sb_busy_w && !dut.ra_stage_flush_w)
+                    fail($sformatf("scoreboard busy did not flush register access at pc=%0d", dut.ra_pc_r));
+                checks++;
+                if (dut.ra_sb_busy_w && !dut.ra_stage_fail_w[dut.ra_warp_id_r])
+                    fail($sformatf("scoreboard-busy instruction did not fail register access at pc=%0d", dut.ra_pc_r));
 
                 // Acquiring a busy register must not happen.
                 checks++;
@@ -431,22 +439,19 @@ module tb_core_issue;
                     fail($sformatf("acquire asserted while scoreboard busy at pc=%0d", dut.ra_pc_r));
             end
 
-            // ---------------- Back-pressure stability ----------------
-            if (prev_valid && prev_stalled) begin
+            // ---------------- Stall-less back-pressure ----------------
+            // A valid operation whose FU is not ready must not be held in the
+            // dispatch stage; the stage is flushed so the instruction (and the
+            // younger ones behind it) replay on later cycles. No dispatch is
+            // counted for a non-handshake, which the order/sequence checks above
+            // enforce.
+            if (fu_in_valid_o !== '0) begin
                 checks++;
-                if (fu_in_valid_o === '0)
-                    fail("valid dropped while FU was not ready");
-                checks++;
-                if (fu_in_operation_o.instr !== prev_op.instr
-                    || fu_in_operation_o.pc !== prev_op.pc
-                    || fu_in_operation_o.seq !== prev_op.seq)
-                    fail("operation changed while FU was not ready");
+                if (fu_in_valid_o[dp_ref_instr.fu_sel] === 1'b1
+                    && !fu_in_ready_i[dp_ref_instr.fu_sel]
+                    && !dut.dp_stage_flush_w)
+                    fail("dispatch stage not flushed while its FU was not ready");
             end
-
-            prev_valid   <= (fu_in_valid_o !== '0);
-            prev_op      <= opw;
-            prev_stalled <= (fu_in_valid_o !== '0) && !fu_in_ready_i[dp_ref_instr.fu_sel]
-                            && (fu_in_valid_o[dp_ref_instr.fu_sel] === 1'b1);
         end
     end
 
@@ -542,7 +547,7 @@ module tb_core_issue;
         $display("  dispatched %0d instructions, exp_pc=%0d", dispatches - disp_base, exp_pc);
 
         // ===================================================================
-        $display("\n== C. Scoreboard hazard stalls register access, then resumes ==");
+        $display("\n== C. Scoreboard hazard flushes register access, then replays ==");
         // ===================================================================
         do_reset();
         disp_base   = dispatches;
@@ -557,12 +562,14 @@ module tb_core_issue;
         end
         checks++;
         if (!wait_ok) begin
-            fail("never observed a scoreboard-busy stall");
+            fail("never observed a scoreboard-busy flush");
         end else begin
             checks++;
-            if (!dut.ra_stage_stall_w)
-                fail("register-access stall not asserted while scoreboard busy");
-            // Let the dispatch stage drain, then confirm issue has stopped.
+            if (!dut.ra_stage_flush_w)
+                fail("register-access flush not asserted while scoreboard busy");
+            // Let the dispatch stage drain, then confirm issue has stopped. The
+            // hazarded instruction is repeatedly flushed/replayed, so it (and
+            // everything younger) never dispatches while the register is busy.
             repeat (3) @(negedge clk);
             disp_before = dispatches;
             repeat (3) @(negedge clk);
@@ -572,12 +579,12 @@ module tb_core_issue;
                                disp_before, dispatches));
         end
 
-        // Release the hazard; the stalled instruction must complete exactly once.
+        // Release the hazard; the flushed instruction must replay exactly once.
         busy_r[0][REGFILE_SEL_I][4] = 1'b0;
         run_more(8, 200, wait_ok);
 
         // ===================================================================
-        $display("\n== D. FU back-pressure holds the operation ==");
+        $display("\n== D. FU back-pressure replays the operation (stall-less) ==");
         // ===================================================================
         do_reset();
         disp_base = dispatches;
@@ -586,29 +593,47 @@ module tb_core_issue;
         // Change `fu_in_ready_i` at the start of a cycle so it is stable for the
         // whole cycle. Changing it on a negedge can race the negedge monitor.
         @(posedge clk);
-        #1 held_op = fu_in_operation_o;
-        fu_in_ready_i = '0;
+        #1 fu_in_ready_i = '0;
+        // The front-end is stall-less: the operation in the dispatch stage is
+        // not held. It (and the younger instructions behind it) is flushed and
+        // rolled back, then replayed once the FU is ready again. `exp_pc` is the
+        // pc that must be replayed first, so it must not advance while blocked.
+        replay_pc   = exp_pc;
         disp_before = dispatches;
-        repeat (4) @(negedge clk);
-        checks++;
-        if (dispatches != disp_before)
-            fail($sformatf("dispatch occurred while FU not ready (%0d -> %0d)",
-                           disp_before, dispatches));
-        checks++;
-        if (fu_in_valid_o === '0)
-            fail("valid deasserted while waiting for FU");
-        checks++;
-        if (fu_in_operation_o.pc !== held_op.pc || fu_in_operation_o.seq !== held_op.seq)
-            fail("held operation changed while FU not ready");
+        for (int i = 0; i < 6; i++) begin
+            @(negedge clk);
+            checks++;
+            if (dispatches != disp_before)
+                fail($sformatf("dispatch occurred while FU not ready (%0d -> %0d)",
+                               disp_before, dispatches));
+            checks++;
+            if (exp_pc != replay_pc)
+                fail($sformatf("exp_pc advanced while FU not ready (%0d -> %0d)",
+                               replay_pc, exp_pc));
+            checks++;
+            if (dut.dp_stage_valid_r && !dut.dp_stage_flush_w)
+                fail("dispatch stage not flushed while FU not ready");
+        end
 
+        // Release the FU; the flushed instructions must replay, in order,
+        // starting with the operation that was in the dispatch stage. The
+        // order/sequence checks in the monitor police that exactly-once replay.
         fu_in_ready_i = '1;
+        wait_ok = 1'b0;
+        for (int i = 0; i < 200; i++) begin
+            @(negedge clk);
+            if (dispatches > disp_before) begin wait_ok = 1'b1; break; end
+        end
+        checks++;
+        if (!wait_ok)
+            fail("flushed operation was not replayed after FU became ready");
         run_more(6, 200, wait_ok);
 
         // ===================================================================
         // Summary
         // ===================================================================
         $display("\n=================================================");
-        $display(" core_issue TB: %0d checks, %0d failures, %0d dispatches",
+        $display(" core_frontend TB: %0d checks, %0d failures, %0d dispatches",
                  checks, errors, dispatches);
         if (errors == 0)
             $display(" RESULT: PASS");
@@ -623,7 +648,7 @@ module tb_core_issue;
     initial begin
         #200000;
         $display("\n  [FAIL] global simulation timeout");
-        $display(" core_issue TB: %0d checks, %0d failures, %0d dispatches",
+        $display(" core_frontend TB: %0d checks, %0d failures, %0d dispatches",
                  checks, errors + 1, dispatches);
         $display(" RESULT: FAIL (timeout)\n");
         $finish;
