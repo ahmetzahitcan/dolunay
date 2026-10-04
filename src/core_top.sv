@@ -75,15 +75,17 @@ module core_top
     hazard_mask_t hsb_rel_valid_w;
 
     scoreboard_mask #(
+        .N_GROUPS(N_WARPS),
         .N_ENTRIES(N_HAZARDS)
      ) u_haz_scoreboard (
     	.clk               (clk),
     	.rst_n             (rst_n),
-    	.frontend_warp_id_i(hsb_frontend_warp_id_w),
-    	.backend_warp_id_i (hsb_backend_warp_id_w),
+    	.busy_group_id_i   (hsb_frontend_warp_id_w),
     	.busy_o            (hsb_busy_w),
+        .acq_group_id_i    (hsb_frontend_warp_id_w),
     	.acq_mask_i        (hsb_acq_mask_w),
     	.acq_seq_i         (hsb_acq_seq_w),
+        .rel_group_id_i    (hsb_backend_warp_id_w),
     	.rel_mask_i        (hsb_rel_mask_w),
     	.rel_seq_i         (hsb_rel_seq_w),
     	.rel_valid_o       (hsb_rel_valid_w)
