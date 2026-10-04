@@ -19,8 +19,10 @@
 module scoreboard
     import params_pkg::*;
 #(
-    parameter int N_ENTRIES,
-    parameter int N_CHECK_PORTS,
+    // FIXME: slang cannot generate proper warnings unless these are set to a default value.
+    parameter int N_ENTRIES = 1,
+    parameter int N_CHECK_PORTS = 3,
+
     localparam int W_ENTRIES = $clog2(N_ENTRIES),
     localparam type entry_id_t = logic[W_ENTRIES-1:0]
 )(
