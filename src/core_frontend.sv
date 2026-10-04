@@ -89,8 +89,6 @@ module core_frontend
     logic if_delay_slot_w;
 
     // - Instruction Decode stage signals
-    pc_t id_jump_addr_w;
-    logic id_jump_w;
     pc_t id_pc_r;
     simd_mask_t id_mask_r;
     logic [31:2] id_undec_instr32_w;
@@ -103,6 +101,11 @@ module core_frontend
     instr_s ra_instr_r;
     warp_id_t ra_warp_id_r;
     logic ra_sb_busy_w, ra_hsb_busy_w;
+
+    // - Branch/Jump, initiated in register access
+    logic ra_jump_w;
+    logic ra_branching_w;
+    pc_t ra_jump_addr_w;
 
     // - Dispatch stage signals
     simd_data_t dp_rs1_data_w;
@@ -199,7 +202,7 @@ module core_frontend
     assign if_pc_w = u_thread_scheduler_pc_w[if_warp_id_r];
     assign if_mask_w = u_thread_scheduler_mask_w[if_warp_id_r];
 
-    assign if_delay_slot_w = (id_jump_w && if_warp_id_r == id_warp_id_r) ||
+    assign if_delay_slot_w = (ra_jump_w && if_warp_id_r == ra_warp_id_r) ||
         (branch_complete_i && branch_type_i == BR_UNIFORM_ALL && if_warp_id_r == branch_warp_id_i);
 
     logic split_w;
@@ -234,8 +237,8 @@ module core_frontend
                 end
             endcase
         end else begin
-            if (id_jump_w) begin
-                pc_next_w = id_jump_addr_w;
+            if (ra_jump_w) begin
+                pc_next_w = ra_jump_addr_w;
                 split_w = 0;
                 split_addr_w = 'x;
             end else begin
@@ -278,8 +281,8 @@ module core_frontend
 
             pc_t pc_next_w;
             always_comb begin
-                if (id_stage_valid_r && id_jump_w && id_warp_id_r == I) begin
-                    pc_next_w = id_jump_addr_w;
+                if (ra_stage_valid_r && ra_jump_w && ra_warp_id_r == I) begin
+                    pc_next_w = ra_jump_addr_w;
                 end else if (if_stage_valid_r && if_warp_id_r == I) begin
                     pc_next_w = pc_p1_rollback_table_w[rollback_table_idx_w];
                 end else begin
@@ -342,66 +345,6 @@ module core_frontend
         .instr_o(id_instr_w)
     );
 
-    // - Branch/Jump
-
-    assign id_delay_slot_w = branch_complete_i && branch_type_i == BR_UNIFORM_ALL && id_warp_id_r == branch_warp_id_i;
-    assign id_jump_addr_w = id_pc_r + id_instr_w.imm[RLEN-1:Z_PC];
-
-    always_comb begin
-        id_jump_w = 'x;
-        if (id_stage_valid_r) begin
-            unique case (id_instr_w.bj_type)
-                BJ_TYPE_NONE: id_jump_w = 0;
-                BJ_TYPE_JAL: id_jump_w = 1;
-                BJ_TYPE_BEQ: id_jump_w = 0;
-                BJ_TYPE_BNE: id_jump_w = 0;
-                BJ_TYPE_BLT: id_jump_w = 0;
-                BJ_TYPE_BGE: id_jump_w = 0;
-                BJ_TYPE_BLTU: id_jump_w = 0;
-                BJ_TYPE_BGEU: id_jump_w = 0;
-            endcase
-        end else begin
-            id_jump_w = 0;
-        end
-    end
-
-    logic id_branching_w;
-
-    always_comb begin
-        id_branching_w = 'x;
-        if (id_stage_valid_r) begin
-            unique case (id_instr_w.bj_type)
-                BJ_TYPE_NONE: id_branching_w = 0;
-                BJ_TYPE_JAL: id_branching_w = 0;
-                BJ_TYPE_BEQ: id_branching_w = 1;
-                BJ_TYPE_BNE: id_branching_w = 1;
-                BJ_TYPE_BLT: id_branching_w = 1;
-                BJ_TYPE_BGE: id_branching_w = 1;
-                BJ_TYPE_BLTU: id_branching_w = 1;
-                BJ_TYPE_BGEU: id_branching_w = 1;
-            endcase
-        end else begin
-            id_branching_w = 0;
-        end
-    end
-
-    always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            branching_r <= '0;
-        end else begin
-            // branching_r is per-warp: update each warp's bit independently, so
-            // that a branch issuing in decode for one warp and a branch
-            // resolving for another warp in the same cycle are both honoured.
-            for (int w = 0; w < N_WARPS; w++) begin
-                if (id_branching_w && id_warp_id_r == warp_id_t'(w)) begin
-                    branching_r[w] <= 1'b1;   // a branch is now in decode for warp w
-                end else if (branch_complete_i && branch_warp_id_i == warp_id_t'(w)) begin
-                    branching_r[w] <= 1'b0;   // warp w's branch resolved
-                end
-            end
-        end
-    end
-
     // - Pipeline Registers
 
     always_ff @( posedge clk ) begin
@@ -462,6 +405,52 @@ module core_frontend
                 ra_seq_list_r[i] <= '0;
             end else begin
                 ra_seq_list_r[i] <= ra_seq_list_next_w[i];
+            end
+        end
+    end
+
+    // - Branch/Jump
+
+    // JAL redirects in register access. Its fall-through is fetched after the
+    // jump, so it may already sit in fetch and/or decode for the jump's warp;
+    // drop it wherever it is.
+    assign id_delay_slot_w = (ra_jump_w && id_warp_id_r == ra_warp_id_r) ||
+        (branch_complete_i && branch_type_i == BR_UNIFORM_ALL && id_warp_id_r == branch_warp_id_i);
+    assign ra_jump_addr_w = ra_pc_r + ra_instr_r.imm[RLEN-1:Z_PC];
+
+    always_comb begin
+        ra_jump_w = 'x;
+        ra_branching_w = 'x;
+        if (ra_stage_valid_r) begin
+            unique case (ra_instr_r.bj_type)
+                BJ_TYPE_NONE: begin ra_jump_w = 0; ra_branching_w = 0; end
+                BJ_TYPE_JAL:  begin ra_jump_w = 1; ra_branching_w = 0; end
+                BJ_TYPE_BEQ:  begin ra_jump_w = 0; ra_branching_w = 1; end
+                BJ_TYPE_BNE:  begin ra_jump_w = 0; ra_branching_w = 1; end
+                BJ_TYPE_BLT:  begin ra_jump_w = 0; ra_branching_w = 1; end
+                BJ_TYPE_BGE:  begin ra_jump_w = 0; ra_branching_w = 1; end
+                BJ_TYPE_BLTU: begin ra_jump_w = 0; ra_branching_w = 1; end
+                BJ_TYPE_BGEU: begin ra_jump_w = 0; ra_branching_w = 1; end
+            endcase
+        end else begin
+            ra_jump_w = 0;
+            ra_branching_w = 0;
+        end
+    end
+
+    always_ff @(posedge clk) begin
+        if (!rst_n) begin
+            branching_r <= '0;
+        end else begin
+            // branching_r is per-warp: update each warp's bit independently, so
+            // that a branch issuing in register access for one warp and a branch
+            // resolving for another warp in the same cycle are both honoured.
+            for (int w = 0; w < N_WARPS; w++) begin
+                if (ra_branching_w && ra_warp_id_r == warp_id_t'(w)) begin
+                    branching_r[w] <= 1'b1;   // a branch is now in register access for warp w
+                end else if (branch_complete_i && branch_warp_id_i == warp_id_t'(w)) begin
+                    branching_r[w] <= 1'b0;   // warp w's branch resolved
+                end
             end
         end
     end
