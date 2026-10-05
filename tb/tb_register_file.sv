@@ -1,6 +1,6 @@
 // =============================================================================
-// tb_register_file_2port.sv — Self-checking testbench for
-//                            src/register_file_2port.sv
+// tb_register_file.sv — Self-checking testbench for
+//                            src/register_file.sv
 // =============================================================================
 //
 // The DUT is a SIMD register file with two identical read/write ports:
@@ -32,7 +32,7 @@
 `timescale 1ns/1ps
 `default_nettype none
 
-module tb_register_file_2port;
+module tb_register_file;
     import params_pkg::*;
 
     // -----------------------------------------------------------------------
@@ -58,7 +58,7 @@ module tb_register_file_2port;
     simd_data_t   portb_write_data_i;
     simd_data_t   portb_data_o;
 
-    register_file_2port dut (
+    register_file dut (
         .clk(clk),
         .porta_warp_id_i(porta_warp_id_i),
         .porta_idx_i(porta_idx_i),
@@ -332,7 +332,7 @@ module tb_register_file_2port;
         // Summary
         // -------------------------------------------------------------------
         $display("\n=================================================");
-        $display(" register_file_2port TB: %0d checks, %0d failures", checks, errors);
+        $display(" register_file TB: %0d checks, %0d failures", checks, errors);
         if (errors == 0)
             $display(" RESULT: PASS (all spec checks passed)");
         else
@@ -345,7 +345,7 @@ module tb_register_file_2port;
     initial begin
         #100000;
         $display("\n  [FAIL] global simulation timeout");
-        $display(" register_file_2port TB: %0d checks, %0d failures", checks, errors + 1);
+        $display(" register_file TB: %0d checks, %0d failures", checks, errors + 1);
         $finish;
     end
 
