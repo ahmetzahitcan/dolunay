@@ -28,6 +28,14 @@ package params_pkg;
     localparam int W_THREADS = $clog2(N_THREADS);
     localparam int W_REGISTERS = $clog2(N_REGISTERS);
 
+    // Physical register file: a flat pool of N_PHYS_REGS registers per thread,
+    // indexed by phys_reg_id_t. This is the single source of truth for the
+    // register file size; the register file itself knows nothing about how an
+    // architectural register number maps onto the pool.
+    localparam int N_PHYS_REGS = N_WARPS * N_REGFILES * N_REGISTERS;
+    localparam int W_PHYS_REGS = $clog2(N_PHYS_REGS);
+    typedef logic [W_PHYS_REGS-1:0] phys_reg_id_t;
+
     localparam int TLOCAL_SIZE_PT = 2048; // per thread
     localparam int TLOCAL_BANK_SIZE = TLOCAL_SIZE_PT * N_WARPS;
     localparam int TLOCAL_BANK_DEPTH = TLOCAL_BANK_SIZE / ADDR_ALIGN;

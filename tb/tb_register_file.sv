@@ -1,9 +1,10 @@
 // =============================================================================
-// tb_register_file.sv — Self-checking testbench for
-//                            src/register_file.sv
+// tb_register_file.sv — Self-checking testbench for src/register_file.sv
 // =============================================================================
 //
-// The DUT is a SIMD register file with two identical read/write ports:
+// The DUT is a SIMD register file with two identical read/write ports, addressed
+// by a single flat physical-register index (phys_reg_id_t) into a pool of
+// params_pkg::N_PHYS_REGS registers:
 //
 //   * porta / portb: one address, one per-thread write-enable mask, one
 //     write-data vector and one registered read-data output each. A port reads
@@ -16,15 +17,14 @@
 // Checks performed:
 //   A. Port B write is visible on both ports.
 //   B. Port A write is visible on both ports.
-//   C. Integer x0 is hardwired to zero.
-//   D. Floating-point x0 is an ordinary register.
-//   E. Read-before-write on port B.
-//   F. Read-before-write on port A.
-//   G. Per-thread write-enable masking (driven through port A).
-//   H. Warp isolation.
-//   I. Integer/floating register-file isolation.
-//   J. Ports read independent addresses in the same cycle.
-//   K. Both ports write distinct addresses in the same cycle.
+//   C. Register index 0 is an ordinary register (no special zero handling).
+//   D. Read-before-write on port B.
+//   E. Read-before-write on port A.
+//   F. Per-thread write-enable masking (driven through port A).
+//   G. The top index (N_PHYS_REGS-1) works.
+//   H. Distinct indices hold independent values.
+//   I. Ports read independent indices in the same cycle.
+//   J. Both ports write distinct indices in the same cycle.
 //
 // slang lint_off unconnected-input-port
 // slang lint_off unconnected-output-port
@@ -44,31 +44,23 @@ module tb_register_file;
     // -----------------------------------------------------------------------
     // DUT ports
     // -----------------------------------------------------------------------
-    warp_id_t     porta_warp_id_i;
-    reg_id_t      porta_idx_i;
-    regfile_sel_e porta_regfile_i;
+    phys_reg_id_t porta_idx_i;
     simd_mask_t   porta_write_en_mask_i;
     simd_data_t   porta_write_data_i;
     simd_data_t   porta_data_o;
 
-    warp_id_t     portb_warp_id_i;
-    reg_id_t      portb_idx_i;
-    regfile_sel_e portb_regfile_i;
+    phys_reg_id_t portb_idx_i;
     simd_mask_t   portb_write_en_mask_i;
     simd_data_t   portb_write_data_i;
     simd_data_t   portb_data_o;
 
     register_file dut (
         .clk(clk),
-        .porta_warp_id_i(porta_warp_id_i),
         .porta_idx_i(porta_idx_i),
-        .porta_regfile_i(porta_regfile_i),
         .porta_write_en_mask_i(porta_write_en_mask_i),
         .porta_write_data_i(porta_write_data_i),
         .porta_data_o(porta_data_o),
-        .portb_warp_id_i(portb_warp_id_i),
         .portb_idx_i(portb_idx_i),
-        .portb_regfile_i(portb_regfile_i),
         .portb_write_en_mask_i(portb_write_en_mask_i),
         .portb_write_data_i(portb_write_data_i),
         .portb_data_o(portb_data_o)
@@ -107,96 +99,76 @@ module tb_register_file;
     endtask
 
     task automatic init_inputs();
-        porta_warp_id_i = '0; porta_idx_i = '0; porta_regfile_i = REGFILE_SEL_I;
-        porta_write_en_mask_i = '0; porta_write_data_i = '0;
-        portb_warp_id_i = '0; portb_idx_i = '0; portb_regfile_i = REGFILE_SEL_I;
-        portb_write_en_mask_i = '0; portb_write_data_i = '0;
+        porta_idx_i = '0; porta_write_en_mask_i = '0; porta_write_data_i = '0;
+        portb_idx_i = '0; portb_write_en_mask_i = '0; portb_write_data_i = '0;
     endtask
 
     // ---- Port A / port B single-operation drivers -------------------------
-    task automatic read_a(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                          output simd_data_t d);
+    task automatic read_a(input phys_reg_id_t idx, output simd_data_t d);
         @(negedge clk);
-        porta_warp_id_i = w; porta_idx_i = idx; porta_regfile_i = rf;
-        porta_write_en_mask_i = '0;
+        porta_idx_i = idx; porta_write_en_mask_i = '0;
         @(negedge clk);
         d = porta_data_o;
     endtask
 
-    task automatic read_b(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                          output simd_data_t d);
+    task automatic read_b(input phys_reg_id_t idx, output simd_data_t d);
         @(negedge clk);
-        portb_warp_id_i = w; portb_idx_i = idx; portb_regfile_i = rf;
-        portb_write_en_mask_i = '0;
+        portb_idx_i = idx; portb_write_en_mask_i = '0;
         @(negedge clk);
         d = portb_data_o;
     endtask
 
-    task automatic write_a(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                           input simd_mask_t mask, input simd_data_t data);
+    task automatic write_a(input phys_reg_id_t idx, input simd_mask_t mask, input simd_data_t data);
         @(negedge clk);
-        porta_warp_id_i = w; porta_idx_i = idx; porta_regfile_i = rf;
-        porta_write_en_mask_i = mask; porta_write_data_i = data;
+        porta_idx_i = idx; porta_write_en_mask_i = mask; porta_write_data_i = data;
         @(posedge clk);
         @(negedge clk);
         porta_write_en_mask_i = '0;
     endtask
 
-    task automatic write_b(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                           input simd_mask_t mask, input simd_data_t data);
+    task automatic write_b(input phys_reg_id_t idx, input simd_mask_t mask, input simd_data_t data);
         @(negedge clk);
-        portb_warp_id_i = w; portb_idx_i = idx; portb_regfile_i = rf;
-        portb_write_en_mask_i = mask; portb_write_data_i = data;
+        portb_idx_i = idx; portb_write_en_mask_i = mask; portb_write_data_i = data;
         @(posedge clk);
         @(negedge clk);
         portb_write_en_mask_i = '0;
     endtask
 
-    // Read-and-write the same address in one cycle; returns the pre-write value.
-    task automatic readwrite_a(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                               input simd_mask_t mask, input simd_data_t data,
+    // Read-and-write the same index in one cycle; returns the pre-write value.
+    task automatic readwrite_a(input phys_reg_id_t idx, input simd_mask_t mask, input simd_data_t data,
                                output simd_data_t d);
         @(negedge clk);
-        porta_warp_id_i = w; porta_idx_i = idx; porta_regfile_i = rf;
-        porta_write_en_mask_i = mask; porta_write_data_i = data;
+        porta_idx_i = idx; porta_write_en_mask_i = mask; porta_write_data_i = data;
         @(negedge clk);
         d = porta_data_o;
         porta_write_en_mask_i = '0;
     endtask
 
-    task automatic readwrite_b(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                               input simd_mask_t mask, input simd_data_t data,
+    task automatic readwrite_b(input phys_reg_id_t idx, input simd_mask_t mask, input simd_data_t data,
                                output simd_data_t d);
         @(negedge clk);
-        portb_warp_id_i = w; portb_idx_i = idx; portb_regfile_i = rf;
-        portb_write_en_mask_i = mask; portb_write_data_i = data;
+        portb_idx_i = idx; portb_write_en_mask_i = mask; portb_write_data_i = data;
         @(negedge clk);
         d = portb_data_o;
         portb_write_en_mask_i = '0;
     endtask
 
-    // Read both ports with independent addresses in the same cycle.
-    task automatic read_both(input warp_id_t wa, input reg_id_t ia, input regfile_sel_e ra,
-                             input warp_id_t wb, input reg_id_t ib, input regfile_sel_e rb,
+    // Read both ports with independent indices in the same cycle.
+    task automatic read_both(input phys_reg_id_t ia, input phys_reg_id_t ib,
                              output simd_data_t da, output simd_data_t db);
         @(negedge clk);
-        porta_warp_id_i = wa; porta_idx_i = ia; porta_regfile_i = ra;
-        portb_warp_id_i = wb; portb_idx_i = ib; portb_regfile_i = rb;
+        porta_idx_i = ia; portb_idx_i = ib;
         porta_write_en_mask_i = '0; portb_write_en_mask_i = '0;
         @(negedge clk);
         da = porta_data_o; db = portb_data_o;
     endtask
 
-    // Write two distinct addresses from the two ports in the same cycle.
-    task automatic write_both(input warp_id_t wa, input reg_id_t ia, input regfile_sel_e ra,
-                              input simd_mask_t maska, input simd_data_t dataa,
-                              input warp_id_t wb, input reg_id_t ib, input regfile_sel_e rb,
-                              input simd_mask_t maskb, input simd_data_t datab);
+    // Write two distinct indices from the two ports in the same cycle.
+    task automatic write_both(input phys_reg_id_t ia, input simd_mask_t maska, input simd_data_t dataa,
+                              input phys_reg_id_t ib, input simd_mask_t maskb, input simd_data_t datab);
         @(negedge clk);
-        porta_warp_id_i = wa; porta_idx_i = ia; porta_regfile_i = ra;
-        porta_write_en_mask_i = maska; porta_write_data_i = dataa;
-        portb_warp_id_i = wb; portb_idx_i = ib; portb_regfile_i = rb;
-        portb_write_en_mask_i = maskb; portb_write_data_i = datab;
+        porta_idx_i = ia; porta_write_en_mask_i = maska; porta_write_data_i = dataa;
+        portb_idx_i = ib; portb_write_en_mask_i = maskb; portb_write_data_i = datab;
         @(posedge clk);
         @(negedge clk);
         porta_write_en_mask_i = '0; portb_write_en_mask_i = '0;
@@ -205,8 +177,10 @@ module tb_register_file;
     // -----------------------------------------------------------------------
     // Test body
     // -----------------------------------------------------------------------
-    simd_data_t exp_d, got_a, got_b, got_lo, got_hi, tmp;
-    simd_data_t exp_h_lo, exp_h_hi, exp_i_lo, exp_i_hi;
+    localparam phys_reg_id_t IDX_TOP = N_PHYS_REGS - 1;
+
+    simd_data_t exp_d, got_a, got_b, got_lo, got_hi;
+    simd_data_t exp_h_lo, exp_h_hi;
     simd_mask_t mask_lo;
 
     initial begin
@@ -219,114 +193,99 @@ module tb_register_file;
         // ---------------- A. Port B write visible on both ports ----------------
         $display("\n== A. Port B write seen by both ports ==");
         set_pattern(exp_d, 16'h1111);
-        write_b(2, 5, REGFILE_SEL_I, '1, exp_d);
-        read_a(2, 5, REGFILE_SEL_I, got_a);
+        write_b(5, '1, exp_d);
+        read_a(5, got_a);
         expect_simd(got_a, exp_d, "port A reads value written by port B");
-        read_b(2, 5, REGFILE_SEL_I, got_b);
+        read_b(5, got_b);
         expect_simd(got_b, exp_d, "port B reads value written by port B");
 
         // ---------------- B. Port A write visible on both ports ----------------
         $display("\n== B. Port A write seen by both ports ==");
         set_pattern(exp_d, 16'h2222);
-        write_a(4, 5, REGFILE_SEL_I, '1, exp_d);
-        read_a(4, 5, REGFILE_SEL_I, got_a);
+        write_a(7, '1, exp_d);
+        read_a(7, got_a);
         expect_simd(got_a, exp_d, "port A reads value written by port A");
-        read_b(4, 5, REGFILE_SEL_I, got_b);
+        read_b(7, got_b);
         expect_simd(got_b, exp_d, "port B reads value written by port A");
 
-        // ---------------- C. Integer x0 hardwired to zero ----------------
-        $display("\n== C. Integer x0 hardwired to zero ==");
-        tmp = '0;
-        set_pattern(exp_d, 16'hDEAD);
-        write_b(0, 0, REGFILE_SEL_I, '1, exp_d);
-        write_a(0, 0, REGFILE_SEL_I, '1, exp_d);
-        read_a(0, 0, REGFILE_SEL_I, got_a);
-        expect_simd(got_a, tmp, "port A reads integer x0 as zero");
-        read_b(0, 0, REGFILE_SEL_I, got_b);
-        expect_simd(got_b, tmp, "port B reads integer x0 as zero");
+        // ---------------- C. Index 0 is an ordinary register ----------------
+        $display("\n== C. Index 0 is an ordinary register ==");
+        set_pattern(exp_d, 16'hABCD);
+        write_a(0, '1, exp_d);
+        read_a(0, got_a);
+        expect_simd(got_a, exp_d, "port A reads index 0 back (no zero forcing)");
+        read_b(0, got_b);
+        expect_simd(got_b, exp_d, "port B reads index 0 back (no zero forcing)");
 
-        // ---------------- D. Float x0 is an ordinary register ----------------
-        $display("\n== D. Float x0 is a normal register ==");
-        set_pattern(exp_d, 16'hF0F0);
-        write_b(0, 0, REGFILE_SEL_F, '1, exp_d);
-        read_b(0, 0, REGFILE_SEL_F, got_b);
-        expect_simd(got_b, exp_d, "port B reads float x0 back");
-        read_a(0, 0, REGFILE_SEL_F, got_a);
-        expect_simd(got_a, exp_d, "port A reads float x0 back");
-
-        // ---------------- E. Read-before-write on port B ----------------
-        $display("\n== E. Read-before-write on port B ==");
+        // ---------------- D. Read-before-write on port B ----------------
+        $display("\n== D. Read-before-write on port B ==");
         set_pattern(got_lo, 16'h0A0A);                 // old value
         set_pattern(exp_d, 16'h0B0B);                  // new value
-        write_b(1, 7, REGFILE_SEL_I, '1, got_lo);
-        readwrite_b(1, 7, REGFILE_SEL_I, '1, exp_d, got_b);
+        write_b(9, '1, got_lo);
+        readwrite_b(9, '1, exp_d, got_b);
         expect_simd(got_b, got_lo, "same-cycle port B read returns pre-write value");
-        read_b(1, 7, REGFILE_SEL_I, got_b);
+        read_b(9, got_b);
         expect_simd(got_b, exp_d, "port B value updates on the next read");
 
-        // ---------------- F. Read-before-write on port A ----------------
-        $display("\n== F. Read-before-write on port A ==");
+        // ---------------- E. Read-before-write on port A ----------------
+        $display("\n== E. Read-before-write on port A ==");
         set_pattern(got_lo, 16'h1C1C);                 // old value
         set_pattern(exp_d, 16'h1D1D);                  // new value
-        write_a(1, 8, REGFILE_SEL_I, '1, got_lo);
-        readwrite_a(1, 8, REGFILE_SEL_I, '1, exp_d, got_a);
+        write_a(10, '1, got_lo);
+        readwrite_a(10, '1, exp_d, got_a);
         expect_simd(got_a, got_lo, "same-cycle port A read returns pre-write value");
-        read_a(1, 8, REGFILE_SEL_I, got_a);
+        read_a(10, got_a);
         expect_simd(got_a, exp_d, "port A value updates on the next read");
 
-        // ---------------- G. Per-thread write masking ----------------
-        $display("\n== G. Per-thread write-enable masking ==");
+        // ---------------- F. Per-thread write masking ----------------
+        $display("\n== F. Per-thread write-enable masking ==");
         set_pattern(got_hi, 16'hAAAA);                 // baseline, all threads
         set_pattern(got_lo, 16'h3333);                 // new value, lower half only
-        write_b(3, 9, REGFILE_SEL_I, '1, got_hi);
+        write_b(11, '1, got_hi);
         mask_lo = '0;
         for (int t = 0; t < N_THREADS / 2; t++) mask_lo[t] = 1'b1;
-        write_a(3, 9, REGFILE_SEL_I, mask_lo, got_lo);
+        write_a(11, mask_lo, got_lo);
         for (int t = 0; t < N_THREADS; t++) begin
             exp_d[t] = mask_lo[t] ? got_lo[t] : got_hi[t];
         end
-        read_b(3, 9, REGFILE_SEL_I, got_b);
+        read_b(11, got_b);
         expect_simd(got_b, exp_d, "only unmasked threads keep the old value");
 
-        // ---------------- H. Warp isolation ----------------
-        $display("\n== H. Warp isolation ==");
-        set_pattern(exp_h_lo, 16'hA000);
-        set_pattern(exp_h_hi, 16'hB000);
-        write_b(0, 4, REGFILE_SEL_I, '1, exp_h_lo);
-        write_b(1, 4, REGFILE_SEL_I, '1, exp_h_hi);
-        read_a(0, 4, REGFILE_SEL_I, got_a);
-        expect_simd(got_a, exp_h_lo, "warp 0 keeps its own value");
-        read_a(1, 4, REGFILE_SEL_I, got_a);
-        expect_simd(got_a, exp_h_hi, "warp 1 keeps its own value");
+        // ---------------- G. Top index works ----------------
+        $display("\n== G. Top index (N_PHYS_REGS-1) works ==");
+        set_pattern(exp_d, 16'h7777);
+        write_b(IDX_TOP, '1, exp_d);
+        read_a(IDX_TOP, got_a);
+        expect_simd(got_a, exp_d, "port A reads the top index back");
+        read_b(IDX_TOP, got_b);
+        expect_simd(got_b, exp_d, "port B reads the top index back");
 
-        // ---------------- I. Register-file isolation ----------------
-        $display("\n== I. Integer/float register-file isolation ==");
-        set_pattern(exp_i_lo, 16'h4444);
-        set_pattern(exp_i_hi, 16'h5555);
-        write_a(0, 6, REGFILE_SEL_I, '1, exp_i_lo);
-        write_a(0, 6, REGFILE_SEL_F, '1, exp_i_hi);
-        read_b(0, 6, REGFILE_SEL_I, got_b);
-        expect_simd(got_b, exp_i_lo, "integer regfile holds its value");
-        read_b(0, 6, REGFILE_SEL_F, got_b);
-        expect_simd(got_b, exp_i_hi, "float regfile holds its value");
+        // ---------------- H. Distinct indices are independent ----------------
+        $display("\n== H. Distinct indices are independent ==");
+        set_pattern(exp_h_lo, 16'h4444);
+        set_pattern(exp_h_hi, 16'h5555);
+        write_b(20, '1, exp_h_lo);
+        write_b(21, '1, exp_h_hi);
+        read_a(20, got_a);
+        expect_simd(got_a, exp_h_lo, "index 20 holds its own value");
+        read_a(21, got_a);
+        expect_simd(got_a, exp_h_hi, "index 21 holds its own value");
 
-        // ---------------- J. Independent port addresses ----------------
-        $display("\n== J. Ports read independent addresses ==");
-        read_both(1, 4, REGFILE_SEL_I,
-                  0, 6, REGFILE_SEL_F, got_a, got_b);
-        expect_simd(got_a, exp_h_hi, "port A reads warp1/reg4/int in shared cycle");
-        expect_simd(got_b, exp_i_hi, "port B reads warp0/reg6/float in shared cycle");
+        // ---------------- I. Independent port indices ----------------
+        $display("\n== I. Ports read independent indices ==");
+        read_both(20, 21, got_a, got_b);
+        expect_simd(got_a, exp_h_lo, "port A reads index 20 in shared cycle");
+        expect_simd(got_b, exp_h_hi, "port B reads index 21 in shared cycle");
 
-        // ---------------- K. Simultaneous writes to distinct addresses ----------------
-        $display("\n== K. Both ports write distinct addresses in one cycle ==");
+        // ---------------- J. Simultaneous writes to distinct indices ----------------
+        $display("\n== J. Both ports write distinct indices in one cycle ==");
         set_pattern(got_lo, 16'h6666);
-        set_pattern(got_hi, 16'h7777);
-        write_both(5, 10, REGFILE_SEL_I, '1, got_lo,
-                   6, 11, REGFILE_SEL_I, '1, got_hi);
-        read_a(5, 10, REGFILE_SEL_I, got_a);
-        expect_simd(got_a, got_lo, "port A address holds its value");
-        read_b(6, 11, REGFILE_SEL_I, got_b);
-        expect_simd(got_b, got_hi, "port B address holds its value");
+        set_pattern(got_hi, 16'h8888);
+        write_both(30, '1, got_lo, 31, '1, got_hi);
+        read_a(30, got_a);
+        expect_simd(got_a, got_lo, "port A index holds its value");
+        read_b(31, got_b);
+        expect_simd(got_b, got_hi, "port B index holds its value");
 
         // -------------------------------------------------------------------
         // Summary
