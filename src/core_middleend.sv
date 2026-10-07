@@ -31,8 +31,23 @@ module core_middleend
     // Register File - Port B
     output phys_reg_id_t rfb_idx_o,
     input wire logic rfb_write_en_i,
-    input wire simd_data_t rfb_data_i
+    input wire simd_data_t rfb_data_i,
+
+    // TODO: If I ever switch to true OoO, these have to be moved to the commit stage.
+    output logic branch_complete_o,
+    output simd_mask_t branch_mask_o,
+    output branch_type_e branch_type_o,
+    output warp_id_t branch_warp_id_o,
+    output pc_t branch_pc_o,
+    output pc_t branch_target_o
 );
+    // Function Unit Signals
+    logic [N_FUNCTION_UNITS-1:0] fu_in_ready_w;
+    logic [N_FUNCTION_UNITS-1:0] fu_in_valid_w;
+    fu_operation_s fu_in_operation_w;
+
+    logic [N_FUNCTION_UNITS-1:0] fu_out_ready_w;
+    logic [N_FUNCTION_UNITS-1:0] fu_out_valid_w;
 
     // Operand Fetch Queues
     me_operation_s [N_WARPS-1:0][OFQ_DEPTH-1:0] ofq_r;
@@ -57,12 +72,34 @@ module core_middleend
     logic of_valid_r;
     me_operation_s of_operation_r;
     warp_id_t of_warp_id_r;
+    function_unit_e of_fu_sel_r;
     simd_data_t of_rs1_buffer_r, of_rs2_buffer_r, of_rs3_buffer_r;
     logic of_rs1_fetched_r, of_rs2_fetched_r, of_rs3_fetched_r;
     logic of_rs1_zero_r, of_rs2_zero_r, of_rs3_zero_r;
 
-    // TODO: Get this from FU ready signals somehow.
+    // FU Sels
+    function_unit_e [N_WARPS-1:0] ofq_fu_sel_w;
+    logic [N_WARPS-1:0] ofq_fu_sel_valid_w;
+    always_comb begin
+        for (int i = 0; i < N_WARPS; i++) begin
+            ofq_fu_sel_w[i] = ofq_r[i][ofq_rptr_r[i]].instr.fu_sel;
+            ofq_fu_sel_valid_w[i] = fu_in_valid_w[ofq_r[i][ofq_rptr_r[i]].instr.fu_sel];
+        end
+    end
+
     warp_id_t ofq_drain_next_warp_w;
+    function_unit_e ofq_drain_next_fu_sel_w;
+    minmax_reducer #(
+    	.COUNT (N_WARPS),
+    	.TYPE  (function_unit_e),
+    	.MAX   (0)
+     ) minmax_reducer (
+        .vals_i(ofq_fu_sel_w),
+        .valid_i(ofq_fu_sel_valid_w),
+        .res_val_o(ofq_drain_next_fu_sel_w),
+        .res_idx_o(ofq_drain_next_warp_w),
+        .res_valid_o() // TODO
+    );
 
     logic ofq_drain_w;
     assign ofq_drain_w = (of_dispatch_w || !of_valid_r) && !ofq_empty_r[ofq_drain_next_warp_w];
@@ -100,6 +137,7 @@ module core_middleend
                 of_operation_r <= op;
                 ofq_rptr_r[ofq_drain_next_warp_w] <= ofq_rptr_p1_w[ofq_drain_next_warp_w];
                 of_warp_id_r <= ofq_drain_next_warp_w;
+                of_fu_sel_r <= ofq_drain_next_fu_sel_w;
                 of_valid_r <= 1;
 
                 if (op.instr.rs1_used) begin
@@ -235,6 +273,80 @@ module core_middleend
     assign of_rs1_data_w = of_rs1_zero_r ? '{default: '0} : of_rs1_buffer_r;
     assign of_rs2_data_w = of_rs2_zero_r ? '{default: '0} : of_rs2_buffer_r;
     assign of_rs3_data_w = of_rs3_zero_r ? '{default: '0} : of_rs3_buffer_r;
+
+    assign fu_in_operation_w = '{
+        seq: of_operation_r.seq,
+        warp_id: of_warp_id_r,
+        instr: of_operation_r.instr,
+        pc: of_operation_r.pc,
+        mask: of_operation_r.mask,
+        rs1_data: of_rs1_data_w,
+        rs2_data: of_rs2_data_w,
+        rs3_data: of_rs3_data_w
+    };
+
+    generate
+        for (genvar i = 0; i < N_FUNCTION_UNITS; i++) begin : gen_fu_valid
+            assign fu_in_valid_w[i] = of_valid_r && (of_fu_sel_r == i);
+        end
+    endgenerate
+
+    // - Function Units
+
+    fu_result_s fu_result_w [0:N_FUNCTION_UNITS-1];
+
+    fu_fpnew u_fpnew (
+    	.clk            (clk),
+    	.rst_n          (rst_n),
+    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_FPU]),
+    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_FPU]),
+    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_FPU]),
+    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_FPU]),
+    	.in_operation_i (fu_in_operation_w),
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_FPU])
+    );
+
+    fu_multialu u_multialu (
+    	.clk            (clk),
+    	.rst_n          (rst_n),
+    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_ALU]),
+    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_ALU]),
+    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_ALU]),
+    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_ALU]),
+    	.in_operation_i (fu_in_operation_w),
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_ALU])
+    );
+
+    fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_w; // FIXME: Put this in a better place lol
+
+    fu_csru u_csru (
+    	.clk            (clk),
+    	.rst_n          (rst_n),
+    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_CSRR]),
+    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_CSRR]),
+    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_CSRR]),
+    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_CSRR]),
+    	.in_operation_i (fu_in_operation_w),
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_CSRR]),
+        .fflags_i       (fflags_w)
+    );
+
+    fu_bju u_bju (
+    	.clk            (clk),
+    	.rst_n          (rst_n),
+    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_BJU]),
+    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_BJU]),
+    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_BJU]),
+    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_BJU]),
+    	.in_operation_i (fu_in_operation_w),
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_BJU]),
+        .branch_complete_o(branch_complete_o),
+        .branch_mask_o(branch_mask_o),
+        .branch_type_o(branch_type_o),
+        .branch_warp_id_o(branch_warp_id_o),
+        .branch_pc_o(branch_pc_o),
+        .branch_target_o(branch_target_o)
+    );
 
 endmodule
 

@@ -18,14 +18,10 @@ module fu_bju
     input wire logic out_ready_i,
     output fu_result_s out_result_o,
 
-    // FIXME: If I ever switch to true OoO, these have to be moved to the commit stage.
+    // TODO: If I ever switch to true OoO, these have to be moved to the commit stage.
     output logic branch_complete_o,
     output simd_mask_t branch_mask_o,
     output branch_type_e branch_type_o,
-    // Identity/target of the resolving branch, taken straight from the
-    // operation. The front-end must not guess these from its decode stage:
-    // with more than one warp the decode stage may hold a different warp by
-    // the time the branch resolves.
     output warp_id_t branch_warp_id_o,
     output pc_t branch_pc_o,
     output pc_t branch_target_o

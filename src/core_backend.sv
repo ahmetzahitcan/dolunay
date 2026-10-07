@@ -69,7 +69,8 @@ module core_backend
     assign cl_fu_handshake_w = cl_pe_valid_w;
 
     priority_encoder #(
-        .WIDTH   (N_FUNCTION_UNITS)
+        .WIDTH   (N_FUNCTION_UNITS),
+        .FROM_MSB (1) // Prioritize slower FUs
      ) u_fu_handshake_unit (
     	.input_i  (fu_out_valid_i),
     	.one_hot_o(fu_sel_w),
