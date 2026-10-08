@@ -1,50 +1,56 @@
+`default_nettype none
+
+/*
+    Min-Max Reducer. Takes a list of values and finds the minimum or maximum.
+                     Returns the value and its tag.
+*/
+
 module minmax_reducer #(
     parameter int COUNT = 8,
     localparam int LOG_COUNT = $clog2(COUNT),
-    parameter type TYPE = logic[31:0],
+    parameter int WIDTH = 32,
+    parameter type TAG_TYPE = logic,
     parameter bit MAX = 0
 ) (
-    input  TYPE [COUNT-1:0] vals_i,
-    input  logic [COUNT-1:0] valid_i,
-    output TYPE res_val_o,
-    output logic [LOG_COUNT-1:0] res_idx_o,
-    output logic res_valid_o
+    input wire logic [COUNT-1:0][WIDTH-1:0] vals_i,
+    input wire TAG_TYPE [COUNT-1:0] tags_i,
+    output logic [WIDTH-1:0] res_val_o,
+    output TAG_TYPE res_tag_o
 );
-
-    if (COUNT != (1 << LOG_COUNT)) begin : gen_assert
-        $error("COUNT (%0d) must be a power of 2", COUNT);
-    end
+    `ifndef SYNTHESIS
+        always_comb begin
+            assert (!$isunknown(vals_i)) else $warning("Unknown values in minmax_reducer, comparison won't simulate correctly!");
+        end
+    `endif
 
     // Flat wire array per reduction level
     // tree_val_w[0] has N elements, tree_val_w[LEVELS] has 1 element
     genvar lvl, i;
     generate
-        TYPE tree_val_w [LOG_COUNT:0][COUNT-1:0];
-        logic tree_valid_w [LOG_COUNT:0][COUNT-1:0];
-        logic [LOG_COUNT-1:0] tree_idx_w [LOG_COUNT:0][COUNT-1:0];
+        if (COUNT != (1 << LOG_COUNT)) begin : gen_assert
+            $error("COUNT (%0d) must be a power of 2", COUNT);
+        end
+
+        logic [WIDTH-1:0] tree_val_w [LOG_COUNT:0][COUNT-1:0];
+        TAG_TYPE tree_tag_w [LOG_COUNT:0][COUNT-1:0];
 
         // Base level
         for (i = 0; i < COUNT; i++) begin : gen_base
             assign tree_val_w[0][i] = vals_i[i];
-            assign tree_valid_w[0][i] = valid_i[i];
-            assign tree_idx_w[0][i] = LOG_COUNT'(unsigned'(i));
+            assign tree_tag_w[0][i] = tags_i[i];
         end
 
         // tree_val_w reduction
         for (lvl = 0; lvl < LOG_COUNT; lvl++) begin : gen_levels
             localparam int PAIRS = COUNT >> (lvl + 1);
             for (i = 0; i < PAIRS; i++) begin : gen_nodes
-                TYPE val_a_w, val_b_w;
+                logic [WIDTH-1:0] val_a_w, val_b_w;
                 assign val_a_w = tree_val_w[lvl][2*i];
                 assign val_b_w = tree_val_w[lvl][2*i+1];
 
-                logic [LOG_COUNT-1:0] idx_a_w, idx_b_w;
-                assign idx_a_w = tree_idx_w[lvl][2*i];
-                assign idx_b_w = tree_idx_w[lvl][2*i+1];
-
-                logic valid_a_w, valid_b_w;
-                assign valid_a_w = tree_valid_w[lvl][2*i];
-                assign valid_b_w = tree_valid_w[lvl][2*i+1];
+                TAG_TYPE tag_a_w, tag_b_w;
+                assign tag_a_w = tree_tag_w[lvl][2*i];
+                assign tag_b_w = tree_tag_w[lvl][2*i+1];
 
                 logic cmp_w;
 
@@ -54,23 +60,15 @@ module minmax_reducer #(
                     assign cmp_w = val_a_w < val_b_w;
                 end
 
-                logic sel_w;
-                always_comb begin
-                    if (valid_a_w && valid_b_w) sel_w = cmp_w;
-                    else if (valid_a_w && !valid_b_w) sel_w = 1;
-                    else if (valid_b_w && !valid_a_w) sel_w = 0;
-                    else sel_w = 'x;
-                end
-
-                assign tree_val_w[lvl+1][i] = sel_w ? val_a_w : val_b_w;
-                assign tree_idx_w[lvl+1][i] = sel_w ? idx_a_w : idx_b_w;
-                assign tree_valid_w[lvl+1][i] = valid_a_w || valid_b_w;
+                assign tree_val_w[lvl+1][i] = cmp_w ? val_a_w : val_b_w;
+                assign tree_tag_w[lvl+1][i] = cmp_w ? tag_a_w : tag_b_w;
             end
         end
 
         assign res_val_o = tree_val_w[LOG_COUNT][0];
-        assign res_idx_o = tree_idx_w[LOG_COUNT][0];
-        assign res_valid_o = tree_valid_w[LOG_COUNT][0];
+        assign res_tag_o = tree_tag_w[LOG_COUNT][0];
     endgenerate
 
 endmodule
+
+`default_nettype wire

@@ -39,7 +39,10 @@ module core_middleend
     output branch_type_e branch_type_o,
     output warp_id_t branch_warp_id_o,
     output pc_t branch_pc_o,
-    output pc_t branch_target_o
+    output pc_t branch_target_o,
+
+    // FIXME: There is probably a better way to deal with this.
+    input wire fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_i
 );
     // Function Unit Signals
     logic [N_FUNCTION_UNITS-1:0] fu_in_ready_w;
@@ -68,6 +71,7 @@ module core_middleend
     assign me_handshake_w = me_valid_i & me_ready_o;
 
     // Operand Fetch Signals
+    logic of_dispatch_ready_w;
     logic of_dispatch_w;
     logic of_valid_r;
     me_operation_s of_operation_r;
@@ -77,32 +81,80 @@ module core_middleend
     logic of_rs1_fetched_r, of_rs2_fetched_r, of_rs3_fetched_r;
     logic of_rs1_zero_r, of_rs2_zero_r, of_rs3_zero_r;
 
-    // FU Sels
-    function_unit_e [N_WARPS-1:0] ofq_fu_sel_w;
-    logic [N_WARPS-1:0] ofq_fu_sel_valid_w;
+    // Next warp selection
+
+    typedef struct packed {
+        function_unit_e fu_sel;
+        warp_id_t warp_id;
+        logic valid;
+    } reducer_tag_s;
+
+    localparam int W_REDUCER_VAL = W_FUNCTION_UNITS + 3;
+
+    logic [N_WARPS-1:0][W_REDUCER_VAL-1:0] reducer_vals_w;
+    reducer_tag_s [N_WARPS-1:0] reducer_tags_w;
     always_comb begin
+        // During simulation, an 'x causes the reducer to freak out.
+        // I could have the simulator use bit instead of logic,
+        // Which might actually lead to slightly lower LUT usage but...
+        // It feels too risky. I might get a simulator-synthesis mismatch.
+        // It's a micro-optimization anyway.
+        localparam logic[$size(function_unit_e)-1:0] fu_sel_undefined = '1;
+
+        static function_unit_e fu_sel;
+        static logic[$size(function_unit_e)-1:0] fu_sel_wrap;
+        static logic fu_valid;
+        static logic fu_valid_wrap;
+        static logic warp_empty;
+        static logic warp_full;
+
         for (int i = 0; i < N_WARPS; i++) begin
-            ofq_fu_sel_w[i] = ofq_r[i][ofq_rptr_r[i]].instr.fu_sel;
-            ofq_fu_sel_valid_w[i] = fu_in_valid_w[ofq_r[i][ofq_rptr_r[i]].instr.fu_sel];
+            warp_empty = ofq_empty_r[i];
+            warp_full = ofq_full_r[i];
+            fu_sel = ofq_r[i][ofq_rptr_r[i]].instr.fu_sel;
+            fu_sel_wrap = warp_empty ?
+                fu_sel_undefined :
+                fu_sel;
+            fu_valid = fu_in_ready_w[ofq_r[i][ofq_rptr_r[i]].instr.fu_sel];
+            fu_valid_wrap = !warp_empty && fu_valid;
+
+            reducer_vals_w[i] = {warp_empty, !fu_valid_wrap, fu_sel_wrap, !warp_full};
+            reducer_tags_w[i] = '{
+                fu_sel: fu_sel,
+                warp_id: W_WARPS'(unsigned'(i)),
+                valid: !warp_empty
+            };
         end
     end
 
-    warp_id_t ofq_drain_next_warp_w;
+    reducer_tag_s reducer_res_tag_w;
+
     function_unit_e ofq_drain_next_fu_sel_w;
+    warp_id_t ofq_drain_next_warp_w;
+    logic ofq_drain_valid_w;
+
+    assign ofq_drain_next_fu_sel_w = reducer_res_tag_w.fu_sel;
+    assign ofq_drain_next_warp_w = reducer_res_tag_w.warp_id;
+    assign ofq_drain_valid_w = reducer_res_tag_w.valid;
+
     minmax_reducer #(
     	.COUNT (N_WARPS),
-    	.TYPE  (function_unit_e),
-    	.MAX   (0)
+    	.TAG_TYPE  (reducer_tag_s),
+    	.MAX   (0),
+        .WIDTH (W_REDUCER_VAL)
      ) minmax_reducer (
-        .vals_i(ofq_fu_sel_w),
-        .valid_i(ofq_fu_sel_valid_w),
-        .res_val_o(ofq_drain_next_fu_sel_w),
-        .res_idx_o(ofq_drain_next_warp_w),
-        .res_valid_o() // TODO
+        .vals_i(reducer_vals_w),
+        .tags_i(reducer_tags_w),
+        .res_tag_o(reducer_res_tag_w),
+
+        // INFO: This is merely used as a priority.
+        // slang lint_off empty-output-connection
+        .res_val_o()
+        // slang lint_on empty-output-connection
     );
 
     logic ofq_drain_w;
-    assign ofq_drain_w = (of_dispatch_w || !of_valid_r) && !ofq_empty_r[ofq_drain_next_warp_w];
+    assign ofq_drain_w = (of_dispatch_w || !of_valid_r) && ofq_drain_valid_w;
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -196,11 +248,12 @@ module core_middleend
     assign of_rs2_needs_fetching_w = !of_rs2_fetched_r && !of_rs2_zero_r;
     assign of_rs3_needs_fetching_w = !of_rs3_fetched_r && !of_rs3_zero_r;
 
-    // TODO: This should also check if the FU is valid.
-    assign of_dispatch_w = of_valid_r &&
+    assign of_dispatch_ready_w = of_valid_r &&
         !of_rs1_needs_fetching_w &&
         !of_rs2_needs_fetching_w &&
         !of_rs3_needs_fetching_w;
+
+    assign of_dispatch_w = of_dispatch_ready_w && fu_in_ready_w[of_fu_sel_r];
 
     logic rfb_sel_w;
     assign rfb_sel_w = !of_rs1_needs_fetching_w;
@@ -226,7 +279,7 @@ module core_middleend
                 of_rs3_fetched_r <= 0;
             end
 
-            if (of_valid_r && !of_dispatch_w) begin
+            if (of_valid_r && !of_dispatch_ready_w) begin
                 // Port A: Used by rd and rs2
                 if (!rfa_write_en_i) begin
                     if (of_rs2_needs_fetching_w) begin
@@ -287,7 +340,7 @@ module core_middleend
 
     generate
         for (genvar i = 0; i < N_FUNCTION_UNITS; i++) begin : gen_fu_valid
-            assign fu_in_valid_w[i] = of_valid_r && (of_fu_sel_r == i);
+            assign fu_in_valid_w[i] = of_valid_r && (of_fu_sel_r == i) && of_dispatch_ready_w;
         end
     endgenerate
 
@@ -317,8 +370,6 @@ module core_middleend
         .out_result_o   (fu_result_w[FUNCTION_UNIT_ALU])
     );
 
-    fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_w; // FIXME: Put this in a better place lol
-
     fu_csru u_csru (
     	.clk            (clk),
     	.rst_n          (rst_n),
@@ -328,7 +379,7 @@ module core_middleend
     	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_CSRR]),
     	.in_operation_i (fu_in_operation_w),
         .out_result_o   (fu_result_w[FUNCTION_UNIT_CSRR]),
-        .fflags_i       (fflags_w)
+        .fflags_i       (fflags_i)
     );
 
     fu_bju u_bju (
