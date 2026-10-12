@@ -69,6 +69,10 @@ package params_pkg;
 
         FUNCTION_UNIT_FPU
     } function_unit_e;
+
+    parameter int SPAD_BANK_DEPTH = 1024;
+    parameter int W_SPAD_BANK_ADDR = $clog2(SPAD_BANK_DEPTH) + Z_ADDR;
+    parameter int N_SPAD_BANKS = N_THREADS;
 endpackage
 
 `default_nettype wire

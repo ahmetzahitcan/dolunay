@@ -2,21 +2,17 @@
 
 module scratchpad
     import params_pkg::*;
-#(
-    parameter int BANK_DEPTH = 1024,
-    parameter int BANK_COUNT = N_THREADS,
-    localparam int W_ADDR = $clog2(BANK_DEPTH) + Z_ADDR
-)(
+(
     input wire logic clk,
-    input wire logic [BANK_COUNT-1:0][W_ADDR-1:Z_ADDR] addr_i,
-    input wire logic [BANK_COUNT-1:0][RLEN-1:0] wdata_i,
-    input wire logic [BANK_COUNT-1:0][ADDR_ALIGN-1:0] wen_i,
-    output logic [BANK_COUNT-1:0][RLEN-1:0] rdata_o
+    input wire logic [N_SPAD_BANKS-1:0][W_SPAD_BANK_ADDR-1:Z_ADDR] addr_i,
+    input wire logic [N_SPAD_BANKS-1:0][RLEN-1:0] wdata_i,
+    input wire logic [N_SPAD_BANKS-1:0][ADDR_ALIGN-1:0] wen_i,
+    output logic [N_SPAD_BANKS-1:0][RLEN-1:0] rdata_o
 );
 
-    for (genvar i = 0; i < BANK_COUNT; i++) begin : gen_bank
+    for (genvar i = 0; i < N_SPAD_BANKS; i++) begin : gen_bank
         ram #(
-        	.DEPTH(BANK_DEPTH)
+        	.DEPTH(SPAD_BANK_DEPTH)
         ) ram (
         	.clk    (clk),
         	.addr_i (addr_i[i]),
