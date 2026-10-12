@@ -20,10 +20,8 @@ module core_backend
     output logic sb_rel_en_o,
     input wire logic sb_rel_valid_i,
 
-    output warp_id_t rf_warp_id_o,
+    output phys_reg_id_t rf_write_idx_o,
     output simd_mask_t rf_write_en_mask_o,
-    output reg_id_t rf_rd_idx_o,
-    output regfile_sel_e rf_rd_regfile_o,
     output simd_data_t  rf_write_data_o,
 
     output warp_id_t hsb_warp_id_o,
@@ -79,10 +77,8 @@ module core_backend
     logic rf_writeback_w;
     assign rf_writeback_w = wb_stage_valid_r && wb_fu_result_r.instr.rd_used && sb_rel_valid_i;
 
-    assign rf_warp_id_o = wb_fu_result_r.warp_id;
-    assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : 0;
-    assign rf_rd_idx_o = wb_fu_result_r.instr.rd_idx;
-    assign rf_rd_regfile_o = wb_fu_result_r.instr.rd_regfile;
+    assign rf_write_idx_o = get_phys_reg_id(wb_fu_result_r.warp_id, wb_fu_result_r.instr.rd_regfile, wb_fu_result_r.instr.rd_idx);
+    assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : '0;
 
     simd_data_t uwb_result_as_simd_w;
     assign uwb_result_as_simd_w = '{default: wb_fu_result_r.uwb_result};

@@ -28,14 +28,6 @@ package params_pkg;
     localparam int W_THREADS = $clog2(N_THREADS);
     localparam int W_REGISTERS = $clog2(N_REGISTERS);
 
-    // Physical register file: a flat pool of N_PHYS_REGS registers per thread,
-    // indexed by phys_reg_id_t. This is the single source of truth for the
-    // register file size; the register file itself knows nothing about how an
-    // architectural register number maps onto the pool.
-    localparam int N_PHYS_REGS = N_WARPS * N_REGFILES * N_REGISTERS;
-    localparam int W_PHYS_REGS = $clog2(N_PHYS_REGS);
-    typedef logic [W_PHYS_REGS-1:0] phys_reg_id_t;
-
     localparam int TLOCAL_SIZE_PT = 2048; // per thread
     localparam int TLOCAL_BANK_SIZE = TLOCAL_SIZE_PT * N_WARPS;
     localparam int TLOCAL_BANK_DEPTH = TLOCAL_BANK_SIZE / ADDR_ALIGN;
@@ -48,6 +40,18 @@ package params_pkg;
     typedef logic [RLEN-1:0] uniform_data_t;
     typedef logic [N_THREADS-1:0][RLEN-1:0] simd_data_t;
     typedef logic [RLEN-1:Z_PC] pc_t;
+
+    // Physical register file: a flat pool of N_PHYS_REGS registers per thread,
+    // indexed by phys_reg_id_t. This is the single source of truth for the
+    // register file size; the register file itself knows nothing about how an
+    // architectural register number maps onto the pool.
+    localparam int N_PHYS_REGS = N_WARPS * N_REGFILES * N_REGISTERS;
+    localparam int W_PHYS_REGS = $clog2(N_PHYS_REGS);
+    typedef logic [W_PHYS_REGS-1:0] phys_reg_id_t;
+
+    function phys_reg_id_t get_phys_reg_id(warp_id_t warp_id, regfile_sel_e regfile_sel, reg_id_t reg_id);
+        return {warp_id, regfile_sel, reg_id};
+    endfunction
 
     localparam int ROB_SIZE = (1 << 3); // FIXME: An absurdly large value for safety. Check how long this should be later.
     localparam int W_ROB_ADDR = $clog2(ROB_SIZE);

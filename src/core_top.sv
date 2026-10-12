@@ -33,12 +33,13 @@ module core_top
     output logic [W_IROM_ADDR-1:Z_PC] irom_addr_b_o,
     input wire logic [RLEN-1:0] irom_data_b_i
 );
-    logic [N_FUNCTION_UNITS-1:0] fu_in_ready_w;
-    logic [N_FUNCTION_UNITS-1:0] fu_in_valid_w;
-    fu_operation_s fu_in_operation_w;
+    logic [N_WARPS-1:0] me_in_ready_w;
+    logic [N_WARPS-1:0] me_in_valid_w;
+    me_operation_s me_in_operation_w;
 
-    logic [N_FUNCTION_UNITS-1:0] fu_out_ready_w;
-    logic [N_FUNCTION_UNITS-1:0] fu_out_valid_w;
+    logic me_out_ready_w;
+    logic me_out_valid_w;
+    fu_result_s me_out_result_w;
 
     // HPMs
     /*
@@ -152,48 +153,28 @@ module core_top
 
     // - Register File
 
-    warp_id_t rf_read_warp_id_w;
+    phys_reg_id_t rfa_me_idx_w, rfa_be_idx_w, rfa_idx_w;
+    simd_mask_t rfa_wen_mask_w;
+    logic rfa_wen_any_w;
+    simd_data_t rfa_wdata_w;
+    simd_data_t rfa_rdata_w;
 
-    reg_id_t rf_rs1_idx_w;
-    regfile_sel_e rf_rs1_regfile_w;
-    simd_data_t rf_rs1_data_w;
+    assign rfa_wen_any_w = |rfa_wen_mask_w;
+    assign rfa_idx_w = rfa_wen_any_w ? rfa_be_idx_w : rfa_me_idx_w;
 
-    reg_id_t rf_rs2_idx_w;
-    regfile_sel_e rf_rs2_regfile_w;
-    simd_data_t rf_rs2_data_w;
+    phys_reg_id_t rfb_idx_w;
+    simd_data_t rfb_rdata_w;
 
-    reg_id_t rf_rs3_idx_w;
-    regfile_sel_e rf_rs3_regfile_w;
-    simd_data_t rf_rs3_data_w;
-
-    warp_id_t rf_write_warp_id_w;
-    reg_id_t rf_rd_idx_w;
-    regfile_sel_e rf_rd_regfile_w;
-    simd_data_t rf_write_data_w;
-    simd_mask_t rf_write_en_mask_w;
-
-    register_file u_register_file(
-        .clk(clk),
-
-        .read_warp_id_i(rf_read_warp_id_w),
-
-        .rs1_idx_i(rf_rs1_idx_w),
-        .rs1_regfile_i(rf_rs1_regfile_w),
-        .rs1_data_o(rf_rs1_data_w),
-
-        .rs2_idx_i(rf_rs2_idx_w),
-        .rs2_regfile_i(rf_rs2_regfile_w),
-        .rs2_data_o(rf_rs2_data_w),
-
-        .rs3_idx_i(rf_rs3_idx_w),
-        .rs3_regfile_i(rf_rs3_regfile_w),
-        .rs3_data_o(rf_rs3_data_w),
-
-        .write_warp_id_i(rf_write_warp_id_w),
-        .write_en_mask_i(rf_write_en_mask_w),
-        .rd_idx_i(rf_rd_idx_w),
-        .rd_regfile_i(rf_rd_regfile_w),
-        .write_data_i(rf_write_data_w)
+    register_file u_register_file (
+    	.clk                  (clk),
+    	.porta_idx_i          (rfa_idx_w),
+    	.porta_write_en_mask_i(rfa_wen_mask_w),
+    	.porta_write_data_i   (rfa_wdata_w),
+    	.porta_data_o         (rfa_rdata_w),
+    	.portb_idx_i          (rfb_idx_w),
+    	.portb_write_en_mask_i('0),
+    	.portb_write_data_i   ('x),
+    	.portb_data_o         (rfb_rdata_w)
     );
 
     // - Front-end
@@ -211,22 +192,11 @@ module core_top
     ) u_core_frontend (
         .clk(clk),
         .rst_n(rst_n),
-        .fu_in_ready_i(fu_in_ready_w),
-        .fu_in_valid_o(fu_in_valid_w),
-        .fu_in_operation_o(fu_in_operation_w),
+        .me_ready_i(me_in_ready_w),
+        .me_valid_o(me_in_valid_w),
+        .me_op_o(me_in_operation_w),
         .instr_addr_o(irom_addr_a_o),
         .undec_instr32_i(irom_data_a_i),
-
-        .rf_read_warp_id_o(rf_read_warp_id_w),
-        .rf_rs1_idx_o(rf_rs1_idx_w),
-        .rf_rs1_regfile_o(rf_rs1_regfile_w),
-        .rf_rs1_data_i(rf_rs1_data_w),
-        .rf_rs2_idx_o(rf_rs2_idx_w),
-        .rf_rs2_regfile_o(rf_rs2_regfile_w),
-        .rf_rs2_data_i(rf_rs2_data_w),
-        .rf_rs3_idx_o(rf_rs3_idx_w),
-        .rf_rs3_regfile_o(rf_rs3_regfile_w),
-        .rf_rs3_data_i(rf_rs3_data_w),
 
         .sb_warp_id_o(sb_frontend_warp_id_w),
 
@@ -261,82 +231,53 @@ module core_top
         .branch_target_i(branch_target_w)
     );
 
-    // - Function Units
+    // - Middle-end
 
-    fu_result_s fu_result_w [0:N_FUNCTION_UNITS-1];
+    // FIXME: THERE MUST BE A BETTER PLACE TO PUT THIS! MUST BE!
+    fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_w;
 
-    fu_fpnew u_fpnew (
-    	.clk            (clk),
-    	.rst_n          (rst_n),
-    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_FPU]),
-    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_FPU]),
-    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_FPU]),
-    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_FPU]),
-    	.in_operation_i (fu_in_operation_w),
-        .out_result_o   (fu_result_w[FUNCTION_UNIT_FPU])
+    core_middleend u_core_middleend (
+    	.clk              (clk),
+    	.rst_n            (rst_n),
+    	.me_ready_o       (me_in_ready_w),
+    	.me_valid_i       (me_in_valid_w),
+    	.me_op_i          (me_in_operation_w),
+    	.rfa_idx_o        (rfa_me_idx_w),
+    	.rfa_write_en_i   (rfa_wen_any_w),
+    	.rfa_data_i       (rfa_rdata_w),
+    	.rfb_idx_o        (rfb_idx_w),
+    	.rfb_write_en_i   ('0),
+    	.rfb_data_i       (rfb_rdata_w),
+    	.result_valid_o   (me_out_valid_w),
+    	.result_ready_i   (me_out_ready_w),
+    	.result_o         (me_out_result_w),
+    	.branch_complete_o(branch_complete_w),
+    	.branch_mask_o    (branch_mask_w),
+    	.branch_type_o    (branch_type_w),
+    	.branch_warp_id_o (branch_warp_id_w),
+    	.branch_pc_o      (branch_pc_w),
+    	.branch_target_o  (branch_target_w),
+    	.fflags_i         (fflags_w)
     );
 
-    fu_multialu u_multialu (
-    	.clk            (clk),
-    	.rst_n          (rst_n),
-    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_ALU]),
-    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_ALU]),
-    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_ALU]),
-    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_ALU]),
-    	.in_operation_i (fu_in_operation_w),
-        .out_result_o   (fu_result_w[FUNCTION_UNIT_ALU])
-    );
-
-    fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_w; // FIXME: Put this in a better place lol
-
-    fu_csru u_csru (
-    	.clk            (clk),
-    	.rst_n          (rst_n),
-    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_CSRR]),
-    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_CSRR]),
-    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_CSRR]),
-    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_CSRR]),
-    	.in_operation_i (fu_in_operation_w),
-        .out_result_o   (fu_result_w[FUNCTION_UNIT_CSRR]),
-        .fflags_i       (fflags_w)
-    );
-
-    fu_bju u_bju (
-    	.clk            (clk),
-    	.rst_n          (rst_n),
-    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_BJU]),
-    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_BJU]),
-    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_BJU]),
-    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_BJU]),
-    	.in_operation_i (fu_in_operation_w),
-        .out_result_o   (fu_result_w[FUNCTION_UNIT_BJU]),
-        .branch_complete_o(branch_complete_w),
-        .branch_mask_o(branch_mask_w),
-        .branch_type_o(branch_type_w),
-        .branch_warp_id_o(branch_warp_id_w),
-        .branch_pc_o(branch_pc_w),
-        .branch_target_o(branch_target_w)
-    );
 
     // - Back-end
 
     core_backend u_core_backend (
     	.clk               (clk),
     	.rst_n             (rst_n),
-    	.fu_out_valid_i    (fu_out_valid_w),
-    	.fu_out_ready_o    (fu_out_ready_w),
-    	.fu_out_result_i   (fu_result_w),
+    	.result_valid_i    (me_out_valid_w),
+    	.result_ready_o    (me_out_ready_w),
+    	.result_i          (me_out_result_w),
     	.sb_warp_id_o      (sb_backend_warp_id_w),
     	.sb_rel_idx_o      (sb_rel_idx_w),
     	.sb_rel_regfile_o  (sb_rel_regfile_w),
     	.sb_rel_seq_o      (sb_rel_seq_w),
     	.sb_rel_en_o       (sb_rel_en_w),
     	.sb_rel_valid_i    (sb_rel_valid_w),
-        .rf_warp_id_o      (rf_write_warp_id_w),
-    	.rf_write_en_mask_o(rf_write_en_mask_w),
-    	.rf_rd_idx_o       (rf_rd_idx_w),
-    	.rf_rd_regfile_o   (rf_rd_regfile_w),
-    	.rf_write_data_o   (rf_write_data_w),
+    	.rf_write_en_mask_o(rfa_wen_mask_w),
+    	.rf_write_idx_o    (rfa_be_idx_w),
+    	.rf_write_data_o   (rfa_wdata_w),
         .hsb_warp_id_o     (hsb_backend_warp_id_w),
         .hsb_rel_mask_o    (hsb_rel_mask_w),
         .hsb_rel_seq_o     (hsb_rel_seq_w),

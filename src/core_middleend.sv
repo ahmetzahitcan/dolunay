@@ -241,9 +241,9 @@ module core_middleend
     phys_reg_id_t of_rs2_pidx_w;
     phys_reg_id_t of_rs3_pidx_w;
 
-    assign of_rs1_pidx_w = {of_warp_id_r, of_operation_r.instr.rs1_regfile, of_operation_r.instr.rs1_idx};
-    assign of_rs2_pidx_w = {of_warp_id_r, of_operation_r.instr.rs2_regfile, of_operation_r.instr.rs2_idx};
-    assign of_rs3_pidx_w = {of_warp_id_r, of_operation_r.instr.rs3_regfile, of_operation_r.instr.rs3_idx};
+    assign of_rs1_pidx_w = get_phys_reg_id(of_warp_id_r, of_operation_r.instr.rs1_regfile, of_operation_r.instr.rs1_idx);
+    assign of_rs2_pidx_w = get_phys_reg_id(of_warp_id_r, of_operation_r.instr.rs2_regfile, of_operation_r.instr.rs2_idx);
+    assign of_rs3_pidx_w = get_phys_reg_id(of_warp_id_r, of_operation_r.instr.rs3_regfile, of_operation_r.instr.rs3_idx);
 
     logic of_rs1_fetching_r, of_rs1_needs_fetching_w;
     logic of_rs2_fetching_r, of_rs2_needs_fetching_w;
