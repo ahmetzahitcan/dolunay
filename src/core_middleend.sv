@@ -33,6 +33,11 @@ module core_middleend
     input wire logic rfb_write_en_i,
     input wire simd_data_t rfb_data_i,
 
+    // Result stream -> back-end (single handshake)
+    output logic result_valid_o,
+    input wire logic result_ready_i,
+    output fu_result_s result_o,
+
     // TODO: If I ever switch to true OoO, these have to be moved to the commit stage.
     output logic branch_complete_o,
     output simd_mask_t branch_mask_o,
@@ -347,6 +352,25 @@ module core_middleend
     // - Function Units
 
     fu_result_s fu_result_w [0:N_FUNCTION_UNITS-1];
+
+    // - Result stream: pick one FU result per cycle and hand it to the back-end.
+    logic [N_FUNCTION_UNITS-1:0] result_sel_w;
+    logic [W_FUNCTION_UNITS-1:0] result_idx_w;
+
+    priority_encoder #(
+    	.WIDTH    (N_FUNCTION_UNITS),
+    	.FROM_MSB (1) // Prioritize slower FUs
+     ) u_result_encoder (
+    	.input_i  (fu_out_valid_w),
+    	.one_hot_o(result_sel_w),
+    	.index_o  (result_idx_w),
+       	.valid_o  (result_valid_o)
+    );
+
+    assign result_o = fu_result_w[result_idx_w];
+
+    // Ack only the selected FU, and only when the back-end will take the result.
+    assign fu_out_ready_w = result_ready_i ? result_sel_w : '0;
 
     fu_fpnew u_fpnew (
     	.clk            (clk),

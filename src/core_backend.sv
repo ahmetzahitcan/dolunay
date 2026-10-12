@@ -8,9 +8,10 @@ module core_backend
     input wire logic clk,
     input wire logic rst_n,
 
-    input wire logic [N_FUNCTION_UNITS-1:0] fu_out_valid_i,
-    output logic [N_FUNCTION_UNITS-1:0] fu_out_ready_o,
-    input wire fu_result_s fu_out_result_i [0:N_FUNCTION_UNITS-1],
+    // Result stream from the middle-end
+    input wire logic       result_valid_i,
+    output logic           result_ready_o,
+    input wire fu_result_s result_i,
 
     output warp_id_t sb_warp_id_o,
     output reg_id_t sb_rel_idx_o,
@@ -33,7 +34,7 @@ module core_backend
     output fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_o
 );
     // Pipeline control
-    logic cl_fu_handshake_w;
+    logic result_handshake_w;
 
     // - Indicate whether a stage contains a valid instruction.
     logic wb_stage_valid_r, cm_stage_valid_r;
@@ -45,7 +46,7 @@ module core_backend
         if (!rst_n) begin
             wb_stage_valid_r <= '0;
         end else begin
-            wb_stage_valid_r <= cl_fu_handshake_w;
+            wb_stage_valid_r <= result_handshake_w;
             cm_stage_valid_r <= rob_output_valid_w;
         end
     end
@@ -56,30 +57,13 @@ module core_backend
     // Commit stage registers
     fu_result_s cm_fu_result_r;
 
-    // Collect stage
-    logic [W_FUNCTION_UNITS-1:0] cl_fu_index_w;
-
-    fu_result_s cl_fu_result_w;
-    assign cl_fu_result_w = fu_out_result_i[cl_fu_index_w];
-
-    logic [N_FUNCTION_UNITS-1:0] fu_sel_w;
-    assign fu_out_ready_o = fu_sel_w;
-
-    logic cl_pe_valid_w;
-    assign cl_fu_handshake_w = cl_pe_valid_w;
-
-    priority_encoder #(
-        .WIDTH   (N_FUNCTION_UNITS),
-        .FROM_MSB (1) // Prioritize slower FUs
-     ) u_fu_handshake_unit (
-    	.input_i  (fu_out_valid_i),
-    	.one_hot_o(fu_sel_w),
-    	.index_o  (cl_fu_index_w),
-       	.valid_o  (cl_pe_valid_w)
-    );
+    // Result stream from the middle-end. The write-back stage is a single
+    // register and always accepts.
+    assign result_ready_o     = 1'b1;
+    assign result_handshake_w = result_valid_i & result_ready_o;
 
     always_ff @(posedge clk) begin
-        wb_fu_result_r <= cl_fu_result_w;
+        if (result_handshake_w) wb_fu_result_r <= result_i;
     end
 
     // Writeback stage

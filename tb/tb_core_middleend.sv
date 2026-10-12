@@ -2,7 +2,8 @@
 // tb_core_middleend.sv — Self-checking testbench for src/core_middleend.sv
 // =============================================================================
 //
-// Scope: the "first half" of the middle-end — operand fetch and dispatch.
+// Scope: the middle-end execution path — operand fetch, dispatch, and the
+// result stream to the back-end.
 //   * Reads operands from the two register-file ports (rs2 on port A, rs1 then
 //     rs3 on port B), with the same one-cycle, registered-read behaviour as
 //     src/register_file.sv.
@@ -14,11 +15,14 @@
 //     defers the read instead of capturing stale data.
 //   * The warp selector prefers a warp whose target FU is ready, and otherwise
 //     falls back to the fastest FU.
+//   * The result stream (result_valid_o / result_ready_i / result_o) carries
+//     every dispatched op back out with the correct warp id, sequence number and
+//     FU select, exactly once.
 //
-// The output/collect side is not implemented in the DUT yet, so this TB drives
-// the internal `fu_out_ready_w` with `force` to let the FUs drain, and observes
-// the dispatch at the middle-end's own FU interface via hierarchical reads.
-// The DUT is exercised only through its ports (plus those two test hooks).
+// The result handshake is driven through the ports (result_ready_i tied high);
+// the internal `fu_in_ready_w` is forced only in a couple of tests to hold
+// dispatch while queues are filled. Dispatch is observed through the ports via
+// hierarchical reads of the middle-end's own FU interface.
 //
 // =============================================================================
 
@@ -60,6 +64,10 @@ module tb_core_middleend;
     logic         rfb_write_en_i;
     simd_data_t   rfb_data_i;
 
+    logic         result_valid_o;
+    logic         result_ready_i = 1'b1;
+    fu_result_s   result_o;
+
     logic         branch_complete_o;
     simd_mask_t   branch_mask_o;
     branch_type_e branch_type_o;
@@ -80,6 +88,9 @@ module tb_core_middleend;
         .rfb_idx_o       (rfb_idx_o),
         .rfb_write_en_i  (rfb_write_en_i),
         .rfb_data_i      (rfb_data_i),
+        .result_valid_o  (result_valid_o),
+        .result_ready_i  (result_ready_i),
+        .result_o        (result_o),
         .branch_complete_o(branch_complete_o),
         .branch_mask_o   (branch_mask_o),
         .branch_type_o   (branch_type_o),
@@ -133,11 +144,13 @@ module tb_core_middleend;
     simd_data_t     exp_rs2  [N_WARPS][MAX_SEQ];
     simd_data_t     exp_rs3  [N_WARPS][MAX_SEQ];
     logic           disp_seen[N_WARPS][MAX_SEQ];
+    logic           coll_seen[N_WARPS][MAX_SEQ];
     int             last_seq [N_WARPS];
 
     int checks;
     int errors;
     int dispatches;
+    int collected;
 
     bit monitor_en = 1'b0;
 
@@ -175,6 +188,7 @@ module tb_core_middleend;
             for (int s = 0; s < MAX_SEQ; s++) begin
                 exp_set[w][s]   = 1'b0;
                 disp_seen[w][s] = 1'b0;
+                coll_seen[w][s] = 1'b0;
                 exp_fu[w][s]    = FUNCTION_UNIT_BJU;
                 exp_rs1[w][s]   = '0;
                 exp_rs2[w][s]   = '0;
@@ -187,6 +201,13 @@ module tb_core_middleend;
         for (int w = 0; w < N_WARPS; w++)
             for (int s = 0; s < MAX_SEQ; s++)
                 if (exp_set[w][s] && !disp_seen[w][s]) return 1'b0;
+        return 1'b1;
+    endfunction
+
+    function automatic bit all_collected();
+        for (int w = 0; w < N_WARPS; w++)
+            for (int s = 0; s < MAX_SEQ; s++)
+                if (exp_set[w][s] && !coll_seen[w][s]) return 1'b0;
         return 1'b1;
     endfunction
 
@@ -217,6 +238,14 @@ module tb_core_middleend;
         for (int i = 0; i < timeout; i++) begin
             @(negedge clk);
             if (all_dispatched()) begin ok = 1'b1; break; end
+        end
+    endtask
+
+    task automatic wait_collected(input int timeout, output bit ok);
+        ok = 1'b0;
+        for (int i = 0; i < timeout; i++) begin
+            @(negedge clk);
+            if (all_collected()) begin ok = 1'b1; break; end
         end
     endtask
 
@@ -260,6 +289,26 @@ module tb_core_middleend;
         end
     end
 
+    // Result monitor — the middle-end presents one result per cycle; the
+    // back-end (result_ready_i tied high here) latches it on the next posedge.
+    always @(negedge clk) begin
+        if (monitor_en && result_valid_o && result_ready_i) begin
+            automatic int w = int'(result_o.warp_id);
+            automatic int s = int'(result_o.seq);
+            collected++;
+            checks++;
+            if (!exp_set[w][s]) begin
+                fail($sformatf("unexpected collect w=%0d seq=%0d", w, s));
+            end else begin
+                if (coll_seen[w][s])
+                    fail($sformatf("duplicate collect w=%0d seq=%0d", w, s));
+                if (result_o.instr.fu_sel !== exp_fu[w][s])
+                    fail($sformatf("collect w=%0d s=%0d wrong FU", w, s));
+            end
+            coll_seen[w][s] = 1'b1;
+        end
+    end
+
     // -----------------------------------------------------------------------
     // Simulation control
     // -----------------------------------------------------------------------
@@ -285,8 +334,7 @@ module tb_core_middleend;
         checks = 0;
         errors = 0;
         dispatches = 0;
-        // Test hook: let the FUs drain even though the collect side is unwired.
-        force dut.fu_out_ready_w = 4'hF;
+        collected = 0;
 
         // ---------------- Test 1: operand fetch / dispatch datapath -------------
         $display("\n[TEST 1] operand fetch / dispatch datapath");
@@ -315,6 +363,8 @@ module tb_core_middleend;
         end
         wait_all(1000, ok);
         if (!ok) fail("test1: not all ops dispatched");
+        wait_collected(1000, ok);
+        if (!ok) fail("test1: not all ops collected");
 
         // ---------------- Test 2: OFQ back-pressure ----------------------------
         $display("\n[TEST 2] operand-fetch-queue back-pressure");
@@ -338,6 +388,8 @@ module tb_core_middleend;
         release dut.fu_in_ready_w;
         wait_all(1000, ok);
         if (!ok) fail("test2: ops did not drain after release");
+        wait_collected(1000, ok);
+        if (!ok) fail("test2: ops did not collect after release");
 
         // ---------------- Test 3: port-A write gating / retry ------------------
         $display("\n[TEST 3] port-A write gating defers the rs2 read");
@@ -356,6 +408,8 @@ module tb_core_middleend;
         rfa_write_en_i = 1'b0;                                  // free port A
         wait_all(1000, ok);
         if (!ok) fail("test3: op did not dispatch after port A freed");
+        wait_collected(1000, ok);
+        if (!ok) fail("test3: op did not collect after port A freed");
 
         // ---------------- Test 4: warp-selector priority ----------------------
         $display("\n[TEST 4] warp selector: prefer ready FU, else fastest");
@@ -384,13 +438,17 @@ module tb_core_middleend;
         force dut.fu_in_ready_w = READY_BJU | READY_ALU | READY_CSRR;
         wait_all(1000, ok);
         if (!ok) fail("test4: ops did not drain after CSRR became ready");
+        wait_collected(1000, ok);
+        if (!ok) fail("test4: ops did not collect after CSRR became ready");
 
         // ---------------- Summary ---------------------------------------------
         release dut.fu_in_ready_w;
-        release dut.fu_out_ready_w;
+        checks++;
+        if (collected != dispatches)
+            fail($sformatf("collected %0d != dispatched %0d", collected, dispatches));
         $display("\n=================================================");
-        $display(" core_middleend TB: %0d checks, %0d failures, %0d dispatches",
-                 checks, errors, dispatches);
+        $display(" core_middleend TB: %0d checks, %0d failures, %0d dispatched, %0d collected",
+                 checks, errors, dispatches, collected);
         if (errors == 0) $display(" RESULT: PASS");
         else             $display(" RESULT: FAIL (%0d checks failed)", errors);
         $display("=================================================\n");
