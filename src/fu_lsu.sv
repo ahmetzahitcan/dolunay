@@ -17,10 +17,10 @@ module fu_lsu
     input wire logic out_ready_i,
     output fu_result_s out_result_o,
 
-    input wire logic [BANK_COUNT-1:0][W_ADDR-1:Z_ADDR] addr_i,
-    input wire logic [BANK_COUNT-1:0][RLEN-1:0] wdata_i,
-    input wire logic [BANK_COUNT-1:0][ADDR_ALIGN-1:0] wen_i,
-    output logic [BANK_COUNT-1:0][RLEN-1:0] rdata_o
+    output logic [N_SPAD_BANKS-1:0][W_SPAD_BANK_ADDR-1:Z_ADDR] spad_addr_o,
+    output logic [N_SPAD_BANKS-1:0][RLEN-1:0] spad_wdata_o,
+    output logic [N_SPAD_BANKS-1:0][ADDR_ALIGN-1:0] spad_wen_o,
+    input wire logic [N_SPAD_BANKS-1:0][RLEN-1:0] spad_rdata_i
 );
 
 endmodule
