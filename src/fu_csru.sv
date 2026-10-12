@@ -18,7 +18,7 @@ module fu_csru
     input wire logic out_ready_i,
     output fu_result_s out_result_o,
 
-    input wire fpnew_pkg::status_t [N_THREADS-1:0] fflags_i
+    input wire fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_i
 );
 
     fu_operation_s operation_w;
@@ -46,7 +46,7 @@ module fu_csru
         wb_result_w = 'x;
         for(int i = 0; i < N_THREADS; i++) begin
             unique case (operation_w.instr.csrr_src)
-                CSRR_SRC_FFLAGS: wb_result_w[i] = {{(RLEN-$bits(fpnew_pkg::status_t)){1'b0}}, fflags_i[i]};
+                CSRR_SRC_FFLAGS: wb_result_w[i] = {{(RLEN-$bits(fpnew_pkg::status_t)){1'b0}}, fflags_i[operation_w.warp_id][i]};
             endcase
         end
     end

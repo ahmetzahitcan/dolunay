@@ -1,7 +1,22 @@
 // =============================================================================
-// tb_shuffle_any.sv — Basic testbench for shuffle_any
+// tb_core_top.sv — integration smoke test for src/core_top.sv
 // =============================================================================
 //
+// Drives core_top (front-end + middle-end + back-end + register file + the real
+// scoreboards) with a program preloaded into the IROM model, and checks that the
+// integrated pipeline makes forward progress and does not trip any RTL
+// assertion. Detailed functional checking of a program's results lives in the
+// host/kernel flow; this TB is the "does it elaborate and run without wedging"
+// harness.
+//
+// Progress is observed through hierarchical probes:
+//   * u_core_middleend.of_dispatch_w   — ops dispatched to the FUs
+//   * core_top.me_out_valid_w          — results handed to the back-end
+//   * u_core_backend.cm_stage_valid_r  — committed entries
+//
+// Pass criterion: at least one op is dispatched, collected and committed.
+//
+// =============================================================================
 
 `timescale 1ns/1ps
 `default_nettype none
@@ -10,25 +25,22 @@ module tb_core_top;
     import tb_config_pkg::RST_CYCLES;
     import params_pkg::*;
 
-    // RST_CYCLES is imported from tb_config_pkg — edit tb_config_pkg.sv
-
     // -----------------------------------------------------------------------
     // DUT ports
     // -----------------------------------------------------------------------
-    logic                 clk     = 0;
-    logic                 rst_n   = 0;
+    logic clk   = 1'b0;
+    logic rst_n = 1'b0;
+    logic start_i = 1'b0;
+    logic ready_o;
 
-   // logic                 start_r;
-   // logic                 ready_w;
-
-    // -----------------------------------------------------------------------
-    // Clock: 10 ns period
-    // -----------------------------------------------------------------------
     always #5 clk = ~clk;
 
-    // -----------------------------------------------------------------------
-    // DUT
-    // -----------------------------------------------------------------------
+`ifdef WAVE
+    initial begin
+        $dumpfile("sim/tb_core_top.fst");
+        $dumpvars(0, tb_core_top);
+    end
+`endif
 
     localparam int IROM_SIZE = 65536;
     localparam int WRAM_SIZE = 65536;
@@ -38,17 +50,17 @@ module tb_core_top;
 
     // WRAM Interface
     logic [W_WRAM_ADDR-1:Z_ADDR] wram_addr_w;
-    logic [RLEN-1:0] wram_wdata_w;
-    logic [ADDR_ALIGN-1:0] wram_wen_w;
-    logic [RLEN-1:0] wram_rdata_w;
+    logic [RLEN-1:0]             wram_wdata_w;
+    logic [ADDR_ALIGN-1:0]       wram_wen_w;
+    logic [RLEN-1:0]             wram_rdata_w;
 
     // IROM Interface A
     logic [W_IROM_ADDR-1:Z_PC] irom_addr_a_w;
-    logic [RLEN-1:0] irom_data_a_w;
+    logic [RLEN-1:0]           irom_data_a_w;
 
     // IROM Interface B
     logic [W_IROM_ADDR-1:Z_PC] irom_addr_b_w;
-    logic [RLEN-1:0] irom_data_b_w;
+    logic [RLEN-1:0]           irom_data_b_w;
 
     core_top #(
     	.WRAM_SIZE(WRAM_SIZE),
@@ -56,6 +68,8 @@ module tb_core_top;
      ) dut (
 	.clk          (clk),
 	.rst_n        (rst_n),
+	.start_i      (start_i),
+	.ready_o      (ready_o),
 	.wram_addr_o  (wram_addr_w),
 	.wram_wdata_o (wram_wdata_w),
 	.wram_wen_o   (wram_wen_w),
@@ -82,27 +96,38 @@ module tb_core_top;
         .port_b_data_o(irom_data_b_w)
     );
 
-    initial begin
-        $dumpfile("tb_core_top.fst");
-        $dumpvars(0, tb_core_top);
+    // -----------------------------------------------------------------------
+    // Progress probes
+    // -----------------------------------------------------------------------
+    int dispatches = 0;
+    int collects   = 0;
+    int commits    = 0;
 
-        // Hold reset low for at least RST_CYCLES clock cycles
-        //start_r = 1'b1;
-        rst_n = 0;
-        repeat (RST_CYCLES) @(posedge clk);
-        rst_n = 1;
-
-        /*
-        @(posedge clk);
-        start_r = 1'b1;
-        @(posedge clk);
-        start_r = 1'b0;
-        */
-
-        repeat (10000) @(posedge clk); //wait (ready_w);
-        $finish;
+    always @(posedge clk) begin
+        if (rst_n) begin
+            if (dut.u_core_middleend.of_dispatch_w)          dispatches++;
+            if (dut.me_out_valid_w)                          collects++;
+            if (dut.u_core_backend.cm_stage_valid_r)         commits++;
+        end
     end
 
+    initial begin
+        rst_n = 1'b0;
+        repeat (RST_CYCLES) @(posedge clk);
+        rst_n = 1'b1;
+
+        repeat (20000) @(posedge clk);
+
+        $display("\n=================================================");
+        $display(" core_top smoke: dispatched=%0d collected=%0d committed=%0d",
+                 dispatches, collects, commits);
+        if (dispatches > 0 && collects > 0 && commits > 0)
+            $display(" RESULT: PASS");
+        else
+            $display(" RESULT: FAIL (no forward progress)");
+        $display("=================================================\n");
+        $finish;
+    end
 
 endmodule
 

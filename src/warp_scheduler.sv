@@ -5,31 +5,45 @@ module warp_scheduler
 (
     input wire logic clk,
     input wire logic rst_n,
-    input wire logic stall_i,
-    output logic [W_WARPS-1:0] warp_id_o
+    input wire logic [N_WARPS-1:0] ready_i,
+    output logic [W_WARPS-1:0] warp_id_o,
+    output logic warp_valid_o
 );
 
-    logic [W_WARPS-1:0] current_warp_r;
+    logic [N_WARPS-1:0] scheduled_warps_r;
+    logic [N_WARPS-1:0] scheduled_warp_one_hot_w;
+    logic [N_WARPS-1:0] scheduled_warps_next_w;
 
-    logic [W_WARPS-1:0] next_warp_w;
-    assign next_warp_w = current_warp_r + 1'b1;
+    always_comb begin
+        scheduled_warps_next_w = scheduled_warps_r & ~scheduled_warp_one_hot_w;
+    end
+
+    priority_encoder #(
+        .WIDTH   (N_WARPS)
+     ) priority_encoder (
+    	.input_i  (scheduled_warps_r),
+    	.one_hot_o(scheduled_warp_one_hot_w),
+    	.index_o  (warp_id_o),
+    	.valid_o  (warp_valid_o)
+    );
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            current_warp_r <= '0;
-        end else if (!stall_i) begin
-            current_warp_r <= next_warp_w;
+            scheduled_warps_r <= '0;
+        end else begin
+            if (|scheduled_warps_next_w) begin
+                scheduled_warps_r <= scheduled_warps_next_w;
+            end else begin
+`ifdef FORCE_WARP_COUNT
+                localparam int WARP_COUNT = `FORCE_WARP_COUNT;
+                localparam int WARP_MASK = (1 << WARP_COUNT) - 1;
+                scheduled_warps_r <= ready_i & WARP_MASK;
+`else
+                scheduled_warps_r <= ready_i;
+`endif
+            end
         end
     end
-
-`ifdef FORCE_WARP_COUNT
-    // Only warps [0, FORCE_WARP_COUNT) are scheduled. The round-robin counter
-    // still runs over the full range, so take it modulo the active count.
-    localparam int unsigned FORCE_WARP_COUNT_VAL = `FORCE_WARP_COUNT;
-    assign warp_id_o = warp_id_t'(current_warp_r % FORCE_WARP_COUNT_VAL);
-`else
-    assign warp_id_o = current_warp_r;
-`endif
 
 endmodule
 

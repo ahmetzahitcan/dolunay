@@ -2,7 +2,7 @@
 
 module priority_encoder #(
     parameter int WIDTH = 32,
-    parameter int FROM_MSB = 0,
+    parameter bit FROM_MSB = 0,
     localparam int LOG_WIDTH = $clog2(WIDTH)
 ) (
     input wire logic [WIDTH-1:0] input_i,
@@ -20,7 +20,7 @@ module priority_encoder #(
                 if (input_i[i]) begin
                     valid_o = 1'b1;
                     one_hot_o[i] = 1'b1;
-                    index_o = i;
+                    index_o = i[LOG_WIDTH-1:0];
                     break;
                 end
             end
@@ -29,7 +29,7 @@ module priority_encoder #(
                 if (input_i[i]) begin
                     valid_o = 1'b1;
                     one_hot_o[i] = 1'b1;
-                    index_o = i;
+                    index_o = i[LOG_WIDTH-1:0];
                     break;
                 end
             end

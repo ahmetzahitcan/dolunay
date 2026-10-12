@@ -8,9 +8,10 @@ module core_backend
     input wire logic clk,
     input wire logic rst_n,
 
-    input wire logic [N_FUNCTION_UNITS-1:0] fu_out_valid_i,
-    output logic [N_FUNCTION_UNITS-1:0] fu_out_ready_o,
-    input wire fu_result_s fu_out_result_i [0:N_FUNCTION_UNITS-1],
+    // Result stream from the middle-end
+    input wire logic       result_valid_i,
+    output logic           result_ready_o,
+    input wire fu_result_s result_i,
 
     output warp_id_t sb_warp_id_o,
     output reg_id_t sb_rel_idx_o,
@@ -19,10 +20,8 @@ module core_backend
     output logic sb_rel_en_o,
     input wire logic sb_rel_valid_i,
 
-    output warp_id_t rf_warp_id_o,
+    output phys_reg_id_t rf_write_idx_o,
     output simd_mask_t rf_write_en_mask_o,
-    output reg_id_t rf_rd_idx_o,
-    output regfile_sel_e rf_rd_regfile_o,
     output simd_data_t  rf_write_data_o,
 
     output warp_id_t hsb_warp_id_o,
@@ -30,10 +29,10 @@ module core_backend
     output seq_t hsb_rel_seq_o,
     input wire hazard_mask_t hsb_rel_valid_i, // INFO: Remains unneeded for now...
 
-    output fpnew_pkg::status_t [N_THREADS-1:0] fflags_o
+    output fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_o
 );
     // Pipeline control
-    logic cl_fu_handshake_w;
+    logic result_handshake_w;
 
     // - Indicate whether a stage contains a valid instruction.
     logic wb_stage_valid_r, cm_stage_valid_r;
@@ -41,58 +40,28 @@ module core_backend
     // - Indicate whether ROB has a valid output
     logic rob_output_valid_w;
 
-    // - Indicate whether a stage should stall.
-    logic cl_stage_stall_w, wb_stage_stall_w, rob_stall_w, cm_stage_stall_w;
-
-    assign cl_stage_stall_w = wb_stage_stall_w;
-    assign wb_stage_stall_w = rob_stall_w;
-    assign rob_stall_w = '0;
-
-    assign cm_stage_stall_w = '0;
-
     always_ff @(posedge clk) begin
         if (!rst_n) begin
             wb_stage_valid_r <= '0;
         end else begin
-            if (!wb_stage_stall_w) wb_stage_valid_r <= !cl_stage_stall_w && cl_fu_handshake_w;
-            if (!cm_stage_stall_w) cm_stage_valid_r <= rob_output_valid_w;
+            wb_stage_valid_r <= result_handshake_w;
+            cm_stage_valid_r <= rob_output_valid_w;
         end
     end
 
     // Writeback stage registers
     fu_result_s wb_fu_result_r;
 
-    // ROB registers
-    fu_result_s rob_fu_result_r;
-
     // Commit stage registers
     fu_result_s cm_fu_result_r;
 
-    // Collect stage
-    logic [W_FUNCTION_UNITS-1:0] cl_fu_index_w;
-
-    fu_result_s cl_fu_result_w;
-    assign cl_fu_result_w = fu_out_result_i[cl_fu_index_w];
-
-    logic [N_FUNCTION_UNITS-1:0] fu_sel_w;
-    assign fu_out_ready_o = !cl_stage_stall_w ? fu_sel_w : '0;
-
-    logic cl_pe_valid_w;
-    assign cl_fu_handshake_w = !cl_stage_stall_w ? cl_pe_valid_w : 0;
-
-    priority_encoder #(
-        .WIDTH   (N_FUNCTION_UNITS)
-     ) u_fu_handshake_unit (
-    	.input_i  (fu_out_valid_i),
-    	.one_hot_o(fu_sel_w),
-    	.index_o  (cl_fu_index_w),
-       	.valid_o  (cl_pe_valid_w)
-    );
+    // Result stream from the middle-end. The write-back stage is a single
+    // register and always accepts.
+    assign result_ready_o     = 1'b1;
+    assign result_handshake_w = result_valid_i & result_ready_o;
 
     always_ff @(posedge clk) begin
-        if (!wb_stage_stall_w) begin
-            wb_fu_result_r <= cl_fu_result_w;
-        end
+        if (result_handshake_w) wb_fu_result_r <= result_i;
     end
 
     // Writeback stage
@@ -108,21 +77,13 @@ module core_backend
     logic rf_writeback_w;
     assign rf_writeback_w = wb_stage_valid_r && wb_fu_result_r.instr.rd_used && sb_rel_valid_i;
 
-    assign rf_warp_id_o = wb_fu_result_r.warp_id;
-    assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : 0;
-    assign rf_rd_idx_o = wb_fu_result_r.instr.rd_idx;
-    assign rf_rd_regfile_o = wb_fu_result_r.instr.rd_regfile;
+    assign rf_write_idx_o = get_phys_reg_id(wb_fu_result_r.warp_id, wb_fu_result_r.instr.rd_regfile, wb_fu_result_r.instr.rd_idx);
+    assign rf_write_en_mask_o = rf_writeback_w ? wb_fu_result_r.mask : '0;
 
     simd_data_t uwb_result_as_simd_w;
     assign uwb_result_as_simd_w = '{default: wb_fu_result_r.uwb_result};
 
     assign rf_write_data_o = wb_fu_result_r.use_uwb ? uwb_result_as_simd_w : wb_fu_result_r.wb_result;
-
-    always_ff @(posedge clk) begin
-        if (!rob_stall_w) begin
-            rob_fu_result_r <= wb_fu_result_r;
-        end
-    end
 
     // ROB
 
@@ -132,12 +93,10 @@ module core_backend
 
     always_comb begin
         rob_output_valid_w = 0;
-        if(!cm_stage_stall_w) begin
-            for (int i = 0; i < N_WARPS; i++) begin
-                if (rob_valid_r[i][rob_head_r[i]]) begin
-                    rob_output_valid_w = 1;
-                    break;
-                end
+        for (int i = 0; i < N_WARPS; i++) begin
+            if (rob_valid_r[i][rob_head_r[i]]) begin
+                rob_output_valid_w = 1;
+                break;
             end
         end
     end
@@ -147,29 +106,30 @@ module core_backend
             rob_valid_r <= '0;
             rob_head_r <= '0;
         end else begin
-            if (!rob_stall_w) begin
-                rob_r[rob_fu_result_r.warp_id][rob_fu_result_r.seq] <= rob_fu_result_r;
-                rob_valid_r[rob_fu_result_r.warp_id][rob_fu_result_r.seq] <= 1;
+            if (wb_stage_valid_r) begin
+                assert (!rob_valid_r[wb_fu_result_r.warp_id][wb_fu_result_r.seq])
+                    else $error("rob_valid_r[%0d][%0d] is already set, two operations might be sharing seq", wb_fu_result_r.warp_id, wb_fu_result_r.seq);
+
+                rob_r[wb_fu_result_r.warp_id][wb_fu_result_r.seq] <= wb_fu_result_r;
+                rob_valid_r[wb_fu_result_r.warp_id][wb_fu_result_r.seq] <= 1;
             end
 
-            if (!cm_stage_stall_w) begin
-                for (int i = 0; i < N_WARPS; i++) begin
-                    if (rob_valid_r[i][rob_head_r[i]]) begin
-                        cm_fu_result_r <= rob_r[i][rob_head_r[i]];
+            for (int i = 0; i < N_WARPS; i++) begin
+                if (rob_valid_r[i][rob_head_r[i]]) begin
+                    cm_fu_result_r <= rob_r[i][rob_head_r[i]];
 
-                        // INFO:    These are the same values stored in the ROB.
-                        //          My hope is that if I add them like this,
-                        //          synthesizer optimizes ROB to eliminate these.
-                        //
-                        // TODO:    Check if the ROB is actually optimized.
-                        //          (If not, instr_s might be a problem in general)
-                        cm_fu_result_r.warp_id <= i[W_WARPS-1:0];
-                        cm_fu_result_r.seq <= rob_head_r[i];
+                    // INFO:    These are the same values stored in the ROB.
+                    //          My hope is that if I add them like this,
+                    //          synthesizer optimizes ROB to eliminate these.
+                    //
+                    // TODO:    Check if the ROB is actually optimized.
+                    //          (If not, instr_s might be a problem in general)
+                    cm_fu_result_r.warp_id <= i[W_WARPS-1:0];
+                    cm_fu_result_r.seq <= rob_head_r[i];
 
-                        rob_valid_r[i][rob_head_r[i]] <= 0;
-                        rob_head_r[i] <= rob_head_r[i] + 1;
-                        break;
-                    end
+                    rob_valid_r[i][rob_head_r[i]] <= 0;
+                    rob_head_r[i] <= rob_head_r[i] + 1;
+                    break;
                 end
             end
         end
@@ -198,7 +158,7 @@ module core_backend
 
     // - FFLAGS - TODO: Move this to either fu_csru.sv or fu_fpnew.sv
 
-    fpnew_pkg::status_t [N_THREADS-1:0] cm_fflags_r;
+    fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] cm_fflags_r;
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -207,9 +167,9 @@ module core_backend
             if (cm_stage_valid_r) begin
                 for (int i = 0; i < N_THREADS; i++) begin
                     unique case (cm_fu_result_r.instr.fflags_update)
-                        FFLAGS_UPDATE_NONE: cm_fflags_r[i] <= cm_fflags_r[i];
-                        FFLAGS_UPDATE_ACC_FPU_STATUS: cm_fflags_r[i] <= cm_fflags_r[i] | cm_fu_result_r.fpu_status[i];
-                        FFLAGS_UPDATE_CSRW: cm_fflags_r[i] <= cm_fu_result_r.csrw_result[i][$bits(fpnew_pkg::status_t)-1:0];
+                        FFLAGS_UPDATE_NONE: ;
+                        FFLAGS_UPDATE_ACC_FPU_STATUS: cm_fflags_r[cm_fu_result_r.warp_id][i] <= cm_fflags_r[cm_fu_result_r.warp_id][i] | cm_fu_result_r.fpu_status[i];
+                        FFLAGS_UPDATE_CSRW: cm_fflags_r[cm_fu_result_r.warp_id][i] <= cm_fu_result_r.csrw_result[i][$bits(fpnew_pkg::status_t)-1:0];
                     endcase
                 end
             end

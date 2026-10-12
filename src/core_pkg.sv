@@ -6,6 +6,13 @@ package core_pkg;
 
     typedef struct packed {
         seq_t seq;
+        control_unit_pkg::instr_s instr;
+        pc_t pc;
+        simd_mask_t mask;
+    } me_operation_s;
+
+    typedef struct packed {
+        seq_t seq;
         warp_id_t warp_id;
         control_unit_pkg::instr_s instr;
         pc_t pc;

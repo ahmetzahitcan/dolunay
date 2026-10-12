@@ -19,7 +19,9 @@
 module scoreboard_mask
     import params_pkg::*;
 #(
-    parameter int N_ENTRIES,
+    // FIXME: slang cannot generate proper warnings unless this is set to a default value.
+    parameter int N_ENTRIES = 1,
+
     localparam type entry_mask_t = logic[N_ENTRIES-1:0]
 )(
     input wire logic clk,
@@ -42,7 +44,7 @@ module scoreboard_mask
     output entry_mask_t rel_valid_o
 );
 
-    logic [N_WARPS-1:0][N_ENTRIES-1:0] busy_r;
+    entry_mask_t [N_WARPS-1:0] busy_r;
     seq_t seq_r [0:N_WARPS-1][0:N_ENTRIES-1];
 
     entry_mask_t rel_valid_w;
@@ -79,7 +81,7 @@ module scoreboard_mask
         end
     end
 
-    assign busy_o = busy_r;
+    assign busy_o = busy_r[frontend_warp_id_i];
     assign rel_valid_o = rel_valid_w;
 
 endmodule

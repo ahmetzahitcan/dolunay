@@ -7,7 +7,7 @@ tez-vivado
 Bender.lock
 bender.tcl
 .cxl/Dolunay/
-xvlog.pb
+*.pb
 .~lock*
 sim/
 .Xil/Vivado-158289-fedora/.cxl/fpnew-test/
@@ -16,3 +16,4 @@ bender.verilator
 *.vcd
 *.fst
 tmp/
+.Xil/Vivado-219773-fedora/

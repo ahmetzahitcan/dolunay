@@ -2,15 +2,26 @@
 // tb_scoreboard.sv — Self-checking testbench for src/scoreboard.sv
 // =============================================================================
 //
+// The scoreboard is a per-warp, per-entry hazard tracker:
 //
-// Timing convention of the DUT:
-//   - Check ports are COMBINATIONAL (chk*_busy_o == f(busy_r, inputs, same cycle)).
-//   - Acquire/release ports are CLOCKED; their effect is visible on `busy_r`
-//     after the posedge, and `rel_success_o` is a register updated on that edge.
+//   * N_CHECK_PORTS combinational "is this entry busy?" queries:
+//         chk_busy_o[p] = chk_en_i[p] && busy_r[frontend_warp_id_i][chk_id_i[p]]
 //
-// So the TB drives combinational check inputs on a negedge and samples the
-// output a delta later, while acquire/release are driven on a negedge and
-// observed after the following posedge.
+//   * One clocked acquire port. Acquiring an already-busy entry overwrites the
+//     stored sequence tag, so the earlier acquire is dropped.
+//
+//   * One half-synchronous release port. rel_valid_o is combinational and
+//     reports whether the release *will* succeed at the next posedge:
+//         rel_valid_o = rel_en_i && busy && (rel_seq_i == stored seq)
+//
+// Entry IDs pack {register index, regfile select}, exactly like core_top:
+//         chk_id_i[p] = {idx, regfile}
+//
+// Timing convention:
+//   * Check inputs are driven on a negedge and sampled one delta later, same
+//     cycle (the check path is purely combinational).
+//   * Acquire / release are driven on a negedge; rel_valid_o is sampled before
+//     the following posedge, and the state change is observed after it.
 //
 // slang lint_off unconnected-input-port
 // slang lint_off unconnected-output-port
@@ -22,6 +33,11 @@ module tb_scoreboard;
     import params_pkg::*;
     import tb_config_pkg::RST_CYCLES;
 
+    localparam int N_ENTRIES     = N_REGISTERS * N_REGFILES;
+    localparam int N_CHECK_PORTS = 3;
+    localparam int W_ENTRIES     = $clog2(N_ENTRIES);
+    typedef logic [W_ENTRIES-1:0] entry_id_t;
+
     // -----------------------------------------------------------------------
     // Clock / reset
     // -----------------------------------------------------------------------
@@ -32,68 +48,53 @@ module tb_scoreboard;
     // -----------------------------------------------------------------------
     // DUT ports
     // -----------------------------------------------------------------------
-    warp_id_t issue_warp_id_i;
-    warp_id_t commit_warp_id_i;
+    warp_id_t frontend_warp_id_i;
+    warp_id_t backend_warp_id_i;
 
-    reg_id_t      chk1_idx_i;
-    regfile_sel_e chk1_regfile_i;
-    logic         chk1_en_i;
-    logic         chk1_busy_o;
+    entry_id_t chk_id_i [0:N_CHECK_PORTS-1];
+    logic      chk_en_i [0:N_CHECK_PORTS-1];
+    logic      chk_busy_o [0:N_CHECK_PORTS-1];
 
-    reg_id_t      chk2_idx_i;
-    regfile_sel_e chk2_regfile_i;
-    logic         chk2_en_i;
-    logic         chk2_busy_o;
+    entry_id_t acq_id_i;
+    seq_t      acq_seq_i;
+    logic      acq_en_i;
 
-    reg_id_t      chk3_idx_i;
-    regfile_sel_e chk3_regfile_i;
-    logic         chk3_en_i;
-    logic         chk3_busy_o;
+    entry_id_t rel_id_i;
+    seq_t      rel_seq_i;
+    logic      rel_en_i;
+    logic      rel_valid_o;
 
-    reg_id_t      acq_idx_i;
-    regfile_sel_e acq_regfile_i;
-    seq_t         acq_seq_i;
-    logic         acq_en_i;
+    scoreboard #(
+        .N_ENTRIES(N_ENTRIES),
+        .N_CHECK_PORTS(N_CHECK_PORTS)
+    ) dut (
+        .clk(clk),
+        .rst_n(rst_n),
 
-    reg_id_t      rel_idx_i;
-    regfile_sel_e rel_regfile_i;
-    seq_t         rel_seq_i;
-    logic         rel_en_i;
-    logic         rel_success_o;
+        .frontend_warp_id_i(frontend_warp_id_i),
+        .backend_warp_id_i(backend_warp_id_i),
 
-    scoreboard dut (
-        .clk            (clk),
-        .rst_n          (rst_n),
+        .chk_id_i(chk_id_i),
+        .chk_en_i(chk_en_i),
+        .chk_busy_o(chk_busy_o),
 
-        .issue_warp_id_i (issue_warp_id_i),
-        .commit_warp_id_i(commit_warp_id_i),
+        .acq_id_i(acq_id_i),
+        .acq_seq_i(acq_seq_i),
+        .acq_en_i(acq_en_i),
 
-        .chk1_idx_i     (chk1_idx_i),
-        .chk1_regfile_i (chk1_regfile_i),
-        .chk1_en_i      (chk1_en_i),
-        .chk1_busy_o    (chk1_busy_o),
-
-        .chk2_idx_i     (chk2_idx_i),
-        .chk2_regfile_i (chk2_regfile_i),
-        .chk2_en_i      (chk2_en_i),
-        .chk2_busy_o    (chk2_busy_o),
-
-        .chk3_idx_i     (chk3_idx_i),
-        .chk3_regfile_i (chk3_regfile_i),
-        .chk3_en_i      (chk3_en_i),
-        .chk3_busy_o    (chk3_busy_o),
-
-        .acq_idx_i      (acq_idx_i),
-        .acq_regfile_i  (acq_regfile_i),
-        .acq_seq_i      (acq_seq_i),
-        .acq_en_i       (acq_en_i),
-
-        .rel_idx_i      (rel_idx_i),
-        .rel_regfile_i  (rel_regfile_i),
-        .rel_seq_i      (rel_seq_i),
-        .rel_en_i       (rel_en_i),
-        .rel_success_o  (rel_success_o)
+        .rel_id_i(rel_id_i),
+        .rel_seq_i(rel_seq_i),
+        .rel_en_i(rel_en_i),
+        .rel_valid_o(rel_valid_o)
     );
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+    // Entry ID encoding used by core_top: {register index, regfile select}.
+    function automatic entry_id_t eid(input reg_id_t idx, input regfile_sel_e rf);
+        return {idx, rf};
+    endfunction
 
     // -----------------------------------------------------------------------
     // Bookkeeping
@@ -102,98 +103,111 @@ module tb_scoreboard;
     int errors    = 0;
     int bugprobes = 0;
 
-    task automatic expect_ok(input logic got, input logic exp, input string label);
+    task automatic expect_ok(input logic dut_val, input logic exp, input string label);
         checks++;
-        if (got !== exp) begin
+        if (dut_val !== exp) begin
             errors++;
-            $display("  [FAIL] %s (expected %0b, got %0b)", label, exp, got);
+            $display("  [FAIL] %s (expected %0b, got %0b)", label, exp, dut_val);
         end else begin
-            $display("  [ ok ] %s (expected %0b, got %0b)", label, exp, got);
+            $display("  [ ok ] %s (expected %0b, got %0b)", label, exp, dut_val);
+        end
+    endtask
+
+    task automatic expect_mask(input logic [N_CHECK_PORTS-1:0] dut_val,
+                               input logic [N_CHECK_PORTS-1:0] exp,
+                               input string label);
+        checks++;
+        if (dut_val !== exp) begin
+            errors++;
+            $display("  [FAIL] %s (expected %b, got %b)", label, exp, dut_val);
+        end else begin
+            $display("  [ ok ] %s (expected %b, got %b)", label, exp, dut_val);
         end
     endtask
 
     // Records a check whose *correct* answer is `correct`. A mismatch is
     // reported as a DUT bug but does not count as a TB failure.
-    task automatic bug_probe(input logic got, input logic correct, input string label);
+    task automatic bug_probe(input logic dut_val, input logic correct, input string label);
         bugprobes++;
-        if (got !== correct)
-            $display("  [BUG ] %s: correct=%0b, dut=%0b", label, correct, got);
+        if (dut_val !== correct)
+            $display("  [BUG ] %s: correct=%0b, dut=%0b", label, correct, dut_val);
         else
-            $display("  [ ok ] %s: dut=%0b", label, got);
+            $display("  [ ok ] %s: dut=%0b", label, dut_val);
     endtask
 
     // -----------------------------------------------------------------------
     // Stimulus helpers
     // -----------------------------------------------------------------------
-
     task automatic init_inputs();
-        issue_warp_id_i  = '0;
-        commit_warp_id_i = '0;
-        chk1_idx_i = '0; chk1_regfile_i = REGFILE_SEL_I; chk1_en_i = 1'b0;
-        chk2_idx_i = '0; chk2_regfile_i = REGFILE_SEL_I; chk2_en_i = 1'b0;
-        chk3_idx_i = '0; chk3_regfile_i = REGFILE_SEL_I; chk3_en_i = 1'b0;
-        acq_idx_i  = '0; acq_regfile_i  = REGFILE_SEL_I; acq_seq_i  = '0; acq_en_i = 1'b0;
-        rel_idx_i  = '0; rel_regfile_i  = REGFILE_SEL_I; rel_seq_i  = '0; rel_en_i = 1'b0;
+        frontend_warp_id_i = '0;
+        backend_warp_id_i  = '0;
+        for (int i = 0; i < N_CHECK_PORTS; i++) begin
+            chk_id_i[i] = '0;
+            chk_en_i[i] = 1'b0;
+        end
+        acq_id_i = '0; acq_seq_i = '0; acq_en_i = 1'b0;
+        rel_id_i = '0; rel_seq_i = '0; rel_en_i = 1'b0;
     endtask
 
-    // Combinational check reads (one cycle each).
-    task automatic read_chk1(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                             output logic busy);
+    // Clocked acquire; effect visible after the following posedge.
+    task automatic do_acq(input warp_id_t w, input entry_id_t id, input seq_t seq);
         @(negedge clk);
-        issue_warp_id_i = w;
-        chk1_idx_i = idx; chk1_regfile_i = rf; chk1_en_i = 1'b1;
-        acq_en_i = 1'b0; rel_en_i = 1'b0;
-        #1 busy = chk1_busy_o;
-        @(negedge clk) chk1_en_i = 1'b0;
-    endtask
-
-    task automatic read_chk2(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                             output logic busy);
-        @(negedge clk);
-        issue_warp_id_i = w;
-        chk2_idx_i = idx; chk2_regfile_i = rf; chk2_en_i = 1'b1;
-        acq_en_i = 1'b0; rel_en_i = 1'b0;
-        #1 busy = chk2_busy_o;
-        @(negedge clk) chk2_en_i = 1'b0;
-    endtask
-
-    task automatic read_chk3(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                             output logic busy);
-        @(negedge clk);
-        issue_warp_id_i = w;
-        chk3_idx_i = idx; chk3_regfile_i = rf; chk3_en_i = 1'b1;
-        acq_en_i = 1'b0; rel_en_i = 1'b0;
-        #1 busy = chk3_busy_o;
-        @(negedge clk) chk3_en_i = 1'b0;
-    endtask
-
-    task automatic do_acq(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                          input seq_t seq);
-        @(negedge clk);
-        issue_warp_id_i = w;
-        acq_idx_i = idx; acq_regfile_i = rf; acq_seq_i = seq; acq_en_i = 1'b1;
+        frontend_warp_id_i = w;
+        backend_warp_id_i  = w;
+        acq_id_i = id; acq_seq_i = seq; acq_en_i = 1'b1;
         rel_en_i = 1'b0;
         @(posedge clk);
         @(negedge clk) acq_en_i = 1'b0;
     endtask
 
-    // Returns rel_success_o for this release (registered, sampled after posedge).
-    task automatic do_rel(input warp_id_t w, input reg_id_t idx, input regfile_sel_e rf,
-                          input seq_t seq, output logic success);
+    // Half-synchronous release. `valid` is rel_valid_o sampled combinationally
+    // before the posedge; the actual free happens on that posedge.
+    task automatic do_rel(input warp_id_t w, input entry_id_t id, input seq_t seq,
+                          output logic valid);
         @(negedge clk);
-        commit_warp_id_i = w;
-        rel_idx_i = idx; rel_regfile_i = rf; rel_seq_i = seq; rel_en_i = 1'b1;
+        frontend_warp_id_i = w;
+        backend_warp_id_i  = w;
+        rel_id_i = id; rel_seq_i = seq; rel_en_i = 1'b1;
         acq_en_i = 1'b0;
+        #1 valid = rel_valid_o;
         @(posedge clk);
-        #1 success = rel_success_o;
         @(negedge clk) rel_en_i = 1'b0;
+    endtask
+
+    // Combinational single-port check.
+    task automatic do_chk(input warp_id_t w, input entry_id_t id, output logic busy);
+        @(negedge clk);
+        frontend_warp_id_i = w;
+        backend_warp_id_i  = w;
+        for (int i = 0; i < N_CHECK_PORTS; i++) chk_en_i[i] = 1'b0;
+        chk_id_i[0] = id; chk_en_i[0] = 1'b1;
+        acq_en_i = 1'b0; rel_en_i = 1'b0;
+        #1 busy = chk_busy_o[0];
+        @(negedge clk);
+        chk_en_i[0] = 1'b0;
+    endtask
+
+    // Combinational check on all ports simultaneously.
+    task automatic do_chk_all(input warp_id_t w, input entry_id_t id,
+                              output logic [N_CHECK_PORTS-1:0] busy);
+        @(negedge clk);
+        frontend_warp_id_i = w;
+        backend_warp_id_i  = w;
+        for (int i = 0; i < N_CHECK_PORTS; i++) begin
+            chk_id_i[i] = id;
+            chk_en_i[i] = 1'b1;
+        end
+        acq_en_i = 1'b0; rel_en_i = 1'b0;
+        #1 for (int i = 0; i < N_CHECK_PORTS; i++) busy[i] = chk_busy_o[i];
+        @(negedge clk);
+        for (int i = 0; i < N_CHECK_PORTS; i++) chk_en_i[i] = 1'b0;
     endtask
 
     // -----------------------------------------------------------------------
     // Test body
     // -----------------------------------------------------------------------
     logic got;
-    logic race_success;
+    logic [N_CHECK_PORTS-1:0] got_mask;
 
     initial begin
         init_inputs();
@@ -205,87 +219,108 @@ module tb_scoreboard;
         @(negedge clk);
 
         $display("\n== A. Post-reset state ==");
-        read_chk1(0, 5,  REGFILE_SEL_I, got); expect_ok(got, 1'b0, "post-reset x5 not busy (chk1)");
-        read_chk2(0, 6,  REGFILE_SEL_F, got); expect_ok(got, 1'b0, "post-reset f6 not busy (chk2)");
-        read_chk3(3, 31, REGFILE_SEL_I, got); expect_ok(got, 1'b0, "post-reset x31 not busy (chk3)");
+        do_chk(0, eid(5,  REGFILE_SEL_I), got); expect_ok(got, 1'b0, "post-reset x5 free");
+        do_chk(0, eid(6,  REGFILE_SEL_F), got); expect_ok(got, 1'b0, "post-reset f6 free");
+        do_chk(3, eid(31, REGFILE_SEL_I), got); expect_ok(got, 1'b0, "post-reset warp3 x31 free");
 
-        // ---------------- x0 is special ----------------
-        $display("\n== B. x0 special-casing ==");
-        do_acq(0, 0, REGFILE_SEL_I, 8'hAA);       // acquire x0: ignored
-        read_chk1(0, 0, REGFILE_SEL_I, got); expect_ok(got, 1'b0, "check x0 never busy after acquire");
-        read_chk2(0, 0, REGFILE_SEL_I, got); expect_ok(got, 1'b0, "check x0 never busy (chk2)");
-        do_rel(0, 0, REGFILE_SEL_I, 8'h00, got); expect_ok(got, 1'b1, "release x0 always succeeds");
+        // ---------------- Acquire / check / release ----------------
+        $display("\n== B. Acquire / check / release (all 3 check ports) ==");
+        do_acq(0, eid(5, REGFILE_SEL_I), 8'h01);
+        do_chk_all(0, eid(5, REGFILE_SEL_I), got_mask);
+        expect_mask(got_mask, 3'b111, "x5 busy on all check ports");
+        do_rel(0, eid(5, REGFILE_SEL_I), 8'h02, got);
+        expect_ok(got, 1'b0, "release with wrong seq is invalid");
+        do_chk(0, eid(5, REGFILE_SEL_I), got);
+        expect_ok(got, 1'b1, "x5 still busy after failed release");
+        do_rel(0, eid(5, REGFILE_SEL_I), 8'h01, got);
+        expect_ok(got, 1'b1, "release with matching seq is valid");
+        do_chk(0, eid(5, REGFILE_SEL_I), got);
+        expect_ok(got, 1'b0, "x5 free after release");
 
-        // f0 (idx 0, FP regfile) is NOT special and must behave normally.
-        do_acq(0, 0, REGFILE_SEL_F, 8'h11);
-        read_chk1(0, 0, REGFILE_SEL_F, got); expect_ok(got, 1'b1, "check f0 is busy (f0 is not special)");
-        do_rel(0, 0, REGFILE_SEL_F, 8'h11, got); expect_ok(got, 1'b1, "release f0 succeeds");
-        read_chk1(0, 0, REGFILE_SEL_F, got); expect_ok(got, 1'b0, "f0 free after release");
+        // ---------------- Re-acquire drops the earlier acquire ----------------
+        $display("\n== C. Re-acquire drops the earlier acquire ==");
+        do_acq(0, eid(6, REGFILE_SEL_I), 8'h10);
+        do_acq(0, eid(6, REGFILE_SEL_I), 8'h20);
+        do_chk(0, eid(6, REGFILE_SEL_I), got); expect_ok(got, 1'b1, "x6 busy after re-acquire");
+        do_rel(0, eid(6, REGFILE_SEL_I), 8'h10, got); expect_ok(got, 1'b0, "dropped acquire release invalid");
+        do_chk(0, eid(6, REGFILE_SEL_I), got); expect_ok(got, 1'b1, "x6 still busy after dropped release");
+        do_rel(0, eid(6, REGFILE_SEL_I), 8'h20, got); expect_ok(got, 1'b1, "latest acquire release valid");
+        do_chk(0, eid(6, REGFILE_SEL_I), got); expect_ok(got, 1'b0, "x6 free after release");
 
-        // ---------------- Basic acquire / check / release ----------------
-        $display("\n== C. Acquire / check / release ==");
-        do_acq(0, 5, REGFILE_SEL_I, 8'h01);
-        read_chk1(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x5 busy on all 3 check ports (1)");
-        read_chk2(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x5 busy on all 3 check ports (2)");
-        read_chk3(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x5 busy on all 3 check ports (3)");
-        do_rel(0, 5, REGFILE_SEL_I, 8'h02, got); expect_ok(got, 1'b0, "release with wrong seq fails");
-        read_chk1(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x5 still busy after failed release");
-        do_rel(0, 5, REGFILE_SEL_I, 8'h01, got); expect_ok(got, 1'b1, "release with matching seq succeeds");
-        read_chk1(0, 5, REGFILE_SEL_I, got); expect_ok(got, 1'b0, "x5 free after release");
+        // ---------------- Per-warp isolation ----------------
+        $display("\n== D. Per-warp isolation ==");
+        do_acq(0, eid(7, REGFILE_SEL_I), 8'h30);
+        do_chk(1, eid(7, REGFILE_SEL_I), got); expect_ok(got, 1'b0, "warp1 x7 independent of warp0");
+        do_acq(1, eid(7, REGFILE_SEL_I), 8'h31);
+        do_chk(0, eid(7, REGFILE_SEL_I), got); expect_ok(got, 1'b1, "warp0 x7 still busy");
+        do_rel(0, eid(7, REGFILE_SEL_I), 8'h30, got); expect_ok(got, 1'b1, "warp0 x7 release valid");
+        do_chk(1, eid(7, REGFILE_SEL_I), got); expect_ok(got, 1'b1, "warp1 x7 unaffected");
+        do_rel(1, eid(7, REGFILE_SEL_I), 8'h31, got); expect_ok(got, 1'b1, "warp1 x7 release valid");
+        do_chk(0, eid(7, REGFILE_SEL_I), got); expect_ok(got, 1'b0, "warp0 x7 free");
 
-        // ---------------- Acquire drop (superseding acquire) ----------------
-        $display("\n== D. Earlier acquire is dropped ==");
-        do_acq(0, 6, REGFILE_SEL_I, 8'h10);
-        do_acq(0, 6, REGFILE_SEL_I, 8'h20);       // drops seq 0x10
-        read_chk1(0, 6, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x6 still busy after re-acquire");
-        do_rel(0, 6, REGFILE_SEL_I, 8'h10, got); expect_ok(got, 1'b0, "dropped acquire release fails");
-        read_chk1(0, 6, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x6 still busy after dropped release");
-        do_rel(0, 6, REGFILE_SEL_I, 8'h20, got); expect_ok(got, 1'b1, "latest acquire release succeeds");
-        read_chk1(0, 6, REGFILE_SEL_I, got); expect_ok(got, 1'b0, "x6 free after release");
+        // ---------------- Per-entry isolation ----------------
+        $display("\n== E. Per-entry isolation ==");
+        do_acq(2, eid(8, REGFILE_SEL_I), 8'h40);
+        do_chk(2, eid(9, REGFILE_SEL_I), got); expect_ok(got, 1'b0, "x9 free while x8 busy");
+        do_chk(2, eid(8, REGFILE_SEL_I), got); expect_ok(got, 1'b1, "x8 busy");
+        do_rel(2, eid(8, REGFILE_SEL_I), 8'h40, got); expect_ok(got, 1'b1, "x8 release valid");
+        do_chk(2, eid(8, REGFILE_SEL_I), got); expect_ok(got, 1'b0, "x8 free after release");
 
-        // ---------------- Warp isolation ----------------
-        $display("\n== E. Per-warp isolation ==");
-        do_acq(0, 7, REGFILE_SEL_I, 8'h30);
-        read_chk1(1, 7, REGFILE_SEL_I, got); expect_ok(got, 1'b0, "warp1 x7 independent of warp0");
-        do_acq(1, 7, REGFILE_SEL_I, 8'h31);
-        read_chk1(0, 7, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "warp0 x7 still busy");
-        do_rel(0, 7, REGFILE_SEL_I, 8'h30, got); expect_ok(got, 1'b1, "warp0 x7 release");
-        read_chk1(1, 7, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "warp1 x7 unaffected by warp0 release");
-        do_rel(1, 7, REGFILE_SEL_I, 8'h31, got); expect_ok(got, 1'b1, "warp1 x7 release");
-
-        // ---------------- Regfile isolation ----------------
-        $display("\n== F. Integer/FP regfile isolation ==");
-        do_acq(2, 8, REGFILE_SEL_I, 8'h40);
-        read_chk1(2, 8, REGFILE_SEL_F, got); expect_ok(got, 1'b0, "f8 independent of x8");
-        do_acq(2, 8, REGFILE_SEL_F, 8'h41);
-        read_chk1(2, 8, REGFILE_SEL_I, got); expect_ok(got, 1'b1, "x8 busy");
-        read_chk1(2, 8, REGFILE_SEL_F, got); expect_ok(got, 1'b1, "f8 busy");
-        do_rel(2, 8, REGFILE_SEL_I, 8'h40, got); expect_ok(got, 1'b1, "x8 release");
-        read_chk1(2, 8, REGFILE_SEL_F, got); expect_ok(got, 1'b1, "f8 still busy");
-        do_rel(2, 8, REGFILE_SEL_F, 8'h41, got); expect_ok(got, 1'b1, "f8 release");
+        // ---------------- Integer/FP entry isolation ----------------
+        $display("\n== F. Integer/FP entry isolation ==");
+        do_acq(3, eid(10, REGFILE_SEL_I), 8'h50);
+        do_chk(3, eid(10, REGFILE_SEL_F), got); expect_ok(got, 1'b0, "f10 independent of x10");
+        do_acq(3, eid(10, REGFILE_SEL_F), 8'h51);
+        do_chk(3, eid(10, REGFILE_SEL_I), got); expect_ok(got, 1'b1, "x10 busy");
+        do_chk(3, eid(10, REGFILE_SEL_F), got); expect_ok(got, 1'b1, "f10 busy");
+        do_rel(3, eid(10, REGFILE_SEL_I), 8'h50, got); expect_ok(got, 1'b1, "x10 release valid");
+        do_chk(3, eid(10, REGFILE_SEL_F), got); expect_ok(got, 1'b1, "f10 still busy after x10 release");
+        do_rel(3, eid(10, REGFILE_SEL_F), 8'h51, got); expect_ok(got, 1'b1, "f10 release valid");
 
         // ---------------- chk_en gating ----------------
         $display("\n== G. chk_en_i gating ==");
-        do_acq(5, 9, REGFILE_SEL_I, 8'h50);
+        do_acq(4, eid(11, REGFILE_SEL_I), 8'h60);
         @(negedge clk);
-        issue_warp_id_i = 5; chk1_idx_i = 9; chk1_regfile_i = REGFILE_SEL_I; chk1_en_i = 1'b0;
-        #1 got = chk1_busy_o;
-        @(negedge clk) chk1_en_i = 1'b0;
-        expect_ok(got, 1'b0, "chk disabled reports not busy even when register is busy");
-        do_rel(5, 9, REGFILE_SEL_I, 8'h50, got); expect_ok(got, 1'b1, "cleanup x9 release");
+        frontend_warp_id_i = 4; chk_id_i[0] = eid(11, REGFILE_SEL_I); chk_en_i[0] = 1'b0;
+        #1 got = chk_busy_o[0];
+        @(negedge clk) chk_en_i[0] = 1'b0;
+        expect_ok(got, 1'b0, "disabled check reports not busy even when entry is busy");
+        do_rel(4, eid(11, REGFILE_SEL_I), 8'h60, got); expect_ok(got, 1'b1, "cleanup x11 release");
+
+        // ---------------- rel_en gating ----------------
+        $display("\n== H. rel_en_i gating (rel_valid_o is combinational) ==");
+        do_acq(5, eid(12, REGFILE_SEL_I), 8'h70);
+        @(negedge clk);
+        frontend_warp_id_i = 5; rel_id_i = eid(12, REGFILE_SEL_I);
+        rel_seq_i = 8'h70; rel_en_i = 1'b0;
+        #1 got = rel_valid_o;
+        @(negedge clk) rel_en_i = 1'b0;
+        expect_ok(got, 1'b0, "rel_valid_o low while rel_en_i=0");
+        do_rel(5, eid(12, REGFILE_SEL_I), 8'h70, got); expect_ok(got, 1'b1, "x12 release valid");
+
+        // ---------------- Invalid releases ----------------
+        $display("\n== I. Invalid releases ==");
+        do_rel(6, eid(13, REGFILE_SEL_I), 8'h80, got);
+        expect_ok(got, 1'b0, "release of never-acquired entry invalid");
+        do_acq(6, eid(13, REGFILE_SEL_I), 8'h81);
+        do_rel(7, eid(13, REGFILE_SEL_I), 8'h81, got);
+        expect_ok(got, 1'b0, "release from wrong warp invalid");
+        do_rel(6, eid(13, REGFILE_SEL_I), 8'h81, got);
+        expect_ok(got, 1'b1, "release from owning warp valid");
+        do_chk(6, eid(13, REGFILE_SEL_I), got); expect_ok(got, 1'b0, "x13 free after release");
 
         // -------------------------------------------------------------------
         // Known-bug probes (informational; do not fail the TB)
         // -------------------------------------------------------------------
-        $display("\n== H. Known-bug probes ==");
-
-        // H1: duplicate release on an already-released entry.
-        // Correct behaviour: a second release of the same entry must NOT report
-        // success (the entry is free). Actual: seq_r is not cleared on release,
-        // so the stale seq still matches and rel_success_o returns 1.
-        do_acq(3, 10, REGFILE_SEL_I, 8'h60);
-        do_rel(3, 10, REGFILE_SEL_I, 8'h60, got); expect_ok(got, 1'b1, "H1 first release succeeds");
-        do_rel(3, 10, REGFILE_SEL_I, 8'h60, got); bug_probe(got, 1'b0, "H1 duplicate release must fail");
+        $display("\n== J. Known-bug probes ==");
+        // Once an entry is free, a second release of the same entry must not
+        // report success. The stored seq is *not* cleared on release, so this
+        // stays correct only because rel_valid_o also requires busy_r.
+        do_acq(8, eid(14, REGFILE_SEL_I), 8'h90);
+        do_rel(8, eid(14, REGFILE_SEL_I), 8'h90, got);
+        expect_ok(got, 1'b1, "J first release valid");
+        do_rel(8, eid(14, REGFILE_SEL_I), 8'h90, got);
+        bug_probe(got, 1'b0, "J duplicate release must be invalid");
 
         // -------------------------------------------------------------------
         // Summary

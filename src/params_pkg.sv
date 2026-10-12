@@ -21,8 +21,8 @@ package params_pkg;
     localparam int PC_ALIGN = 4;
     localparam int Z_PC = $clog2(PC_ALIGN);
 
-    localparam int N_WARPS = 64;
-    localparam int N_THREADS = 8;
+    localparam int N_WARPS = 8;
+    localparam int N_THREADS = 32;
     localparam int N_REGISTERS = 32; // RV32I
     localparam int W_WARPS = $clog2(N_WARPS);
     localparam int W_THREADS = $clog2(N_THREADS);
@@ -41,7 +41,19 @@ package params_pkg;
     typedef logic [N_THREADS-1:0][RLEN-1:0] simd_data_t;
     typedef logic [RLEN-1:Z_PC] pc_t;
 
-    localparam int ROB_SIZE = (1 << 12); // FIXME: An absurdly large value for safety. Check how long this should be later.
+    // Physical register file: a flat pool of N_PHYS_REGS registers per thread,
+    // indexed by phys_reg_id_t. This is the single source of truth for the
+    // register file size; the register file itself knows nothing about how an
+    // architectural register number maps onto the pool.
+    localparam int N_PHYS_REGS = N_WARPS * N_REGFILES * N_REGISTERS;
+    localparam int W_PHYS_REGS = $clog2(N_PHYS_REGS);
+    typedef logic [W_PHYS_REGS-1:0] phys_reg_id_t;
+
+    function phys_reg_id_t get_phys_reg_id(warp_id_t warp_id, regfile_sel_e regfile_sel, reg_id_t reg_id);
+        return {warp_id, regfile_sel, reg_id};
+    endfunction
+
+    localparam int ROB_SIZE = (1 << 3); // FIXME: An absurdly large value for safety. Check how long this should be later.
     localparam int W_ROB_ADDR = $clog2(ROB_SIZE);
 
     typedef logic [W_ROB_ADDR-1:0] seq_t;
@@ -49,14 +61,13 @@ package params_pkg;
     // FIXME: I had to move these here, because Verilator
     localparam int N_FUNCTION_UNITS = 4;
     localparam int W_FUNCTION_UNITS = $clog2(N_FUNCTION_UNITS);
-    // INFO: The order of enum elements actually matters, the one on top is prioritized in the back-end's Collect stage.
+    // INFO: The order of enum elements actually matters, the lower values are considered "faster".
     typedef enum logic [W_FUNCTION_UNITS-1:0] {
-        FUNCTION_UNIT_FPU,
-
-        // One-cycle FUs
         FUNCTION_UNIT_BJU,
+        FUNCTION_UNIT_CSRR,
         FUNCTION_UNIT_ALU,
-        FUNCTION_UNIT_CSRR
+
+        FUNCTION_UNIT_FPU
     } function_unit_e;
 endpackage
 
