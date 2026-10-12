@@ -237,6 +237,24 @@ module core_middleend
     end
 
     // Operand Fetch Logic
+
+    logic of_rs1_is_rs2_w;
+    logic of_rs1_is_rs3_w;
+    logic of_rs2_is_rs3_w;
+
+    assign of_rs1_is_rs2_w =
+        of_operation_r.instr.rs1_regfile == of_operation_r.instr.rs2_regfile &&
+        of_operation_r.instr.rs1_idx == of_operation_r.instr.rs2_idx &&
+        !of_rs1_zero_r && !of_rs2_zero_r;
+    assign of_rs1_is_rs3_w =
+        of_operation_r.instr.rs1_regfile == of_operation_r.instr.rs3_regfile &&
+        of_operation_r.instr.rs1_idx == of_operation_r.instr.rs3_idx &&
+        !of_rs1_zero_r && !of_rs3_zero_r;
+    assign of_rs2_is_rs3_w =
+        of_operation_r.instr.rs2_regfile == of_operation_r.instr.rs3_regfile &&
+        of_operation_r.instr.rs2_idx == of_operation_r.instr.rs3_idx &&
+        !of_rs2_zero_r && !of_rs3_zero_r;
+
     phys_reg_id_t of_rs1_pidx_w;
     phys_reg_id_t of_rs2_pidx_w;
     phys_reg_id_t of_rs3_pidx_w;
@@ -245,83 +263,212 @@ module core_middleend
     assign of_rs2_pidx_w = get_phys_reg_id(of_warp_id_r, of_operation_r.instr.rs2_regfile, of_operation_r.instr.rs2_idx);
     assign of_rs3_pidx_w = get_phys_reg_id(of_warp_id_r, of_operation_r.instr.rs3_regfile, of_operation_r.instr.rs3_idx);
 
-    logic of_rs1_fetching_r, of_rs1_needs_fetching_w;
-    logic of_rs2_fetching_r, of_rs2_needs_fetching_w;
-    logic of_rs3_fetching_r, of_rs3_needs_fetching_w;
+    logic of_rs1_fetching_w, of_rs1_needs_fetching_w;
+    logic of_rs2_fetching_w, of_rs2_needs_fetching_w;
+    logic of_rs3_fetching_w, of_rs3_needs_fetching_w;
 
-    assign of_rs1_needs_fetching_w = !of_rs1_fetched_r && !of_rs1_zero_r;
-    assign of_rs2_needs_fetching_w = !of_rs2_fetched_r && !of_rs2_zero_r;
-    assign of_rs3_needs_fetching_w = !of_rs3_fetched_r && !of_rs3_zero_r;
+    assign of_rs1_needs_fetching_w = !of_rs1_fetched_r && !of_rs1_fetching_w && !of_rs1_zero_r;
+    assign of_rs2_needs_fetching_w = !of_rs2_fetched_r && !of_rs2_fetching_w && !of_rs2_zero_r;
+    assign of_rs3_needs_fetching_w = !of_rs3_fetched_r && !of_rs3_fetching_w && !of_rs3_zero_r;
 
     assign of_dispatch_ready_w = of_valid_r &&
-        !of_rs1_needs_fetching_w &&
-        !of_rs2_needs_fetching_w &&
-        !of_rs3_needs_fetching_w;
+        (of_rs1_fetched_r || of_rs1_zero_r) &&
+        (of_rs2_fetched_r || of_rs2_zero_r) &&
+        (of_rs3_fetched_r || of_rs3_zero_r);
 
     assign of_dispatch_w = of_dispatch_ready_w && fu_in_ready_w[of_fu_sel_r];
 
-    logic rfb_sel_w;
-    assign rfb_sel_w = !of_rs1_needs_fetching_w;
+    typedef enum logic[1:0] {
+        OF_REGSEL_NONE,
+        OF_REGSEL_RS1,
+        OF_REGSEL_RS2,
+        OF_REGSEL_RS3
+    } of_regsel_e;
 
-    assign rfa_idx_o = of_rs2_pidx_w;
-    assign rfb_idx_o = rfb_sel_w ? of_rs3_pidx_w : of_rs1_pidx_w;
+    of_regsel_e of_rfa_regsel_w;
+    of_regsel_e of_rfb_regsel_w;
+
+    always_comb begin
+        of_rfa_regsel_w = OF_REGSEL_NONE;
+        of_rfb_regsel_w = OF_REGSEL_NONE;
+
+        if (!rfa_write_en_i && !rfb_write_en_i) begin
+            // Both ports available
+
+            if (of_rs1_needs_fetching_w) begin
+                of_rfa_regsel_w = OF_REGSEL_RS1;
+
+                if (!of_rs1_is_rs2_w && of_rs2_needs_fetching_w) begin
+                    of_rfb_regsel_w = OF_REGSEL_RS2;
+                end else if (!of_rs1_is_rs3_w && of_rs3_needs_fetching_w) begin
+                    of_rfb_regsel_w = OF_REGSEL_RS3;
+                end
+            end else if (of_rs2_needs_fetching_w) begin
+                of_rfa_regsel_w = OF_REGSEL_RS2;
+
+                if (!of_rs2_is_rs3_w && of_rs3_needs_fetching_w) begin
+                    of_rfb_regsel_w = OF_REGSEL_RS3;
+                end
+            end else if (of_rs3_needs_fetching_w) begin
+                of_rfa_regsel_w = OF_REGSEL_RS3;
+            end
+        end else if (rfa_write_en_i && !rfb_write_en_i) begin
+            // Only port B available
+
+            of_rfa_regsel_w = OF_REGSEL_NONE;
+            if (of_rs1_needs_fetching_w) begin
+                of_rfb_regsel_w = OF_REGSEL_RS1;
+            end else if (of_rs2_needs_fetching_w) begin
+                of_rfb_regsel_w = OF_REGSEL_RS2;
+            end else if (of_rs3_needs_fetching_w) begin
+                of_rfb_regsel_w = OF_REGSEL_RS3;
+            end
+        end else if (!rfa_write_en_i && rfb_write_en_i) begin
+            // Only port A available,
+            //      with the current design, this should never happen.
+
+            $warning("Port B used for writing! If the writeback logic was changed, OF functionality should be updated!");
+
+            of_rfb_regsel_w = OF_REGSEL_NONE;
+            if (of_rs1_needs_fetching_w) begin
+                of_rfa_regsel_w = OF_REGSEL_RS1;
+            end else if (of_rs2_needs_fetching_w) begin
+                of_rfa_regsel_w = OF_REGSEL_RS2;
+            end else if (of_rs3_needs_fetching_w) begin
+                of_rfa_regsel_w = OF_REGSEL_RS3;
+            end
+        end else begin
+            // Neither port available,
+            //      with the current design, this should never happen.
+            $warning("Port B used for writing! If the writeback logic was changed, OF functionality should be updated!");
+
+            of_rfa_regsel_w = OF_REGSEL_NONE;
+            of_rfb_regsel_w = OF_REGSEL_NONE;
+        end
+    end
+
+    always_comb begin
+        rfa_idx_o = 'x;
+        rfb_idx_o = 'x;
+
+        unique case(of_rfa_regsel_w)
+            OF_REGSEL_NONE:;
+            OF_REGSEL_RS1: rfa_idx_o = of_rs1_pidx_w;
+            OF_REGSEL_RS2: rfa_idx_o = of_rs2_pidx_w;
+            OF_REGSEL_RS3: rfa_idx_o = of_rs3_pidx_w;
+        endcase
+
+        unique case(of_rfb_regsel_w)
+            OF_REGSEL_NONE:;
+            OF_REGSEL_RS1: rfb_idx_o = of_rs1_pidx_w;
+            OF_REGSEL_RS2: rfb_idx_o = of_rs2_pidx_w;
+            OF_REGSEL_RS3: rfb_idx_o = of_rs3_pidx_w;
+        endcase
+    end
+
+    typedef enum logic[1:0] {
+        OF_FETCH_PORT_NONE,
+        OF_FETCH_PORT_A,
+        OF_FETCH_PORT_B
+    } of_fetch_port_e;
+
+    of_fetch_port_e of_rs1_fetch_port_r;
+    of_fetch_port_e of_rs2_fetch_port_r;
+    of_fetch_port_e of_rs3_fetch_port_r;
+
+    assign of_rs1_fetching_w = of_rs1_fetch_port_r != OF_FETCH_PORT_NONE;
+    assign of_rs2_fetching_w = of_rs2_fetch_port_r != OF_FETCH_PORT_NONE;
+    assign of_rs3_fetching_w = of_rs3_fetch_port_r != OF_FETCH_PORT_NONE;
 
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            of_rs1_fetching_r <= 0;
-            of_rs2_fetching_r <= 0;
-            of_rs3_fetching_r <= 0;
+            of_rs1_fetch_port_r <= OF_FETCH_PORT_NONE;
+            of_rs2_fetch_port_r <= OF_FETCH_PORT_NONE;
+            of_rs3_fetch_port_r <= OF_FETCH_PORT_NONE;
             of_rs1_fetched_r <= 0;
             of_rs2_fetched_r <= 0;
             of_rs3_fetched_r <= 0;
         end else begin
             if (ofq_drain_w) begin
-                of_rs1_fetching_r <= 0;
-                of_rs2_fetching_r <= 0;
-                of_rs3_fetching_r <= 0;
+                of_rs1_fetch_port_r <= OF_FETCH_PORT_NONE;
+                of_rs2_fetch_port_r <= OF_FETCH_PORT_NONE;
+                of_rs3_fetch_port_r <= OF_FETCH_PORT_NONE;
                 of_rs1_fetched_r <= 0;
                 of_rs2_fetched_r <= 0;
                 of_rs3_fetched_r <= 0;
             end
 
             if (of_valid_r && !of_dispatch_ready_w) begin
-                // Port A: Used by rd and rs2
-                if (!rfa_write_en_i) begin
-                    if (of_rs2_needs_fetching_w) begin
-                        of_rs2_fetching_r <= 1;
+                // Port A:
+                unique case(of_rfa_regsel_w)
+                    OF_REGSEL_NONE: ;
+                    OF_REGSEL_RS1: begin
+                        of_rs1_fetch_port_r <= OF_FETCH_PORT_A;
+                        if (of_rs1_is_rs2_w) of_rs2_fetch_port_r <= OF_FETCH_PORT_A;
+                        if (of_rs1_is_rs3_w) of_rs3_fetch_port_r <= OF_FETCH_PORT_A;
                     end
-                end
-
-                if (of_rs2_fetching_r) begin
-                    of_rs2_fetching_r <= 0;
-                    of_rs2_buffer_r <= rfa_data_i;
-                    of_rs2_fetched_r <= 1;
-                end
-
-                // Port B: Used by rs1 and rs3
-                //         let's still check write_en_i just for good measure
-                //         synthesizer should optimize anyway
-                if (!rfb_write_en_i) begin
-                    if (rfb_sel_w) begin // rs3
-                        if (of_rs3_needs_fetching_w) begin
-                            of_rs3_fetching_r <= 1;
-                        end
-                    end else begin // rs1
-                        if (of_rs1_needs_fetching_w) begin
-                            of_rs1_fetching_r <= 1;
-                        end
+                    OF_REGSEL_RS2: begin
+                        of_rs2_fetch_port_r <= OF_FETCH_PORT_A;
+                        if (of_rs2_is_rs3_w) of_rs3_fetch_port_r <= OF_FETCH_PORT_A;
                     end
-                end
+                    OF_REGSEL_RS3: begin
+                        of_rs3_fetch_port_r <= OF_FETCH_PORT_A;
+                    end
+                endcase
 
-                unique0 if (of_rs1_fetching_r) begin
-                    of_rs1_fetching_r <= 0;
-                    of_rs1_buffer_r <= rfb_data_i;
+                if (of_rs1_fetch_port_r == OF_FETCH_PORT_A) begin
+                    of_rs1_fetch_port_r <= OF_FETCH_PORT_NONE;
                     of_rs1_fetched_r <= 1;
-                end else if (of_rs3_fetching_r) begin
-                    of_rs3_fetching_r <= 0;
-                    of_rs3_buffer_r <= rfb_data_i;
-                    of_rs3_fetched_r <= 1;
+                    of_rs1_buffer_r <= rfa_data_i;
                 end
+
+                if (of_rs2_fetch_port_r == OF_FETCH_PORT_A) begin
+                    of_rs2_fetch_port_r <= OF_FETCH_PORT_NONE;
+                    of_rs2_fetched_r <= 1;
+                    of_rs2_buffer_r <= rfa_data_i;
+                end
+
+                if (of_rs3_fetch_port_r == OF_FETCH_PORT_A) begin
+                    of_rs3_fetch_port_r <= OF_FETCH_PORT_NONE;
+                    of_rs3_fetched_r <= 1;
+                    of_rs3_buffer_r <= rfa_data_i;
+                end
+
+                // Port B:
+                unique case(of_rfb_regsel_w)
+                    OF_REGSEL_NONE: ;
+                    OF_REGSEL_RS1: begin
+                        of_rs1_fetch_port_r <= OF_FETCH_PORT_B;
+                        if (of_rs1_is_rs2_w) of_rs2_fetch_port_r <= OF_FETCH_PORT_B;
+                        if (of_rs1_is_rs3_w) of_rs3_fetch_port_r <= OF_FETCH_PORT_B;
+                    end
+                    OF_REGSEL_RS2: begin
+                        of_rs2_fetch_port_r <= OF_FETCH_PORT_B;
+                        if (of_rs2_is_rs3_w) of_rs3_fetch_port_r <= OF_FETCH_PORT_B;
+                    end
+                    OF_REGSEL_RS3: begin
+                        of_rs3_fetch_port_r <= OF_FETCH_PORT_B;
+                    end
+                endcase
+
+                if (of_rs1_fetch_port_r == OF_FETCH_PORT_B) begin
+                    of_rs1_fetch_port_r <= OF_FETCH_PORT_NONE;
+                    of_rs1_fetched_r <= 1;
+                    of_rs1_buffer_r <= rfb_data_i;
+                end
+
+                if (of_rs2_fetch_port_r == OF_FETCH_PORT_B) begin
+                    of_rs2_fetch_port_r <= OF_FETCH_PORT_NONE;
+                    of_rs2_fetched_r <= 1;
+                    of_rs2_buffer_r <= rfb_data_i;
+                end
+
+                if (of_rs3_fetch_port_r == OF_FETCH_PORT_B) begin
+                    of_rs3_fetch_port_r <= OF_FETCH_PORT_NONE;
+                    of_rs3_fetched_r <= 1;
+                    of_rs3_buffer_r <= rfb_data_i;
+                end
+
             end
         end
     end

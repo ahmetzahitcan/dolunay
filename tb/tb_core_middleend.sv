@@ -257,6 +257,27 @@ module tb_core_middleend;
         end
     endtask
 
+    // Push one op and measure how many cycles it spends in the operand-fetch
+    // stage (from entering OF until dispatch). Queueing delay is excluded, so
+    // this isolates the shared-source folding benefit.
+    task automatic measure_latency(input warp_id_t w, input me_operation_s op, output int lat);
+        lat = 0;
+        while (dut.of_valid_r) @(negedge clk);   // wait for OF stage to go idle
+        @(negedge clk);
+        while (!me_ready_o[w]) @(negedge clk);
+        me_valid_i    = '0;
+        me_valid_i[w] = 1'b1;
+        me_op_i       = op;
+        @(posedge clk);
+        #1;
+        me_valid_i = '0;
+        while (!dut.of_valid_r) @(negedge clk);   // wait for it to enter OF
+        while (!dut.of_dispatch_w) begin
+            @(negedge clk);
+            lat++;
+        end
+    endtask
+
     // -----------------------------------------------------------------------
     // Dispatch monitor — sampled mid-cycle, when of_dispatch_w is stable.
     // -----------------------------------------------------------------------
@@ -441,8 +462,59 @@ module tb_core_middleend;
         wait_collected(1000, ok);
         if (!ok) fail("test4: ops did not collect after CSRR became ready");
 
-        // ---------------- Summary ---------------------------------------------
         release dut.fu_in_ready_w;
+
+        // ---------------- Test 5: shared-source alias folding ------------------
+        $display("\n[TEST 5] shared-source alias folding");
+        do_reset();
+        clear_exp();
+        begin
+            automatic me_operation_s o;
+            automatic int lat_one, lat_two, lat_distinct, lat_rs1rs2, lat_rs1rs3, lat_rs2rs3, lat_all;
+
+            // 3 distinct sources -> baseline
+            o = make_op(3'd0, FUNCTION_UNIT_ALU, 1, REGFILE_SEL_F, 5'd1, 1, REGFILE_SEL_F, 5'd2, 1, REGFILE_SEL_F, 5'd3);
+            expect_op(3'd0, o); measure_latency(3'd0, o, lat_distinct);
+
+            // rs1 == rs2
+            o = make_op(3'd1, FUNCTION_UNIT_ALU, 1, REGFILE_SEL_F, 5'd4, 1, REGFILE_SEL_F, 5'd4, 1, REGFILE_SEL_F, 5'd6);
+            expect_op(3'd0, o); measure_latency(3'd0, o, lat_rs1rs2);
+
+            // rs1 == rs3
+            o = make_op(3'd2, FUNCTION_UNIT_ALU, 1, REGFILE_SEL_F, 5'd7, 1, REGFILE_SEL_F, 5'd8, 1, REGFILE_SEL_F, 5'd7);
+            expect_op(3'd0, o); measure_latency(3'd0, o, lat_rs1rs3);
+
+            // rs2 == rs3
+            o = make_op(3'd3, FUNCTION_UNIT_ALU, 1, REGFILE_SEL_F, 5'd9, 1, REGFILE_SEL_F, 5'd10, 1, REGFILE_SEL_F, 5'd10);
+            expect_op(3'd0, o); measure_latency(3'd0, o, lat_rs2rs3);
+
+            // all three share one source
+            o = make_op(3'd4, FUNCTION_UNIT_ALU, 1, REGFILE_SEL_F, 5'd11, 1, REGFILE_SEL_F, 5'd11, 1, REGFILE_SEL_F, 5'd11);
+            expect_op(3'd0, o); measure_latency(3'd0, o, lat_all);
+
+            // 1 source and 2 distinct sources -> shows the fixed buffer stage
+            o = make_op(3'd5, FUNCTION_UNIT_ALU, 1, REGFILE_SEL_F, 5'd12, 0, REGFILE_SEL_I, 5'd0, 0, REGFILE_SEL_I, 5'd0);
+            expect_op(3'd0, o); measure_latency(3'd0, o, lat_one);
+            o = make_op(3'd6, FUNCTION_UNIT_ALU, 1, REGFILE_SEL_F, 5'd13, 1, REGFILE_SEL_F, 5'd14, 0, REGFILE_SEL_I, 5'd0);
+            expect_op(3'd0, o); measure_latency(3'd0, o, lat_two);
+
+            $display("  OF latency (cycles): 1src=%0d  2src=%0d  3distinct=%0d  rs1=rs2:%0d  rs1=rs3:%0d  rs2=rs3:%0d  all:%0d",
+                     lat_one, lat_two, lat_distinct, lat_rs1rs2, lat_rs1rs3, lat_rs2rs3, lat_all);
+
+            checks++;
+            if (lat_one != lat_two) fail("test5: 1-src and 2-src should have equal OF latency");
+            if (lat_rs1rs2 >= lat_distinct) fail("test5: rs1==rs2 did not shorten operand fetch");
+            checks++;
+            if (lat_rs1rs3 >= lat_distinct) fail("test5: rs1==rs3 did not shorten operand fetch");
+            checks++;
+            if (lat_rs2rs3 >= lat_distinct) fail("test5: rs2==rs3 did not shorten operand fetch");
+            checks++;
+            if (lat_all     >= lat_distinct) fail("test5: all-same did not shorten operand fetch");
+        end
+        wait_collected(1000, ok);
+        if (!ok) fail("test5: alias ops did not collect");
+
+        // ---------------- Summary ---------------------------------------------
         checks++;
         if (collected != dispatches)
             fail($sformatf("collected %0d != dispatched %0d", collected, dispatches));
