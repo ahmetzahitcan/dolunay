@@ -75,6 +75,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b111100000000?????000?????10100: begin // FMV_W_X
                 `ifndef SYNTHESIS
@@ -105,6 +109,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b111000000000?????000?????10100: begin // FMV_X_W
                 `ifndef SYNTHESIS
@@ -135,6 +143,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b000000000001?????001?????11100: begin // CSRRW_FFLAGS
                 `ifndef SYNTHESIS
@@ -165,6 +177,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b010110000000?????????????10100: begin // FSQRT_S
                 `ifndef SYNTHESIS
@@ -195,6 +211,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b110000000000?????????????10100: begin // FCVT_W_S
                 `ifndef SYNTHESIS
@@ -225,6 +245,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b110000000001?????????????10100: begin // FCVT_WU_S
                 `ifndef SYNTHESIS
@@ -255,6 +279,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b110100000000?????????????10100: begin // FCVT_S_W
                 `ifndef SYNTHESIS
@@ -285,6 +313,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b110100000001?????????????10100: begin // FCVT_S_WU
                 `ifndef SYNTHESIS
@@ -315,6 +347,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????000?????01100: begin // ADD
                 `ifndef SYNTHESIS
@@ -345,6 +381,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0010000??????????010?????01100: begin // SH1ADD
                 `ifndef SYNTHESIS
@@ -375,6 +415,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0010000??????????100?????01100: begin // SH2ADD
                 `ifndef SYNTHESIS
@@ -405,6 +449,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0010000??????????110?????01100: begin // SH3ADD
                 `ifndef SYNTHESIS
@@ -435,6 +483,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0100000??????????000?????01100: begin // SUB
                 `ifndef SYNTHESIS
@@ -465,6 +517,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????001?????01100: begin // SLL
                 `ifndef SYNTHESIS
@@ -495,6 +551,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????010?????01100: begin // SLT
                 `ifndef SYNTHESIS
@@ -525,6 +585,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????011?????01100: begin // SLTU
                 `ifndef SYNTHESIS
@@ -555,6 +619,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????100?????01100: begin // XOR
                 `ifndef SYNTHESIS
@@ -585,6 +653,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????101?????01100: begin // SRL
                 `ifndef SYNTHESIS
@@ -615,6 +687,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0100000??????????101?????01100: begin // SRA
                 `ifndef SYNTHESIS
@@ -645,6 +721,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????110?????01100: begin // OR
                 `ifndef SYNTHESIS
@@ -675,6 +755,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????111?????01100: begin // AND
                 `ifndef SYNTHESIS
@@ -705,6 +789,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????001?????00100: begin // SLLI
                 `ifndef SYNTHESIS
@@ -735,6 +823,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????101?????00100: begin // SRLI
                 `ifndef SYNTHESIS
@@ -765,6 +857,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0100000??????????101?????00100: begin // SRAI
                 `ifndef SYNTHESIS
@@ -795,6 +891,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000111??????????101?????01100: begin // CZERO_EQZ
                 `ifndef SYNTHESIS
@@ -825,6 +925,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000111??????????111?????01100: begin // CZERO_NEZ
                 `ifndef SYNTHESIS
@@ -855,6 +959,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0010100??????????00??????10100: begin // FMINMAX_S
                 `ifndef SYNTHESIS
@@ -885,6 +993,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0010000??????????0???????10100: begin // FSGNJ_S
                 `ifndef SYNTHESIS
@@ -915,6 +1027,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b1010000??????????0???????10100: begin // FCMP_S
                 `ifndef SYNTHESIS
@@ -945,6 +1061,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000000??????????????????10100: begin // FADD_S
                 `ifndef SYNTHESIS
@@ -975,6 +1095,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS1;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_RS2;
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0000100??????????????????10100: begin // FSUB_S
                 `ifndef SYNTHESIS
@@ -1005,6 +1129,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS1;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_RS2;
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0001000??????????????????10100: begin // FMUL_S
                 `ifndef SYNTHESIS
@@ -1035,6 +1163,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b0001100??????????????????10100: begin // FDIV_S
                 `ifndef SYNTHESIS
@@ -1065,6 +1197,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????000?????00100: begin // ADDI
                 `ifndef SYNTHESIS
@@ -1095,6 +1231,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????010?????00100: begin // SLTI
                 `ifndef SYNTHESIS
@@ -1125,6 +1265,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????011?????00100: begin // SLTIU
                 `ifndef SYNTHESIS
@@ -1155,6 +1299,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????100?????00100: begin // XORI
                 `ifndef SYNTHESIS
@@ -1185,6 +1333,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????110?????00100: begin // ORI
                 `ifndef SYNTHESIS
@@ -1215,6 +1367,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????111?????00100: begin // ANDI
                 `ifndef SYNTHESIS
@@ -1245,6 +1401,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????000?????11000: begin // BEQ
                 `ifndef SYNTHESIS
@@ -1275,6 +1435,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_BEQ;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????001?????11000: begin // BNE
                 `ifndef SYNTHESIS
@@ -1305,6 +1469,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_BNE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????100?????11000: begin // BLT
                 `ifndef SYNTHESIS
@@ -1335,6 +1503,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_BLT;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????101?????11000: begin // BGE
                 `ifndef SYNTHESIS
@@ -1365,6 +1537,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_BGE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????110?????11000: begin // BLTU
                 `ifndef SYNTHESIS
@@ -1395,6 +1571,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_BLTU;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????111?????11000: begin // BGEU
                 `ifndef SYNTHESIS
@@ -1425,6 +1605,350 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_BGEU;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
+            end
+            30'b?????????????????000?????00000: begin // LB
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "lb $d, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_I;
+                instr_o.rd_used = 1'b1;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b0;
+                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
+                instr_o.mem_opsize = MEM_OPSIZE_BYTE;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_SIGN;
+            end
+            30'b?????????????????001?????00000: begin // LH
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "lh $d, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_I;
+                instr_o.rd_used = 1'b1;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b0;
+                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
+                instr_o.mem_opsize = MEM_OPSIZE_HALF;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_SIGN;
+            end
+            30'b?????????????????010?????00000: begin // LW
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "lw $d, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_I;
+                instr_o.rd_used = 1'b1;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b0;
+                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
+                instr_o.mem_opsize = MEM_OPSIZE_WORD;
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
+            end
+            30'b?????????????????010?????00001: begin // FLW
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "flw $d, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_I;
+                instr_o.rd_used = 1'b1;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b0;
+                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
+                instr_o.mem_opsize = MEM_OPSIZE_WORD;
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
+            end
+            30'b?????????????????100?????00000: begin // LBU
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "lbu $d, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_I;
+                instr_o.rd_used = 1'b1;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b0;
+                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
+                instr_o.mem_opsize = MEM_OPSIZE_BYTE;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_ZERO;
+            end
+            30'b?????????????????101?????00000: begin // LHU
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "lhu $d, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_I;
+                instr_o.rd_used = 1'b1;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b0;
+                instr_o.rs2_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
+                instr_o.mem_opsize = MEM_OPSIZE_HALF;
+                instr_o.mem_extendmode = MEM_EXTENDMODE_ZERO;
+            end
+            30'b?????????????????000?????01000: begin // SB
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "sb $2, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_S;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
+                instr_o.mem_opsize = MEM_OPSIZE_BYTE;
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
+            end
+            30'b?????????????????001?????01000: begin // SH
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "sh $2, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_S;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
+                instr_o.mem_opsize = MEM_OPSIZE_HALF;
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
+            end
+            30'b?????????????????010?????01000: begin // SW
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "sw $2, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_S;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
+                instr_o.mem_opsize = MEM_OPSIZE_WORD;
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
+            end
+            30'b?????????????????010?????01001: begin // FSW
+                `ifndef SYNTHESIS
+                sim__disasm_format_w = "fsw $2, $i($1)";
+                `endif
+                imm_type_w = IMM_TYPE_S;
+                instr_o.rd_used = 1'b0;
+                instr_o.rd_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.rs1_used = 1'b1;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
+                instr_o.rs2_used = 1'b1;
+                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_F;
+                instr_o.rs3_used = 1'b0;
+                instr_o.rs3_regfile = params_pkg::regfile_sel_e'('x);
+                instr_o.hazards[I_HAZARDS_FFLAGS] = HAZARDS_IGN;
+                instr_o.hazards[I_HAZARDS_FRM] = HAZARDS_IGN;
+                instr_o.fu_sel = params_pkg::FUNCTION_UNIT_LSU;
+                instr_o.csrr_src = csrr_src_e'('x);
+                instr_o.csrw_method = csrw_method_e'('x);
+                instr_o.fflags_update = FFLAGS_UPDATE_NONE;
+                instr_o.alu_funct = alu_funct_e'('x);
+                instr_o.alu_addy_funct = alu_addy_funct_e'('x);
+                instr_o.alu_op1_sel = alu_op1_sel_e'('x);
+                instr_o.alu_op2_sel = alu_op2_sel_e'('x);
+                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
+                instr_o.fpu_op_modifier = 'x;
+                instr_o.fpu_op0_sel = fpu_op0_sel_e'('x);
+                instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
+                instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
+                instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b1;
+                instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
+                instr_o.mem_opsize = MEM_OPSIZE_WORD;
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????00??????????????????10000: begin // FMADD_S
                 `ifndef SYNTHESIS
@@ -1455,6 +1979,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_RS3;
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????00??????????????????10001: begin // FMSUB_S
                 `ifndef SYNTHESIS
@@ -1485,6 +2013,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_RS3;
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????00??????????????????10010: begin // FNMSUB_S
                 `ifndef SYNTHESIS
@@ -1515,6 +2047,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_RS3;
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????00??????????????????10011: begin // FNMADD_S
                 `ifndef SYNTHESIS
@@ -1545,6 +2081,10 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_RS3;
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????????????11011: begin // JAL
                 `ifndef SYNTHESIS
@@ -1575,6 +2115,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_JAL;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????????????01101: begin // LUI
                 `ifndef SYNTHESIS
@@ -1605,6 +2149,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             30'b?????????????????????????00101: begin // AUIPC
                 `ifndef SYNTHESIS
@@ -1635,6 +2183,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = BJ_TYPE_NONE;
+                instr_o.mem_active = 1'b0;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
             default: begin // INVALID
                 `ifndef SYNTHESIS
@@ -1668,6 +2220,10 @@ module control_unit
                 instr_o.fpu_op1_sel = fpu_op1_sel_e'('x);
                 instr_o.fpu_op2_sel = fpu_op2_sel_e'('x);
                 instr_o.bj_type = bj_type_e'('x);
+                instr_o.mem_active = 'x;
+                instr_o.mem_loadstore = mem_loadstore_e'('x);
+                instr_o.mem_opsize = mem_opsize_e'('x);
+                instr_o.mem_extendmode = mem_extendmode_e'('x);
             end
         endcase
     end

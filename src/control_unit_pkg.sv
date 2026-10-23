@@ -3,9 +3,10 @@
 package control_unit_pkg;
 	import params_pkg::*;
 
-	typedef enum logic [1:0] {
+	typedef enum logic [2:0] {
 		IMM_TYPE_I,
 		IMM_TYPE_B,
+		IMM_TYPE_S,
 		IMM_TYPE_J,
 		IMM_TYPE_U
 	} imm_type_e;
@@ -89,6 +90,22 @@ package control_unit_pkg;
 		BJ_TYPE_JAL
 	} bj_type_e;
 
+	typedef enum logic {
+		MEM_LOADSTORE_LOAD,
+		MEM_LOADSTORE_STORE
+	} mem_loadstore_e;
+
+	typedef enum logic [1:0] {
+		MEM_OPSIZE_BYTE,
+		MEM_OPSIZE_HALF,
+		MEM_OPSIZE_WORD
+	} mem_opsize_e;
+
+	typedef enum logic {
+		MEM_EXTENDMODE_SIGN,
+		MEM_EXTENDMODE_ZERO
+	} mem_extendmode_e;
+
 	localparam int N_HAZARDS = 2;
 	localparam int W_HAZARDS = $clog2(N_HAZARDS);
 	localparam int I_HAZARDS_FFLAGS = 0;
@@ -127,6 +144,10 @@ package control_unit_pkg;
 		fpu_op1_sel_e fpu_op1_sel;
 		fpu_op2_sel_e fpu_op2_sel;
 		bj_type_e bj_type;
+		logic mem_active;
+		mem_loadstore_e mem_loadstore;
+		mem_opsize_e mem_opsize;
+		mem_extendmode_e mem_extendmode;
 	} instr_s;
 
 endpackage

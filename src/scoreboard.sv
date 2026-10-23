@@ -68,10 +68,12 @@ module scoreboard
             busy_r <= '0;
         end else begin
             if (rel_en_i) begin
+                `ifndef SYNTHESIS
                 assert (busy_r[rel_id_i] || rel_seq_i != seq_r[rel_id_i])
                     else $warning("Release operation on non-busy entry! Entry: %d", rel_id_i);
                 assert (!$isunknown(seq_r[rel_id_i]))
                     else $error("Release operation on invalid seq! Entry: %d", rel_id_i);
+                `endif
 
                 if (rel_seq_i == seq_r[rel_id_i]) begin
                     busy_r[rel_id_i] <= 0;

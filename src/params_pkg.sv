@@ -59,7 +59,7 @@ package params_pkg;
     typedef logic [W_ROB_ADDR-1:0] seq_t;
 
     // FIXME: I had to move these here, because Verilator
-    localparam int N_FUNCTION_UNITS = 4;
+    localparam int N_FUNCTION_UNITS = 5;
     localparam int W_FUNCTION_UNITS = $clog2(N_FUNCTION_UNITS);
     // INFO: The order of enum elements actually matters, the lower values are considered "faster".
     typedef enum logic [W_FUNCTION_UNITS-1:0] {
@@ -67,12 +67,17 @@ package params_pkg;
         FUNCTION_UNIT_CSRR,
         FUNCTION_UNIT_ALU,
 
-        FUNCTION_UNIT_FPU
+        FUNCTION_UNIT_FPU,
+
+        FUNCTION_UNIT_LSU
     } function_unit_e;
 
     parameter int SPAD_BANK_DEPTH = 1024;
     parameter int W_SPAD_BANK_ADDR = $clog2(SPAD_BANK_DEPTH) + Z_ADDR;
     parameter int N_SPAD_BANKS = N_THREADS;
+    parameter int W_SPAD_BANKS = $clog2(N_SPAD_BANKS);
+    parameter int Z_SPAD_BANK_SEL = W_SPAD_BANK_ADDR + 1;
+    parameter int W_SPAD_BANK_SEL = W_SPAD_BANKS + Z_SPAD_BANK_SEL;
 endpackage
 
 `default_nettype wire

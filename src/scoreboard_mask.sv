@@ -63,10 +63,12 @@ module scoreboard_mask
         end else begin
             for (int i = 0; i < N_ENTRIES; i++) begin
                 if (rel_mask_i[i]) begin
+                    `ifndef SYNTHESIS
                     assert (busy_r[backend_warp_id_i][i])
                         else $warning("Release operation on non-busy entry! Entry: %d-%d", backend_warp_id_i, i);
                     assert (!$isunknown(seq_r[backend_warp_id_i][i]))
                         else $error("Release operation on invalid seq! Entry: %d-%d", backend_warp_id_i, i);
+                    `endif
 
                     if (rel_seq_i == seq_r[backend_warp_id_i][i]) begin
                         busy_r[backend_warp_id_i][i] <= 0;
