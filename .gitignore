@@ -18,3 +18,10 @@ bender.verilator
 tmp/
 .Xil/Vivado-219773-fedora/
 obj_dir/
+
+# cocotb
+cocotb/results.xml
+cocotb/sim_build/
+cocotb/__pycache__/
+cocotb/tests/__pycache__/
+dump.vcd

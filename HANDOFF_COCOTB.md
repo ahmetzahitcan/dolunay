@@ -405,10 +405,25 @@ sh tb/run_core_top.sh        # the whole core
 checkout lives in `.bender/` inside the project (gitignored); `bender update`
 refreshes it.
 
-For cocotb you will need the Python package in WSL (`pip install cocotb`) and
-a `Makefile` in the usual cocotb layout. Keep the build tree outside the
-project for the reason above — a cocotb `Makefile` with
-`SIM_BUILD=/home/azc/dolunay-sim/cocotb_lsu` works.
+**The cocotb environment is now set up** — see `cocotb/README.md`. Two things
+were needed that the distribution does not provide:
+
+- **cocotb 2.1** is in a virtualenv, `~/venvs/dolunay-cocotb` (the
+  distribution Python is externally managed, so `pip install` into it is
+  refused). `sh cocotb/setup.sh` creates it.
+- **Verilator 5.048** is unpacked into `~/tools/verilator-5.048` and put in
+  front of the `PATH` by the cocotb runner scripts. cocotb 2.x needs
+  Verilator 5.036 or later: its `verilator.cpp` uses VPI entry points
+  (`VerilatedVpi::evalNeeded` and friends) that do not exist in 5.020, and
+  the compile fails with "is not a member of 'VerilatedVpi'". The
+  distribution Verilator is left alone, because the SystemVerilog
+  testbenches are verified against it.
+
+The mock testbench (`sh cocotb/run_mock.sh`) proves out the flow, and the
+real `fu_lsu` has already been compiled and linked through it with the file
+list that `tb/common.sh` generates from Bender. See `cocotb/README.md` for
+the two path problems (spaces in the path, CRLF line endings) and how they
+are handled.
 
 ---
 

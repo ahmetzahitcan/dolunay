@@ -1,0 +1,15 @@
+# The cocotb virtualenv.
+#
+# The virtualenv itself lives outside the repository (~/venvs/dolunay-cocotb by
+# default) — it is per-machine state, it is never version controlled, and the
+# repository is on a Windows filesystem that is ~70x slower for the many small
+# files a virtualenv is made of. What belongs in the repository is the list of
+# packages that goes into it, so that a fresh clone plus cocotb/setup.sh gives
+# the same environment.
+#
+# cocotb is pinned exactly: it is the API the testbenches are written against,
+# and a new major version can change it. Its own dependencies are left to pip.
+#
+# cocotb 2.x needs Verilator 5.036 or later; that is not a Python package, so
+# setup.sh takes care of it separately.
+cocotb==2.1.0
