@@ -358,13 +358,13 @@ The word address `w = addr[16:2]` is 15 bits, split into three 5-bit fields:
 ```
 w = [ A : 5 | B : 5 | L : 5 ]
     w[14:10]  w[9:5]   w[4:0]
-  addr[16:14] addr[11:7] addr[6:2]
+  addr[16:12] addr[11:7] addr[6:2]
 ```
 
 `A` = region (which 4 KB block), `B` = middle, `L` = lane within a 32-word group.
 
 ```
-bank  = A ^ B ^ L        =  addr[16:14] ^ addr[11:7] ^ addr[6:2]
+bank  = A ^ B ^ L        =  addr[16:12] ^ addr[11:7] ^ addr[6:2]
 offset = {B, L} = w[9:0] =  addr[11:2]        (unchanged from the current design)
 ```
 

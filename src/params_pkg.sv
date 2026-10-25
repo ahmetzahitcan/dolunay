@@ -72,6 +72,66 @@ package params_pkg;
     parameter int W_SPAD_BANKS = $clog2(N_SPAD_BANKS);
     parameter int Z_SPAD_BANK_SEL = W_SPAD_BANK_ADDR;
     parameter int W_SPAD_BANK_SEL = W_SPAD_BANKS + Z_SPAD_BANK_SEL;
+
+    // ---------------------------------------------------------------------------
+    // Scratchpad bank mapping
+    //
+    // The scratchpad is split into N_SPAD_BANKS banks of SPAD_BANK_DEPTH words.
+    // A byte address selects a word, and the word selects a bank; the word's
+    // position inside its bank is the offset.
+    //
+    // The word address w = addr >> 2 is split into three equal fields:
+    //
+    //     w = [ A : 5 | B : 5 | L : 5 ]
+    //         w[14:10]  w[9:5]   w[4:0]
+    //       addr[16:12] addr[11:7] addr[6:2]
+    //
+    //   A = region: which 4 KB block the word is in
+    //   B = the middle field
+    //   L = lane: which word of a 32-word group
+    //
+    // The bank is A ^ B ^ L, and the offset inside the bank is {B, L}. The
+    // offset therefore holds B and L, and A is recoverable from the bank
+    // (A = bank ^ B ^ L), so every word has its own place in the scratchpad.
+    //
+    // The mapping is a permutation of the address space, so it is invisible to
+    // the program. It was picked because it is conflict free for the three
+    // access patterns that matter:
+    //
+    //   * a shared vector or matrix row (32 consecutive words): the lane field
+    //     separates the threads;
+    //   * a matrix column: for a row of NCOLS words the row index lands in B
+    //     and the column index in L, so B ^ L is the classic column-XOR-row
+    //     swizzle;
+    //   * thread private data, one region per thread: the region field
+    //     separates the threads.
+    //
+    // See LSU_ROADMAP.md section 9 for the derivation and the measurements.
+    // ---------------------------------------------------------------------------
+
+    // The three address fields the bank mapping is built from.
+    function automatic logic [W_SPAD_BANKS-1:0] spad_field_a(input logic [RLEN-1:0] addr);
+        spad_field_a = addr[W_SPAD_BANK_SEL-1 : W_SPAD_BANK_SEL-W_SPAD_BANKS];
+    endfunction
+
+    function automatic logic [W_SPAD_BANKS-1:0] spad_field_b(input logic [RLEN-1:0] addr);
+        spad_field_b = addr[W_SPAD_BANK_ADDR-1 : W_SPAD_BANK_ADDR-W_SPAD_BANKS];
+    endfunction
+
+    function automatic logic [W_SPAD_BANKS-1:0] spad_field_l(input logic [RLEN-1:0] addr);
+        spad_field_l = addr[Z_ADDR+W_SPAD_BANKS-1 : Z_ADDR];
+    endfunction
+
+    // The bank a byte address belongs to.
+    function automatic logic [W_SPAD_BANKS-1:0] spad_bank_of(input logic [RLEN-1:0] addr);
+        spad_bank_of = spad_field_a(addr) ^ spad_field_b(addr) ^ spad_field_l(addr);
+    endfunction
+
+    // The position of a byte address inside its bank.
+    function automatic logic [W_SPAD_BANK_ADDR-1:Z_ADDR] spad_offset_of(input logic [RLEN-1:0] addr);
+        spad_offset_of = addr[W_SPAD_BANK_ADDR-1 : Z_ADDR];
+    endfunction
+
 endpackage
 
 `default_nettype wire
