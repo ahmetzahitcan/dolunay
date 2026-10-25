@@ -1,6 +1,6 @@
 # LSU roadmap — completing `fu_lsu`
 
-**Status:** proposal, for review before implementation.
+**Status:** decisions taken (see §9), implementation starting.
 **Baseline:** branch `ooo-lite`, HEAD `d1b1d7f` (after the sim-flow fixes).
 **Inputs:** `HANDOFF.md` (LSU resource analysis), `src/fu_lsu.sv`, `src/scratchpad.sv`,
 `src/ram.sv`, `src/mem_read_formatter.sv`, `src/mem_write_formatter.sv`.
@@ -312,17 +312,103 @@ CP5 is optional and needs Vivado access; everything up to CP4 is Verilator-only.
 
 ## 8. Open questions for you
 
-- **D1 (§1).** Replay inside the LSU, or in the core? I recommend inside the LSU.
-- **D2 (§3a).** Confirmed: use `mem_write_formatter`'s byte enables rather than
-  the raw 2-bit alignment?
-- **D3 (§5).** Keep the store data and the read data in separate arrays
-  (~3.1k FFs), or share one array (~2.1k FFs)?
-- **D4.** `addr[12]` is unused by the decode. Keep it as a hole, or is it
-  meant to select a half of the bank? I will keep the current behaviour.
-- **D5.** Bank count: keep 32? `fu_lsu` currently asserts
-  `N_SPAD_BANKS == N_THREADS`, and dropping to 16 shifts the whole address map.
-  I recommend keeping 32 for now — the LSU is ~3% of the resource problem.
-- **D6.** Where should `scratchpad` live: in `core_top` (memory next to the
-  WRAM/IROM, SPAD bus on the middle-end's ports) or inside `core_middleend`
-  next to the LSU? I recommend `core_top`.
-- **D7.** For a store, should `wb_result` be `'0` or `'x`? I plan `'0`.
+- ~~**D1 (§1).**~~ Replay inside the LSU — **decided: inside the LSU.**
+- ~~**D2 (§3a).**~~ Confirmed: use `mem_write_formatter`'s byte enables rather than
+  the raw 2-bit alignment.
+- ~~**D3 (§5).**~~ Keep the store data and the read data in separate arrays
+  (~3.1k FFs), or share one array (~2.1k FFs)? — **decided: separate.** The 1024 FFs
+  are 0.8% of the device and the design is 258% over on LUTs anyway; separate
+  arrays keep one meaning per array and the write path one mux level shorter.
+- ~~**D4.**~~ `addr[12]` was unused by the decode — **fixed in the working tree**
+  (`Z_SPAD_BANK_SEL = W_SPAD_BANK_ADDR`), so the window is now exactly
+  `addr[16:0]` = 128 KB = 32 banks x 1024 words x 4 B, contiguous.
+- ~~**D5.~~ Bank count and bank mapping — **decided: 32 banks, `A ^ B ^ L` mapping**
+  (see §9).
+- ~~**D6.~~ Where should `scratchpad` live — **decided: `core_top`.** The LSU keeps a
+  clean SPAD interface so that an LSU/DMA arbiter can be inserted above it later.
+- ~~**D7.~~ For a store, should `wb_result` be `'0` or `'x`? — **decided: `'x`.** A
+  store has `rd_used == 0`, so the back-end never writes it back; there is no X
+  to propagate.
+
+---
+
+## 9. The bank mapping (D5)
+
+### The scheme
+
+The word address `w = addr[16:2]` is 15 bits, split into three 5-bit fields:
+
+```
+w = [ A : 5 | B : 5 | L : 5 ]
+    w[14:10]  w[9:5]   w[4:0]
+  addr[16:14] addr[11:7] addr[6:2]
+```
+
+`A` = region (which 4 KB block), `B` = middle, `L` = lane within a 32-word group.
+
+```
+bank  = A ^ B ^ L        =  addr[16:14] ^ addr[11:7] ^ addr[6:2]
+offset = {B, L} = w[9:0] =  addr[11:2]        (unchanged from the current design)
+```
+
+**Why this form is the only legal one with this offset.** The offset holds `B` and
+`L` but not `A`, so `A` has to be recoverable from the bank. That restricts the
+bank to `A ^ g(B, L)` for some function `g`, with `A = bank ^ g(B, L)`. The choice
+of `g` is then the whole design:
+
+| `g` | vector / matrix row | matrix column | private area |
+|---|---:|---:|---:|
+| `0` (contiguous) | 32 | 32 | 1 |
+| `L` | 2 | 32 | 1 |
+| `B` | 32 | 1 | 1 |
+| **`B ^ L`** | **2** | **1** | **1** |
+
+`B ^ L` is the only one that is injective in *both* halves independently, which
+is exactly what the two access patterns need: a row varies `L`, a matrix column
+varies `B` (the row index sits at stride NCOLS).
+
+For a matrix with `NCOLS = 32` this is literally the classic column-XOR-row
+swizzle: `B = r + const` and `L = c`, so `bank = A ^ r ^ c`.
+
+### Measured behaviour
+
+| access | cycles |
+|---|---:|
+| shared vector / matrix row (32 consecutive words), worst over 32768 bases | 2 |
+| matrix column, `NCOLS` = 4 … 1024 (every value that fits in the SPAD) | **1** |
+| matrix column, `NCOLS` = 1 or 2 (degenerate, really a vector access) | 2 |
+| thread-private area, size >= 32 bytes per thread, all threads at the same offset | **1** |
+| thread-private area, threads at *unequal* offsets | 8 |
+| all threads at the same address | 32 (unavoidable) |
+
+A 32x32 word tile is 4 KB = exactly one region. For the exact column swizzle the
+tile base only needs **64-byte** alignment (32 words) — 4 KB alignment is more
+than necessary.
+
+### What it costs the program
+
+The mapping is a permutation of the address space, so it is **invisible to the
+program**: ordinary addresses just work, and no compiler change is needed. The
+only requirements are:
+
+- per-thread private data goes in a per-thread area (`tid * R`), with
+  `R >= 32 bytes`; the runtime sets the per-thread base (`sp`, and any TLS
+  base). The register file is already per-thread in this project, so `sp` is
+  per-thread and the compiler needs to know nothing;
+- matrices want 64-byte alignment (nearly free, a 32x32 tile is 4096 B anyway);
+- uniform stack depth across a warp — which falls out of SIMT execution, since
+  all threads of a warp run the same instruction and therefore have identical
+  frames. Diverged threads are masked off and do not compete for banks.
+
+The only capacity decision left is how to split the 128 KB between per-thread
+private areas and shared data (e.g. 1 KB per thread = 32 KB private, 96 KB
+shared).
+
+### Cost in the LSU
+
+Two levels of 5-bit XOR per thread = 320 LUTs. The offset is unchanged, so
+`src/ram.sv` and `src/scratchpad.sv` need no change at all.
+
+The scheme is a parameter (`SPAD_BANK_SCHEME` in `params_pkg.sv`) with
+`contiguous`, `interleaved`, `B^L` and `A^B^L` selectable, since this has been
+iterated on a lot.
