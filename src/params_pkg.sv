@@ -76,7 +76,7 @@ package params_pkg;
     parameter int W_SPAD_BANK_ADDR = $clog2(SPAD_BANK_DEPTH) + Z_ADDR;
     parameter int N_SPAD_BANKS = N_THREADS;
     parameter int W_SPAD_BANKS = $clog2(N_SPAD_BANKS);
-    parameter int Z_SPAD_BANK_SEL = W_SPAD_BANK_ADDR + 1;
+    parameter int Z_SPAD_BANK_SEL = W_SPAD_BANK_ADDR;
     parameter int W_SPAD_BANK_SEL = W_SPAD_BANKS + Z_SPAD_BANK_SEL;
 endpackage
 
