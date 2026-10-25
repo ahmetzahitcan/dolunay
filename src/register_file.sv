@@ -91,7 +91,12 @@ module register_file
             always_ff @(posedge clk) begin
                 if (sim__init) begin
                     for (int R = 0; R < N_PHYS_REGS; R++) begin
-                        regs_r[R] <= unsigned'(R << 16) | T;
+                        // NOTE: Blocking assignment is required here. Verilator
+                        // rejects a non-blocking assignment to an unpacked array
+                        // element inside a for loop (BLKLOOPINIT). The block is
+                        // simulation-only, and using '=' also means a real port
+                        // write in the same cycle still wins over the init.
+                        regs_r[R] = unsigned'(R << 16) | T;
                     end
                 end
             end
