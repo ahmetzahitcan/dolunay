@@ -76,6 +76,20 @@ module tb_core_middleend;
 
     fpnew_pkg::status_t [N_WARPS-1:0][N_THREADS-1:0] fflags_i;
 
+    // Scratchpad, for the LSU in the middle-end.
+    logic [N_SPAD_BANKS-1:0][W_SPAD_BANK_ADDR-1:Z_ADDR] spad_addr_w;
+    logic [N_SPAD_BANKS-1:0][RLEN-1:0]                spad_wdata_w;
+    logic [N_SPAD_BANKS-1:0][ADDR_ALIGN-1:0]          spad_wen_w;
+    logic [N_SPAD_BANKS-1:0][RLEN-1:0]                spad_rdata_w;
+
+    scratchpad u_scratchpad (
+        .clk    (clk),
+        .addr_i (spad_addr_w),
+        .wdata_i(spad_wdata_w),
+        .wen_i  (spad_wen_w),
+        .rdata_o(spad_rdata_w)
+    );
+
     core_middleend dut (
         .clk             (clk),
         .rst_n           (rst_n),
@@ -91,6 +105,10 @@ module tb_core_middleend;
         .result_valid_o  (result_valid_o),
         .result_ready_i  (result_ready_i),
         .result_o        (result_o),
+        .spad_addr_o     (spad_addr_w),
+        .spad_wdata_o    (spad_wdata_w),
+        .spad_wen_o      (spad_wen_w),
+        .spad_rdata_i    (spad_rdata_w),
         .branch_complete_o(branch_complete_o),
         .branch_mask_o   (branch_mask_o),
         .branch_type_o   (branch_type_o),

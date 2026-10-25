@@ -231,6 +231,25 @@ module core_top
         .branch_target_i(branch_target_w)
     );
 
+    // - Scratchpad
+    //
+    // The scratchpad is a banked memory that the LSU in the middle-end
+    // accesses. It lives here, next to the other memories, so that a DMA
+    // unit can be put in front of it later.
+
+    logic [N_SPAD_BANKS-1:0][W_SPAD_BANK_ADDR-1:Z_ADDR] spad_addr_w;
+    logic [N_SPAD_BANKS-1:0][RLEN-1:0]                spad_wdata_w;
+    logic [N_SPAD_BANKS-1:0][ADDR_ALIGN-1:0]          spad_wen_w;
+    logic [N_SPAD_BANKS-1:0][RLEN-1:0]                spad_rdata_w;
+
+    scratchpad u_scratchpad (
+        .clk    (clk),
+        .addr_i (spad_addr_w),
+        .wdata_i(spad_wdata_w),
+        .wen_i  (spad_wen_w),
+        .rdata_o(spad_rdata_w)
+    );
+
     // - Middle-end
 
     // FIXME: THERE MUST BE A BETTER PLACE TO PUT THIS! MUST BE!
@@ -251,6 +270,10 @@ module core_top
     	.result_valid_o   (me_out_valid_w),
     	.result_ready_i   (me_out_ready_w),
     	.result_o         (me_out_result_w),
+    	.spad_addr_o      (spad_addr_w),
+    	.spad_wdata_o     (spad_wdata_w),
+    	.spad_wen_o       (spad_wen_w),
+    	.spad_rdata_i     (spad_rdata_w),
     	.branch_complete_o(branch_complete_w),
     	.branch_mask_o    (branch_mask_w),
     	.branch_type_o    (branch_type_w),

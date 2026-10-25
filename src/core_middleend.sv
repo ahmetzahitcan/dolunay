@@ -38,6 +38,16 @@ module core_middleend
     input wire logic result_ready_i,
     output fu_result_s result_o,
 
+    // Scratchpad Interface
+    //
+    // The scratchpad itself lives in core_top, next to the other memories, so
+    // that a DMA unit can be put in front of it later without touching this
+    // module.
+    output logic [N_SPAD_BANKS-1:0][W_SPAD_BANK_ADDR-1:Z_ADDR] spad_addr_o,
+    output logic [N_SPAD_BANKS-1:0][RLEN-1:0]                spad_wdata_o,
+    output logic [N_SPAD_BANKS-1:0][ADDR_ALIGN-1:0]          spad_wen_o,
+    input wire logic [N_SPAD_BANKS-1:0][RLEN-1:0]            spad_rdata_i,
+
     // TODO: If I ever switch to true OoO, these have to be moved to the commit stage.
     output logic branch_complete_o,
     output simd_mask_t branch_mask_o,
@@ -551,6 +561,21 @@ module core_middleend
     	.in_operation_i (fu_in_operation_w),
         .out_result_o   (fu_result_w[FUNCTION_UNIT_CSRR]),
         .fflags_i       (fflags_i)
+    );
+
+    fu_lsu u_lsu (
+    	.clk            (clk),
+    	.rst_n          (rst_n),
+    	.in_valid_i     (fu_in_valid_w[FUNCTION_UNIT_LSU]),
+    	.in_ready_o     (fu_in_ready_w[FUNCTION_UNIT_LSU]),
+    	.out_valid_o    (fu_out_valid_w[FUNCTION_UNIT_LSU]),
+    	.out_ready_i    (fu_out_ready_w[FUNCTION_UNIT_LSU]),
+    	.in_operation_i (fu_in_operation_w),
+        .out_result_o   (fu_result_w[FUNCTION_UNIT_LSU]),
+        .spad_addr_o    (spad_addr_o),
+        .spad_wdata_o   (spad_wdata_o),
+        .spad_wen_o     (spad_wen_o),
+        .spad_rdata_i   (spad_rdata_i)
     );
 
     fu_bju u_bju (
