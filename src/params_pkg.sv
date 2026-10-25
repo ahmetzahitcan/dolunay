@@ -28,12 +28,6 @@ package params_pkg;
     localparam int W_THREADS = $clog2(N_THREADS);
     localparam int W_REGISTERS = $clog2(N_REGISTERS);
 
-    localparam int TLOCAL_SIZE_PT = 2048; // per thread
-    localparam int TLOCAL_BANK_SIZE = TLOCAL_SIZE_PT * N_WARPS;
-    localparam int TLOCAL_BANK_DEPTH = TLOCAL_BANK_SIZE / ADDR_ALIGN;
-    localparam int W_TLOCAL_ADDR_PT = $clog2(TLOCAL_SIZE_PT);
-    localparam int W_TLOCAL_BANK_ADDR = $clog2(TLOCAL_BANK_SIZE);
-
     typedef logic [N_THREADS-1:0] simd_mask_t;
     typedef logic [W_WARPS-1:0] warp_id_t;
     typedef logic [W_REGISTERS-1:0] reg_id_t;
