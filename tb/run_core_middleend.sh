@@ -20,11 +20,8 @@ fi
 # 1) File list: Bender dependencies, project packages, project RTL, testbench.
 gen_filelist sim/middleend.f ../tb/tb_core_middleend.sv
 
-verilator --binary --timing $TRACE -Wall -Wno-fatal \
-    --top-module tb_core_middleend --Mdir sim/obj_core_middleend -o tb_core_middleend_sim \
-    -F sim/middleend.f
-
-./sim/obj_core_middleend/tb_core_middleend_sim
+# 2) Build and run.
+verilator_build core_middleend tb_core_middleend sim/middleend.f $TRACE
 
 if [ "$1" = "--wave" ]; then
     echo

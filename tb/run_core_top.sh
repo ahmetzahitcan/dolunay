@@ -20,11 +20,8 @@ fi
 # 1) File list: Bender dependencies, project packages, project RTL, testbench.
 gen_filelist sim/core_top.f ../tb/tb_core_top.sv
 
-verilator --binary --timing $TRACE --assert -Wall -Wno-fatal \
-    --top-module tb_core_top --Mdir sim/obj_core_top -o tb_core_top_sim \
-    -F sim/core_top.f
-
-./sim/obj_core_top/tb_core_top_sim
+# 2) Build and run.
+verilator_build core_top tb_core_top sim/core_top.f $TRACE
 
 if [ "$1" = "--wave" ]; then
     echo
