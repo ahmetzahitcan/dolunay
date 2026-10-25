@@ -73,6 +73,23 @@ computed.
 
 ## 2. Micro-architecture (Option A)
 
+### 2.0 Naming
+
+The project's conventions, which this design follows:
+
+| suffix | meaning |
+|---|---|
+| `_i` | input |
+| `_o` | output — driven combinationally, or assigned directly from an `_r` of the same value |
+| `_w` | combinational path (a "wire") |
+| `_r` | flop / register |
+
+So the LSU's state is `busy_r`, `done_r`, `pending_r`, `capture_r`, `last_win_r`,
+`rdata_r`, `bank_r`, `off_r`, `align_r`, `wdata_r`, `wen_r`, `sel_r`, and the
+operation context `op_seq_r`, `op_warp_id_r`, `op_pc_r`, `op_mask_r`,
+`op_instr_r`. The combinational counterparts are `winner_w`, `hit_any_w`,
+`success_w`, `rfmt_pdata_w`, `wfmt_mdata_w`, `wfmt_wen_w`.
+
 ### 2.1 Address decode — unchanged from today
 
 `addr = rs1_data[i] + imm` (32-bit adder per thread), then:
@@ -95,11 +112,11 @@ simd_mask_t              capture_r;   // threads whose read data lands this cycl
 simd_mask_t              last_win_r;  // "all threads won" of the previous cycle
 simd_data_t              rdata_r;     // read data collected so far
 
-logic [N_THREADS-1:0][W_SPAD_BANKS-1:0]      bank_q;
-logic [N_THREADS-1:0][W_SPAD_BANK_ADDR-1:Z_ADDR] off_q;
-logic [N_THREADS-1:0][Z_ADDR-1:0]            align_q;
-logic [N_THREADS-1:0][RLEN-1:0]              wdata_q;  // formatted store data
-logic [N_THREADS-1:0][ADDR_ALIGN-1:0]        wen_q;    // formatted byte enables
+logic [N_THREADS-1:0][W_SPAD_BANKS-1:0]      bank_r;
+logic [N_THREADS-1:0][W_SPAD_BANK_ADDR-1:Z_ADDR] off_r;
+logic [N_THREADS-1:0][Z_ADDR-1:0]            align_r;
+logic [N_THREADS-1:0][RLEN-1:0]              wdata_r;  // formatted store data
+logic [N_THREADS-1:0][ADDR_ALIGN-1:0]        wen_r;    // formatted byte enables
 ```
 
 Plus the operation context for the result: `seq`, `warp_id`, `pc`, `mask`,
@@ -116,7 +133,7 @@ always_comb begin
         winner_w[b]  = '0;            // 0, NOT 'x
         hit_any_w[b] = 1'b0;
         for (int i = N_THREADS-1; i >= 0; i--) begin   // reversed: lowest index wins
-            if (pending_r[i] && (bank_q[i] == b[W_SPAD_BANKS-1:0])) begin
+            if (pending_r[i] && (bank_r[i] == b[W_SPAD_BANKS-1:0])) begin
                 winner_w[b]  = W_THREADS'(i);
                 hit_any_w[b] = 1'b1;
             end
@@ -124,8 +141,8 @@ always_comb begin
     end
     for (int i = 0; i < N_THREADS; i++) begin
         success_w[i] = pending_r[i] &&
-                       hit_any_w[bank_q[i]] &&
-                       (winner_w[bank_q[i]] == W_THREADS'(i));
+                       hit_any_w[bank_r[i]] &&
+                       (winner_w[bank_r[i]] == W_THREADS'(i));
     end
 end
 ```
@@ -139,9 +156,9 @@ active-thread mask — no separate `thread_active_w` needed.
 always_comb begin
     for (int b = 0; b < N_SPAD_BANKS; b++) begin
         if (hit_any_w[b]) begin
-            spad_addr_o[b]  = off_q[winner_w[b]];
-            spad_wdata_o[b] = wdata_q[winner_w[b]];
-            spad_wen_o[b]   = is_store ? wen_q[winner_w[b]] : '0;
+            spad_addr_o[b]  = off_r[winner_w[b]];
+            spad_wdata_o[b] = wdata_r[winner_w[b]];
+            spad_wen_o[b]   = is_store ? wen_r[winner_w[b]] : '0;
         end else begin
             spad_addr_o[b]  = '0;
             spad_wdata_o[b] = '0;
@@ -155,11 +172,11 @@ end
 
 ```systemverilog
 always_ff @(posedge clk)
-    for (int i = 0; i < N_THREADS; i++) sel_q[i] <= bank_q[i];
+    for (int i = 0; i < N_THREADS; i++) sel_r[i] <= bank_r[i];
 
 always_ff @(posedge clk)
     for (int i = 0; i < N_THREADS; i++)
-        if (capture_r[i]) rdata_r[i] <= spad_rdata_i[sel_q[i]];
+        if (capture_r[i]) rdata_r[i] <= spad_rdata_i[sel_r[i]];
 ```
 
 Bank *b* is addressed with the **winner's** offset, so the word it returns
@@ -170,14 +187,14 @@ registered read.
 
 ### 2.6 Result
 
-`mem_read_formatter` is applied at the end, on `rdata_r` with `align_q` as the
+`mem_read_formatter` is applied at the end, on `rdata_r` with `align_r` as the
 alignment, so each thread's byte/half/word is extracted at *its own* alignment
 and sign/zero-extended per `mem_extendmode`.
 
 ```systemverilog
 out_result_o = '{
-    seq: op_seq_q, warp_id: op_warp_id_q, instr: op_instr_q, pc: op_pc_q,
-    mask: op_mask_q,                 // the original active mask: all threads succeed
+    seq: op_seq_r, warp_id: op_warp_id_r, instr: op_instr_r, pc: op_pc_r,
+    mask: op_mask_r,                 // the original active mask: all threads succeed
     wb_result: rfmt_pdata_w,
     use_uwb: '0, uwb_result: 'x, csrw_result: 'x, fpu_status: 'x
 };
@@ -197,10 +214,10 @@ Both would be real bugs, and neither is caught by looking at the sketch alone.
 (`[Z_ADDR-1:0]`) while `spad_wen_o` is 4 bits (`[ADDR_ALIGN-1:0]`). Zero
 extension silently mis-encodes every byte lane. `mem_write_formatter` already
 produces the correct 4-bit byte enables (`src/mem_write_formatter.sv:36-58`), so
-the LSU uses `wdata_q`/`wen_q` from it.
+the LSU uses `wdata_r`/`wen_r` from it.
 
 **(b) §5.2 does not gate unclaimed banks.** With `winner_w[b] = '0` for a bank
-nobody requested, `wen_q[0]` would be written into that bank — a store to a
+nobody requested, `wen_r[0]` would be written into that bank — a store to a
 random thread's address. The `hit_any_w[b]` guard in §2.4 fixes it.
 
 **(c) §5.3's `sel_q_w` should be `W_SPAD_BANKS` bits, not `W_THREADS` bits**,
@@ -242,8 +259,8 @@ FU. The FPU is already multi-cycle, so nothing in the contract needs to change.
 
 | item | FFs | note |
 |---|---:|---|
-| `bank_q` + `off_q` + `align_q` | 544 | 17 bits x 32 threads |
-| `wdata_q` + `wen_q` | 1152 | stores only; holds the *formatted* data so the gather is a single mux level |
+| `bank_r` + `off_r` + `align_r` | 544 | 17 bits x 32 threads |
+| `wdata_r` + `wen_r` | 1152 | stores only; holds the *formatted* data so the gather is a single mux level |
 | `rdata_r` | 1024 | loads only |
 | operation context (`instr`, `seq`, `pc`, `mask`) | ~275 | `instr_s` without `sim__disasm` |
 | masks and flags | ~100 | |
