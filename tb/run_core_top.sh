@@ -10,24 +10,15 @@
 set -e
 cd "$(dirname "$0")/.."
 
+. ./tb/common.sh
+
 TRACE=""
 if [ "$1" = "--wave" ]; then
     TRACE="--trace-fst --trace-structs -DWAVE"
 fi
 
-# 1) Dependency checkouts (fpnew, common_cells, ...) + their defines.
-bender script verilator | grep -vE "/dolunay/(src|tb)/" > sim/core_top.f
-
-# 2) Project packages first, in dependency order.
-printf '%s\n' \
-    ../src/params_pkg.sv \
-    ../src/control_unit_pkg.sv \
-    ../src/core_pkg.sv \
-    ../tb/tb_config_pkg.sv >> sim/core_top.f
-
-# 3) Remaining project RTL, then the testbench.
-ls src/*.sv | grep -vE '_pkg\.sv$' | sed 's|^|../|' >> sim/core_top.f
-printf '%s\n' ../tb/tb_core_top.sv >> sim/core_top.f
+# 1) File list: Bender dependencies, project packages, project RTL, testbench.
+gen_filelist sim/core_top.f ../tb/tb_core_top.sv
 
 verilator --binary --timing $TRACE --assert -Wall -Wno-fatal \
     --top-module tb_core_top --Mdir sim/obj_core_top -o tb_core_top_sim \

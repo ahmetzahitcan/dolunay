@@ -1,0 +1,3 @@
+# The toolchain runs under WSL/Linux, where a stray CR at the end of a line
+# breaks shell builtins such as `set -e`. Keep the shell scripts LF-only.
+*.sh text eol=lf

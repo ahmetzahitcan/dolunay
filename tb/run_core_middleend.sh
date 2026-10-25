@@ -10,28 +10,15 @@
 set -e
 cd "$(dirname "$0")/.."
 
+. ./tb/common.sh
+
 TRACE=""
 if [ "$1" = "--wave" ]; then
     TRACE="--trace-fst --trace-structs -DWAVE"
 fi
 
-# 1) Dependency checkouts (fpnew, common_cells, ...) + their defines, taken
-#    verbatim from Bender, but without the project's own src/tb entries.
-bender script verilator | grep -vE "/dolunay/(src|tb)/" > sim/middleend.f
-
-# NOTE: paths in a -F list are resolved relative to the list's directory
-# (sim/), hence the ../ prefixes.
-
-# 2) Project packages first, in dependency order.
-printf '%s\n' \
-    ../src/params_pkg.sv \
-    ../src/control_unit_pkg.sv \
-    ../src/core_pkg.sv \
-    ../tb/tb_config_pkg.sv >> sim/middleend.f
-
-# 3) Remaining project RTL (order-independent), then the testbench.
-ls src/*.sv | grep -vE '_pkg\.sv$' | sed 's|^|../|' >> sim/middleend.f
-printf '%s\n' ../tb/tb_core_middleend.sv >> sim/middleend.f
+# 1) File list: Bender dependencies, project packages, project RTL, testbench.
+gen_filelist sim/middleend.f ../tb/tb_core_middleend.sv
 
 verilator --binary --timing $TRACE -Wall -Wno-fatal \
     --top-module tb_core_middleend --Mdir sim/obj_core_middleend -o tb_core_middleend_sim \
