@@ -1,5 +1,5 @@
-# The metadata of this testbench. pytb/run.py reads it to find the testbench
-# and to work out what it is built from.
+# The metadata of this testbench. pytb/run.py reads it to find the testbench,
+# to work out what it is built from, and to work out what options it takes.
 #
 # The name it is selected by on the command line. It defaults to the name of
 # the folder.
@@ -36,3 +36,16 @@ project_sources = [
 # The files of the Bender checkouts, matched by the end of their path. Only
 # the fpnew package is needed: the testbench never instantiates the FPU.
 bender_sources = ["fpnew_pkg.sv"]
+
+# The options of this testbench. Each one is a command line option named
+# --fu_lsu+<name>, and it is handed to the testbench in the environment as
+# DOLUNAY_FU_LSU_<NAME>. The testbench reads them in test_fu_lsu.py.
+#
+# The type is "int", "str" or "flag". A flag is off unless it is given.
+#
+# The mode of the randomised test is 0 mixed (the default), 1 loads only,
+# 2 stores only, 3 single threaded, 4 word sized.
+[options]
+mode = { type = "int", default = 0, help = "the mode of the randomised test" }
+seed = { type = "str", help = "the seed of the randomised test, and of cocotb itself" }
+readback = { type = "flag", help = "read every word an operation touched back" }

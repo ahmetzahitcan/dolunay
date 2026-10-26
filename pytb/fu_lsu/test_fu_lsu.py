@@ -41,11 +41,20 @@ CLK_PERIOD_NS = 10
 # test, not hang the run.
 TIMEOUT_NS = 10_000
 
-# The options of the randomised test. They are the bisection tool, so they
-# have to survive the conversion.
-MODE = int(os.environ.get("DOLUNAY_LSU_MODE", "0"))
-READBACK = bool(int(os.environ.get("DOLUNAY_LSU_READBACK", "0")))
-SEED = os.environ.get("DOLUNAY_LSU_SEED")
+# The options of the randomised test. They are declared in testbench.toml,
+# and the runner hands them over in the environment, named after the
+# testbench and the option: DOLUNAY_<TESTBENCH>_<OPTION>.
+TESTBENCH = os.environ.get("DOLUNAY_TESTBENCH", "fu_lsu")
+
+
+def option(name: str, default: str = "") -> str:
+    """The value of one of this testbench's options."""
+    return os.environ.get(f"DOLUNAY_{TESTBENCH.upper()}_{name.upper()}", default)
+
+
+MODE = int(option("mode", "0"))
+READBACK = bool(int(option("readback", "0")))
+SEED = option("seed") or None
 
 
 def _int(value) -> int:

@@ -64,13 +64,30 @@ METADATA_KEYS = {
     "sources",
     "project_sources",
     "bender_sources",
-    "autorun"
+    "autorun",
+    "options",
 }
+
+# The types an option may have. A flag is off unless it is given.
+OPTION_TYPES = {"int": int, "str": str, "flag": None}
+
+# What an option can be worth.
+OptionValue = int | str | bool | None
 
 
 # -----------------------------------------------------------------------------
 # The testbenches
 # -----------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Option:
+    """One option of a testbench."""
+
+    name: str
+    type: str  # "int", "str" or "flag"
+    default: OptionValue = None
+    help: str = ""
 
 
 @dataclass(frozen=True)
@@ -85,7 +102,8 @@ class Testbench:
     sources: list[Path] = field(default_factory=list)  # its own files
     project_sources: list[Path] = field(default_factory=list)  # the project's
     bender_sources: list[str] = field(default_factory=list)  # Bender's
-    autorun: bool = True # Run when running all tests
+    autorun: bool = True  # run when running all of them
+    options: dict[str, Option] = field(default_factory=dict)
 
     def all_sources(self) -> list[Path]:
         """Everything it is built from, in the order Verilator needs it.
@@ -98,6 +116,14 @@ class Testbench:
             + self.project_sources
             + self.sources
         )
+
+    def option(self, args: argparse.Namespace, name: str) -> OptionValue:
+        """The value of one of this testbench's options."""
+        return getattr(args, f"opt_{self.name}_{name}", None)
+
+    def option_env(self, name: str) -> str:
+        """The environment variable one of its options is handed over in."""
+        return f"DOLUNAY_{self.name.upper()}_{name.upper()}"
 
 
 def discover_testbenches() -> list[Testbench]:
@@ -148,8 +174,36 @@ def load_testbench(folder: Path, metadata: Path) -> Testbench:
         sources=sources,
         project_sources=project_sources,
         bender_sources=list(data.get("bender_sources", [])),
-        autorun=data.get("autorun", True)
+        autorun=data.get("autorun", True),
+        options=load_options(data.get("options", {}), metadata),
     )
+
+
+def load_options(specs: dict, metadata: Path) -> dict[str, Option]:
+    """The options a testbench declares.
+
+    An option is a table with a type, and optionally a default and a help
+    text. The type is "int", "str" or "flag".
+    """
+    options = {}
+    for name, spec in specs.items():
+        if not isinstance(spec, dict):
+            raise SystemExit(
+                f"ERROR: {metadata}: the option '{name}' has to be a table"
+            )
+        kind = spec.get("type", "str")
+        if kind not in OPTION_TYPES:
+            raise SystemExit(
+                f"ERROR: {metadata}: the option '{name}' has the unknown type "
+                f"'{kind}'. The types are: {', '.join(sorted(OPTION_TYPES))}"
+            )
+        options[name] = Option(
+            name=name,
+            type=kind,
+            default=spec.get("default"),
+            help=spec.get("help", ""),
+        )
+    return options
 
 
 def bender_files(patterns: list[str]) -> list[Path]:
@@ -358,13 +412,18 @@ def run_testbench(
     if folder not in sys.path:
         sys.path.insert(0, folder)
 
+    # The seed of the testbench, if it has one, is the seed of cocotb too.
+    seed = testbench.option(args, "seed")
+    if seed is not None:
+        seed = str(seed)
+
     results = runner.test(
         hdl_toplevel=testbench.toplevel,
         test_module=testbench.module,
         build_dir=build_dir,
         waves=args.waves,
-        seed=args.seed,
-        extra_env=test_environment(args),
+        seed=seed,
+        extra_env=test_environment(testbench, args),
         verbose=args.verbose,
     )
 
@@ -375,19 +434,23 @@ def run_testbench(
         return 0, 1
 
 
-def test_environment(args: argparse.Namespace) -> dict[str, str]:
-    """The environment the testbenches are run with.
+def test_environment(
+    testbench: Testbench, args: argparse.Namespace
+) -> dict[str, str]:
+    """The environment a testbench is run with.
 
-    The options of the randomised test of the load/store unit testbench are
-    passed on as environment variables; see pytb/README.md.
+    The options of the testbench are handed over in the environment, one
+    variable each, named after the testbench and the option. The testbench
+    knows the names, because they follow from the name of the testbench and
+    the name of the option.
     """
-    environment = {}
-    if args.mode is not None:
-        environment["DOLUNAY_LSU_MODE"] = str(args.mode)
-    if args.seed is not None:
-        environment["DOLUNAY_LSU_SEED"] = str(args.seed)
-    if args.readback:
-        environment["DOLUNAY_LSU_READBACK"] = "1"
+    environment = {"DOLUNAY_TESTBENCH": testbench.name}
+    for name, option in testbench.options.items():
+        value = testbench.option(args, name)
+        if option.type == "flag":
+            environment[testbench.option_env(name)] = "1" if value else "0"
+        elif value is not None:
+            environment[testbench.option_env(name)] = str(value)
     return environment
 
 
@@ -405,16 +468,54 @@ def clean() -> None:
 # -----------------------------------------------------------------------------
 
 
-def parse_args(argv: list[str]) -> argparse.Namespace:
+def add_testbench_options(
+    parser: argparse.ArgumentParser, testbenches: list[Testbench]
+) -> None:
+    """Add the options the testbenches declare.
+
+    The option of a testbench is named after it, so that the options of two
+    testbenches do not collide: --fu_lsu+mode.
+    """
+    for testbench in testbenches:
+        for name, option in testbench.options.items():
+            flag = f"--{testbench.name}+{name}"
+            dest = f"opt_{testbench.name}_{name}"
+            if option.type == "flag":
+                parser.add_argument(
+                    flag,
+                    dest=dest,
+                    action="store_true",
+                    default=False,
+                    help=option.help,
+                )
+            else:
+                parser.add_argument(
+                    flag,
+                    dest=dest,
+                    type=OPTION_TYPES[option.type],
+                    default=option.default,
+                    metavar="N" if option.type == "int" else "VALUE",
+                    help=option.help,
+                )
+
+
+def options_help(testbenches: list[Testbench]) -> str:
+    """The options of the testbenches, for the help of the command line."""
+    lines = []
+    for testbench in testbenches:
+        for name, option in testbench.options.items():
+            lines.append(f"  --{testbench.name}+{name}  {option.help}")
+    if not lines:
+        return ""
+    return "The options of the testbenches:\n" + "\n".join(lines)
+
+
+def parse_args(
+    argv: list[str], testbenches: list[Testbench]
+) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run the cocotb testbenches of the project.",
-        epilog=(
-            "The options of the randomised test of the load/store unit testbench:\n"
-            "  --mode N    0 mixed (the default), 1 loads only, 2 stores only,\n"
-            "              3 single threaded, 4 word sized\n"
-            "  --seed N    the seed of the randomised test, and of cocotb itself\n"
-            "  --readback  read every word an operation touched back\n"
-        ),
+        epilog=options_help(testbenches),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -433,19 +534,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--clean", action="store_true", help="remove the build trees and exit"
     )
     parser.add_argument(
-        "--mode", type=int, help="the mode of the randomised test (fu_lsu)"
-    )
-    parser.add_argument(
-        "--seed", help="the seed of the randomised test (fu_lsu)"
-    )
-    parser.add_argument(
-        "--readback",
-        action="store_true",
-        help="read every word an operation touched back (fu_lsu)",
+        "--runall", action="store_true", help="run all the tests, even those with autorun=false"
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true", help="say what the tools are doing"
     )
+    add_testbench_options(parser, testbenches)
     return parser.parse_args(argv)
 
 
@@ -466,14 +560,16 @@ def main(argv: list[str]) -> int:
             f"{sys.version.split()[0]}."
         ) from None
 
-    args = parse_args(argv)
-
+    # The options of the testbenches are in their metadata, so the
+    # testbenches have to be found before the command line is parsed.
     testbenches = discover_testbenches()
     if not testbenches:
         raise SystemExit(
             f"ERROR: no testbench found in {PYTB_DIR}.\n"
             f"       A testbench is a folder with a {METADATA_NAME} in it."
         )
+
+    args = parse_args(argv, testbenches)
 
     if args.list:
         for testbench in testbenches:
@@ -484,7 +580,7 @@ def main(argv: list[str]) -> int:
         clean()
         return 0
 
-    selected = [t for t in testbenches if t.autorun]
+    selected = testbenches if args.runall else [t for t in testbenches if t.autorun]
     if args.testbenches:
         known = {testbench.name: testbench for testbench in testbenches}
         unknown = [name for name in args.testbenches if name not in known]

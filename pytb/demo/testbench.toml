@@ -17,6 +17,3 @@ module = "test_demo"
 
 # The files of the testbench itself, relative to this folder.
 sources = ["demo.sv"]
-
-# Do not run unless explicitly asked to
-autorun = false

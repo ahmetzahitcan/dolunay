@@ -485,6 +485,14 @@ A testbench is a folder with a `testbench.toml` in it, which says what it
 is and what it is built from. `run.py` finds them by looking for the file,
 so a new testbench is a new folder and nothing else.
 
+**The options of a testbench are worked out from its metadata**, and they
+are named after it, so that the options of two testbenches do not collide:
+`--fu_lsu+mode` rather than `--mode`. The runner hands them over in the
+environment, one variable each, named after the testbench and the option
+(`DOLUNAY_FU_LSU_MODE`), and the testbench reads them with the same rule.
+This is the bisection tool of the randomised test, so it has to keep
+working.
+
 ```sh
 python3 pytb/run.py                # every testbench
 python3 pytb/run.py fu_lsu         # one of them

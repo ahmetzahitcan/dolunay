@@ -28,6 +28,24 @@ A folder with a `testbench.toml` in it *is* a testbench: `run.py` finds them
 by looking for the file, so a new testbench is a new folder and nothing
 else.
 
+The metadata says what the testbench is, what it is built from, and what
+options it takes:
+
+```toml
+name = "fu_lsu"                    # defaults to the name of the folder
+description = "the load/store unit"
+toplevel = "tb_fu_lsu_cocotb"      # the HDL top module
+module = "test_fu_lsu"             # the Python module the tests are in
+sources = ["tb_fu_lsu_cocotb.sv"]  # its own files
+autorun = true                     # run it when running all of them
+
+[options]
+mode = { type = "int", default = 0, help = "the mode of the randomised test" }
+```
+
+The keys of the testbench come **before** the tables, because that is how
+TOML works: a key after a table header belongs to that table.
+
 ## Setting it up
 
 It is done once per machine.
@@ -127,15 +145,24 @@ first. It exits with a non-zero status when a test fails.
 | `--list` | list the testbenches and exit |
 | `--waves` | dump a waveform trace into the build tree |
 | `--clean` | remove the build trees and exit |
-| `--mode N` | the mode of the randomised test (see below) |
-| `--seed N` | the seed of the randomised test, and of cocotb itself |
-| `--readback` | read every word an operation touched back |
+| `--runall` | run all the testbenches, even those with `autorun = false` |
 | `-v` | say what the tools are doing |
+
+The options of a testbench are worked out from its metadata, and they are
+named after it, so that the options of two testbenches do not collide:
+
+```sh
+python3 pytb/run.py fu_lsu --fu_lsu+mode 1     # loads only
+python3 pytb/run.py fu_lsu --fu_lsu+seed 1234  # a reproducible run
+python3 pytb/run.py fu_lsu --fu_lsu+readback   # read every touched word back
+```
+
+`python3 pytb/run.py --help` lists the options of every testbench.
 
 The randomised test of the load/store unit testbench is the bisection
 tool, and it is what makes a failure findable:
 
-| `--mode` | what it generates |
+| `--fu_lsu+mode` | what it generates |
 |---|---|
 | 0 | loads and stores mixed (the default) |
 | 1 | loads only |
@@ -143,14 +170,22 @@ tool, and it is what makes a failure findable:
 | 3 | single threaded |
 | 4 | word sized |
 
-```sh
-python3 pytb/run.py fu_lsu --mode 1     # loads only
-python3 pytb/run.py fu_lsu --seed 1234  # a reproducible run
-python3 pytb/run.py fu_lsu --readback   # read every touched word back
-```
-
 The seed is printed at the start of the run, so a failure can be
 reproduced.
+
+### How an option reaches the testbench
+
+The runner hands the options over in the environment, one variable each,
+named after the testbench and the option: `DOLUNAY_FU_LSU_MODE` for
+`--fu_lsu+mode`. The testbench reads them with the same rule, in
+`fu_lsu/test_fu_lsu.py`:
+
+```python
+TESTBENCH = os.environ.get("DOLUNAY_TESTBENCH", "fu_lsu")
+
+def option(name: str, default: str = "") -> str:
+    return os.environ.get(f"DOLUNAY_{TESTBENCH.upper()}_{name.upper()}", default)
+```
 
 ## How the load/store unit testbench is put together
 
