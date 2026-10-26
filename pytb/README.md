@@ -40,8 +40,11 @@ sources = ["tb_fu_lsu_cocotb.sv"]  # its own files
 autorun = true                     # run it when running all of them
 
 [options]
-mode = { type = "int", default = 0, help = "the mode of the randomised test" }
+mode = { type = "str", default = "mixed", values = ["mixed", "loads"], help = "what it generates" }
 ```
+
+The type is `int`, `str` or `flag`, and the values, when there are any,
+are the ones the option accepts.
 
 The keys of the testbench come **before** the tables, because that is how
 TOML works: a key after a table header belongs to that table.
@@ -152,9 +155,9 @@ The options of a testbench are worked out from its metadata, and they are
 named after it, so that the options of two testbenches do not collide:
 
 ```sh
-python3 pytb/run.py fu_lsu --fu_lsu+mode 1     # loads only
-python3 pytb/run.py fu_lsu --fu_lsu+seed 1234  # a reproducible run
-python3 pytb/run.py fu_lsu --fu_lsu+readback   # read every touched word back
+python3 pytb/run.py fu_lsu --fu_lsu+mode loads     # loads only
+python3 pytb/run.py fu_lsu --fu_lsu+seed 1234      # a reproducible run
+python3 pytb/run.py fu_lsu --fu_lsu+readback       # read every touched word back
 ```
 
 `python3 pytb/run.py --help` lists the options of every testbench.
@@ -164,11 +167,22 @@ tool, and it is what makes a failure findable:
 
 | `--fu_lsu+mode` | what it generates |
 |---|---|
-| 0 | loads and stores mixed (the default) |
-| 1 | loads only |
-| 2 | stores only |
-| 3 | single threaded |
-| 4 | word sized |
+| `mixed` | loads and stores mixed (the default) |
+| `loads` | loads only |
+| `stores` | stores only |
+| `single` | single threaded |
+| `word` | word sized |
+
+The mode is a set of names, not numbers, because it is something a person
+types. The values are declared in the metadata of the testbench, and the
+testbench has an enum for them:
+
+```python
+class Mode(Enum):
+    MIXED = "mixed"
+    LOADS = "loads"
+    ...
+```
 
 The seed is printed at the start of the run, so a failure can be
 reproduced.
@@ -224,8 +238,22 @@ widened needs no change in them at all.
 
 What is left of the layout is how a thread's data is laid out in a
 `simd_data_t`, which is a packed array: thread *i* is in the bits
-`[i*RLEN +: RLEN]`. The testbench checks the widths of the signals against
-the parameters of the model, so that a change of those is caught too.
+`[i*RLEN +: RLEN]`.
+
+### The parameters of the design
+
+The model is a model of a particular design, so the parameters of that
+design — `RLEN`, `N_THREADS`, `N_SPAD_BANKS`, `SPAD_BANK_DEPTH` and
+`ADDR_ALIGN` — have to be the ones the model has. The harness gives them
+to the testbench, which checks them before anything else:
+
+```
+AssertionError: RLEN is 64, the model thinks it is 32
+```
+
+It is a precondition and not a check: if the parameters are not the ones
+the model has, the model is not a model of this design, and every check
+that follows would be meaningless. So the test stops there.
 
 ## Writing a testbench
 

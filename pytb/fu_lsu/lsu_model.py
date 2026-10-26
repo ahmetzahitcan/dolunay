@@ -28,6 +28,9 @@ is a packed array: thread i is in bits [i*RLEN +: RLEN].
 
 from __future__ import annotations
 
+from enum import IntEnum
+from dataclasses import dataclass, field
+
 # -----------------------------------------------------------------------------
 # The parameters of the design
 # -----------------------------------------------------------------------------
@@ -38,16 +41,48 @@ N_SPAD_BANKS = 32  # the banks of the scratchpad
 SPAD_BANK_DEPTH = 1024  # the words of a bank
 ADDR_ALIGN = 4  # the bytes of a word
 
-# The enums of the instruction.
-MEM_OPSIZE_BYTE = 0
-MEM_OPSIZE_HALF = 1
-MEM_OPSIZE_WORD = 2
 
-MEM_LOADSTORE_LOAD = 0
-MEM_LOADSTORE_STORE = 1
+# -----------------------------------------------------------------------------
+# The enums of the instruction
+#
+# The RTL has them as int enums and the harness hands them over as they are,
+# so they are int enums here too.
+# -----------------------------------------------------------------------------
 
-MEM_EXTENDMODE_SIGN = 0
-MEM_EXTENDMODE_ZERO = 1
+
+class MemOpsize(IntEnum):
+    """The size of a memory access."""
+
+    BYTE = 0
+    HALF = 1
+    WORD = 2
+
+
+class MemLoadstore(IntEnum):
+    """What a memory access does."""
+
+    LOAD = 0
+    STORE = 1
+
+
+class MemExtendmode(IntEnum):
+    """How a loaded value is extended."""
+
+    SIGN = 0
+    ZERO = 1
+
+
+@dataclass
+class Operation:
+    """One memory operation, as the LSU is given it."""
+
+    mask: int = 0
+    rs1: list[int] = field(default_factory=lambda: [0] * N_THREADS)
+    rs2: list[int] = field(default_factory=lambda: [0] * N_THREADS)
+    opsize: MemOpsize = MemOpsize.WORD
+    imm: int = 0
+    loadstore: MemLoadstore = MemLoadstore.LOAD
+    extendmode: MemExtendmode = MemExtendmode.SIGN
 
 
 # -----------------------------------------------------------------------------
@@ -111,15 +146,15 @@ def addr_of(bank: int, offset: int) -> int:
 # The store formatting
 # -----------------------------------------------------------------------------
 
-def store_wen(opsize: int, align: int) -> int:
+def store_wen(opsize: MemOpsize, align: int) -> int:
     """The byte enables a store of the given size and alignment writes.
 
     This mirrors mem_write_formatter, but it is written out again here so
     that a mistake in the formatter is caught.
     """
-    if opsize == MEM_OPSIZE_BYTE:
+    if opsize == MemOpsize.BYTE:
         return 1 << align
-    if opsize == MEM_OPSIZE_HALF:
+    if opsize == MemOpsize.HALF:
         if align == 0:
             return 0b0011
         if align == 2:
@@ -128,7 +163,7 @@ def store_wen(opsize: int, align: int) -> int:
     return 0b1111
 
 
-def store_byte(opsize: int, data: int, lane: int) -> int:
+def store_byte(opsize: MemOpsize, data: int, lane: int) -> int:
     """The byte a store of the given size writes into the given lane.
 
     A byte store replicates the byte into every lane. A half store puts the
@@ -136,9 +171,9 @@ def store_byte(opsize: int, data: int, lane: int) -> int:
     halves of the word, so lane 2 gets the same byte as lane 0. A word store
     keeps the word as it is.
     """
-    if opsize == MEM_OPSIZE_BYTE:
+    if opsize == MemOpsize.BYTE:
         return data & 0xFF
-    if opsize == MEM_OPSIZE_HALF:
+    if opsize == MemOpsize.HALF:
         return (data >> ((lane % 2) * 8)) & 0xFF
     return (data >> (lane * 8)) & 0xFF
 
@@ -147,7 +182,9 @@ def store_byte(opsize: int, data: int, lane: int) -> int:
 # The load formatting
 # -----------------------------------------------------------------------------
 
-def load_value(word: int, align: int, opsize: int, extendmode: int) -> int:
+def load_value(
+    word: int, align: int, opsize: MemOpsize, extendmode: MemExtendmode
+) -> int:
     """The value a load of the given size and alignment produces.
 
     This mirrors mem_read_formatter.
@@ -161,16 +198,16 @@ def load_value(word: int, align: int, opsize: int, extendmode: int) -> int:
         half_v = 0
     word_v = word & 0xFFFFFFFF if align == 0 else 0
 
-    if opsize == MEM_OPSIZE_BYTE:
+    if opsize == MemOpsize.BYTE:
         value, width = byte_v, 8
-    elif opsize == MEM_OPSIZE_HALF:
+    elif opsize == MemOpsize.HALF:
         value, width = half_v, 16
     else:
         value, width = word_v, 32
 
     if width == RLEN:
         return value & 0xFFFFFFFF
-    if extendmode == MEM_EXTENDMODE_SIGN and (value >> (width - 1)) & 1:
+    if extendmode == MemExtendmode.SIGN and (value >> (width - 1)) & 1:
         value |= ((1 << (RLEN - width)) - 1) << width
     return value & 0xFFFFFFFF
 
@@ -179,15 +216,7 @@ def load_value(word: int, align: int, opsize: int, extendmode: int) -> int:
 # The arbitration
 # -----------------------------------------------------------------------------
 
-def arbitrate(
-    mask: int,
-    rs1: list[int],
-    rs2: list[int],
-    opsize: int,
-    imm: int,
-    is_store: bool,
-    mem: list[list[int]],
-) -> int:
+def arbitrate(op: Operation, mem: list[list[int]]) -> int:
     """The arbitration, and the stores it performs.
 
     Every bank serves its lowest numbered pending thread in every cycle, and
@@ -201,22 +230,22 @@ def arbitrate(
     """
     per_bank: list[list[int]] = [[] for _ in range(N_SPAD_BANKS)]
     for index in range(N_THREADS):
-        if (mask >> index) & 1:
-            addr = (rs1[index] + imm) & 0xFFFFFFFF
+        if (op.mask >> index) & 1:
+            addr = (op.rs1[index] + op.imm) & 0xFFFFFFFF
             per_bank[spad_bank_of(addr)].append(index)
 
     cycles = max((len(threads) for threads in per_bank), default=0)
 
-    if is_store:
+    if op.loadstore == MemLoadstore.STORE:
         for bank, threads in enumerate(per_bank):
             for index in threads:
-                addr = (rs1[index] + imm) & 0xFFFFFFFF
+                addr = (op.rs1[index] + op.imm) & 0xFFFFFFFF
                 offset = spad_offset_of(addr)
-                wen = store_wen(opsize, addr & (ADDR_ALIGN - 1))
+                wen = store_wen(op.opsize, addr & (ADDR_ALIGN - 1))
                 word = mem[bank][offset]
                 for lane in range(ADDR_ALIGN):
                     if (wen >> lane) & 1:
-                        byte = store_byte(opsize, rs2[index], lane)
+                        byte = store_byte(op.opsize, op.rs2[index], lane)
                         word = (word & ~(0xFF << (lane * 8))) | (byte << (lane * 8))
                 mem[bank][offset] = word
 

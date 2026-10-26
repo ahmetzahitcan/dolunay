@@ -493,6 +493,11 @@ environment, one variable each, named after the testbench and the option
 This is the bisection tool of the randomised test, so it has to keep
 working.
 
+The values of an option are names rather than numbers, because they are
+something a person types: `--fu_lsu+mode loads`. The values are declared
+in the metadata of the testbench, and the testbench has a `StrEnum` for
+them.
+
 ```sh
 python3 pytb/run.py                # every testbench
 python3 pytb/run.py fu_lsu         # one of them
@@ -519,8 +524,15 @@ moved or widened needs no change in the testbench or the model at all.
 
 What is left of the layout is how a thread's data is laid out in a
 `simd_data_t`, which is a packed array: thread *i* is in the bits
-`[i*RLEN +: RLEN]`. The testbench checks the widths of the signals against
-the parameters of the model, so that a change of those is caught too.
+`[i*RLEN +: RLEN]`.
+
+**The parameters of the design are checked before anything else.** The
+model is a model of a particular design, so `RLEN`, `N_THREADS`,
+`N_SPAD_BANKS`, `SPAD_BANK_DEPTH` and `ADDR_ALIGN` have to be the ones the
+model has; the harness gives them to the testbench, which checks them.
+It is a precondition and not a check: if the parameters are not the ones
+the model has, the model is not a model of this design, and every check
+that follows would be meaningless, so the test stops there.
 
 ### What was found on the way
 

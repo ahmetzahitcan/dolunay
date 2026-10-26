@@ -15,9 +15,9 @@ The test groups are the ones of the SystemVerilog testbench:
      read-back of every word,
   8. back-pressure: the result must be held stable while out_ready_i is low.
 
-The randomised test is the bisection tool: the mode selects loads only (1),
-stores only (2), single-threaded (3) or word-sized (4), and the seed makes
-a failure reproducible. Both come from the command line, see pytb/run.py.
+The randomised test is the bisection tool: the mode selects loads only,
+stores only, single-threaded or word-sized, and the seed makes a failure
+reproducible. Both come from the command line, see pytb/run.py.
 
 The timing convention is the one the SystemVerilog testbenches in tb/ use:
 the inputs are driven on the falling edge and the outputs are sampled on the
@@ -26,6 +26,7 @@ falling edge, so nothing races with the clock edge.
 
 from __future__ import annotations
 
+from enum import Enum
 import os
 import random
 
@@ -48,25 +49,43 @@ TESTBENCH = os.environ.get("DOLUNAY_TESTBENCH", "fu_lsu")
 
 
 def option(name: str, default: str = "") -> str:
-    """The value of one of this testbench's options."""
+    """The value of one of this testbench's options.
+
+    The runner names the variable after the testbench and the option, the
+    same way it does here: see option_env in pytb/run.py.
+    """
     return os.environ.get(f"DOLUNAY_{TESTBENCH.upper()}_{name.upper()}", default)
 
 
-MODE = int(option("mode", "0"))
+class Mode(Enum):
+    """What the randomised test generates.
+
+    It is a value a person types, so it is a string enum. The values are
+    listed in testbench.toml as well, and the runner refuses anything else.
+    """
+
+    MIXED = "mixed"
+    LOADS = "loads"
+    STORES = "stores"
+    SINGLE = "single"
+    WORD = "word"
+
+
+MODE = Mode(option("mode", Mode.MIXED.value))
 READBACK = bool(int(option("readback", "0")))
 SEED = option("seed") or None
 
 
-def _int(value) -> int:
+def signal_int(handle) -> int:
     """The value of a signal as an integer. An unknown bit counts as zero.
 
     Verilator is a two-state simulator, so this only matters for the fields
     the RTL drives with 'x, which the testbench does not look at.
     """
     try:
-        return int(value)
+        return int(handle.value)
     except ValueError:
-        bits = str(value)
+        bits = str(handle.value)
         for unknown in "xz":
             bits = bits.replace(unknown, "0")
         # A weak zero and a weak one, as Verilator resolves them.
@@ -91,13 +110,7 @@ class Lsu:
         ]
 
         # The operation the next run_op drives.
-        self.op_mask = 0
-        self.op_rs1 = [0] * model.N_THREADS
-        self.op_rs2 = [0] * model.N_THREADS
-        self.op_loadstore = model.MEM_LOADSTORE_LOAD
-        self.op_opsize = model.MEM_OPSIZE_WORD
-        self.op_extmode = model.MEM_EXTENDMODE_SIGN
-        self.op_imm = 0
+        self.op = model.Operation()
         self.stall_cycles = 0
 
     # -------------------------------------------------------------------------
@@ -121,6 +134,45 @@ class Lsu:
             f"{self.name}: {self.errors} of {self.checks} checks failed"
         )
 
+    def check_model_fits(self) -> None:
+        """The model has to be a model of *this* design.
+
+        The parameters of the design have to be the ones the model has, and
+        the thread data has to be as wide as the model thinks it is. If they
+        are not, the model is not a model of this design, and every check
+        that follows would be meaningless — so the test stops here.
+        """
+        dut = self.dut
+        for name, expected, actual in (
+            ("RLEN", model.RLEN, signal_int(dut.param_rlen_o)),
+            ("N_THREADS", model.N_THREADS, signal_int(dut.param_n_threads_o)),
+            (
+                "N_SPAD_BANKS",
+                model.N_SPAD_BANKS,
+                signal_int(dut.param_n_spad_banks_o),
+            ),
+            (
+                "SPAD_BANK_DEPTH",
+                model.SPAD_BANK_DEPTH,
+                signal_int(dut.param_spad_bank_depth_o),
+            ),
+            ("ADDR_ALIGN", model.ADDR_ALIGN, signal_int(dut.param_addr_align_o)),
+        ):
+            assert expected == actual, (
+                f"{name} is {actual}, the model thinks it is {expected}"
+            )
+
+        # The threads of a simd_data_t are packed, so the thread data has to
+        # be as wide as the number of threads times the width of a thread.
+        assert len(dut.op_mask.value) == model.N_THREADS, (
+            f"the mask is {len(dut.op_mask.value)} bits wide, the model thinks "
+            f"it is {model.N_THREADS}"
+        )
+        assert len(dut.op_rs1.value) == model.N_THREADS * model.RLEN, (
+            f"the thread data is {len(dut.op_rs1.value)} bits wide, the model "
+            f"thinks it is {model.N_THREADS * model.RLEN}"
+        )
+
     # -------------------------------------------------------------------------
     # Setting the DUT up
     # -------------------------------------------------------------------------
@@ -142,19 +194,11 @@ class Lsu:
         dut.init_wdata.value = 0
         dut.init_wen.value = 0
 
-        # The model has to know how wide a thread is and how many of them
-        # there are, because that is how a simd_data_t is laid out. The
-        # widths of the signals say what the design uses.
-        self.check(
-            len(dut.op_mask.value) == model.N_THREADS,
-            f"the mask is {len(dut.op_mask.value)} bits wide, the model thinks "
-            f"it is {model.N_THREADS}",
-        )
-        self.check(
-            len(dut.op_rs1.value) == model.N_THREADS * model.RLEN,
-            f"the thread data is {len(dut.op_rs1.value)} bits wide, the model "
-            f"thinks it is {model.N_THREADS * model.RLEN}",
-        )
+        # The model is a model of a particular design, so the parameters of
+        # that design have to be the ones the model has. The harness gives
+        # them, so that a change of one of them is caught here and not
+        # somewhere in the middle of a test.
+        self.check_model_fits()
 
         for _ in range(4):
             await FallingEdge(dut.clk)
@@ -187,17 +231,10 @@ class Lsu:
     async def run_op(self, name: str) -> None:
         """Run one operation and compare the result against the model."""
         dut = self.dut
+        op = self.op
 
         # What the model says the result is.
-        model_cycles = model.arbitrate(
-            self.op_mask,
-            self.op_rs1,
-            self.op_rs2,
-            self.op_opsize,
-            self.op_imm,
-            self.op_loadstore == model.MEM_LOADSTORE_STORE,
-            self.mem,
-        )
+        model_cycles = model.arbitrate(op, self.mem)
 
         # Present the operation. The harness packs the fields into the
         # struct the LSU takes, so the testbench does not have to know where
@@ -206,19 +243,19 @@ class Lsu:
         # The sequence number wraps at the width of its type, which is what
         # the design does with it.
         dut.op_seq.value = self.seq & ((1 << len(dut.op_seq.value)) - 1)
-        dut.op_mask.value = self.op_mask
-        dut.op_rs1.value = model.pack_threads(self.op_rs1)
-        dut.op_rs2.value = model.pack_threads(self.op_rs2)
-        dut.op_imm.value = self.op_imm
-        dut.op_mem_loadstore.value = self.op_loadstore
-        dut.op_mem_opsize.value = self.op_opsize
-        dut.op_mem_extendmode.value = self.op_extmode
+        dut.op_mask.value = op.mask
+        dut.op_rs1.value = model.pack_threads(op.rs1)
+        dut.op_rs2.value = model.pack_threads(op.rs2)
+        dut.op_imm.value = op.imm
+        dut.op_mem_loadstore.value = op.loadstore
+        dut.op_mem_opsize.value = op.opsize
+        dut.op_mem_extendmode.value = op.extendmode
         self.seq += 1
 
         # It is accepted at the clock edge between the two falling edges.
         await FallingEdge(dut.clk)
         self.check(
-            _int(dut.in_ready_o.value) == 1, f"{name}: the LSU was not ready"
+            signal_int(dut.in_ready_o) == 1, f"{name}: the LSU was not ready"
         )
         dut.in_valid_i.value = 1
         await FallingEdge(dut.clk)
@@ -230,7 +267,7 @@ class Lsu:
         while True:
             await with_timeout(FallingEdge(dut.clk), TIMEOUT_NS, "ns")
             latency += 1
-            if _int(dut.out_valid_o.value):
+            if signal_int(dut.out_valid_o):
                 break
 
         self.check(
@@ -239,59 +276,59 @@ class Lsu:
         )
 
         self.check(
-            _int(dut.res_mask.value) == self.op_mask,
+            signal_int(dut.res_mask) == op.mask,
             f"{name}: result mask",
         )
 
         # The LSU must have latched the instruction of this operation. The
         # harness gives back the instruction it built and the one the LSU
         # latched, so they can be compared without knowing the layout.
-        issued = _int(dut.op_instr.value)
-        latched = _int(dut.res_instr.value)
+        issued = signal_int(dut.op_instr)
+        latched = signal_int(dut.res_instr)
         self.check(
             latched == issued,
             f"{name}: the latched instruction is not the one that was issued",
         )
 
-        loaded = _int(dut.res_wb_result.value)
+        loaded = signal_int(dut.res_wb_result)
 
         # If the back-end is not ready, the result must be held.
         if self.stall_cycles > 0:
             dut.out_ready_i.value = 0
-            held_mask = _int(dut.res_mask.value)
+            held_mask = signal_int(dut.res_mask)
             held_instr = latched
             held_wb = loaded
-            is_load = self.op_loadstore == model.MEM_LOADSTORE_LOAD
+            is_load = op.loadstore == model.MemLoadstore.LOAD
             for _ in range(self.stall_cycles):
                 await FallingEdge(dut.clk)
                 self.check(
-                    _int(dut.out_valid_o.value) == 1,
+                    signal_int(dut.out_valid_o) == 1,
                     f"{name}: out_valid dropped while stalled",
                 )
                 self.check(
-                    _int(dut.res_mask.value) == held_mask
-                    and _int(dut.res_instr.value) == held_instr
+                    signal_int(dut.res_mask) == held_mask
+                    and signal_int(dut.res_instr) == held_instr
                     # A store has no write back data and the RTL drives it
                     # with 'x, so it is only checked for a load.
                     and (
                         not is_load
-                        or _int(dut.res_wb_result.value) == held_wb
+                        or signal_int(dut.res_wb_result) == held_wb
                     ),
                     f"{name}: the result changed while stalled",
                 )
             dut.out_ready_i.value = 1
 
         # The value every thread loaded.
-        if self.op_loadstore == model.MEM_LOADSTORE_LOAD:
+        if op.loadstore == model.MemLoadstore.LOAD:
             for index in range(model.N_THREADS):
-                if not (self.op_mask >> index) & 1:
+                if not (op.mask >> index) & 1:
                     continue
-                addr = (self.op_rs1[index] + self.op_imm) & 0xFFFFFFFF
+                addr = (op.rs1[index] + op.imm) & 0xFFFFFFFF
                 bank = model.spad_bank_of(addr)
                 offset = model.spad_offset_of(addr)
                 word = self.mem[bank][offset]
                 expected = model.load_value(
-                    word, addr & 3, self.op_opsize, self.op_extmode
+                    word, addr & 3, self.op.opsize, self.op.extendmode
                 )
                 self.check(
                     model.thread(loaded, index) == expected,
@@ -311,36 +348,19 @@ class Lsu:
 
         Used to find out which store went where.
         """
-        saved = (
-            self.op_mask,
-            list(self.op_rs1),
-            list(self.op_rs2),
-            self.op_loadstore,
-            self.op_opsize,
-            self.op_extmode,
-            self.op_imm,
-        )
+        saved = self.op
 
-        self.op_mask = 1
-        self.op_rs1 = [0] * model.N_THREADS
-        self.op_rs1[0] = model.addr_of(bank, offset)
-        self.op_rs2 = [0] * model.N_THREADS
-        self.op_loadstore = model.MEM_LOADSTORE_LOAD
-        self.op_opsize = model.MEM_OPSIZE_WORD
-        self.op_extmode = model.MEM_EXTENDMODE_SIGN
-        self.op_imm = 0
+        self.op = model.Operation(
+            mask=1,
+            rs1=[model.addr_of(bank, offset)] + [0] * (model.N_THREADS - 1),
+            opsize=model.MemOpsize.WORD,
+            loadstore=model.MemLoadstore.LOAD,
+            extendmode=model.MemExtendmode.SIGN,
+        )
 
         await self.run_op(f"{name} readback bank {bank} offset {offset}")
 
-        (
-            self.op_mask,
-            self.op_rs1,
-            self.op_rs2,
-            self.op_loadstore,
-            self.op_opsize,
-            self.op_extmode,
-            self.op_imm,
-        ) = saved
+        self.op = saved
 
     # -------------------------------------------------------------------------
     # Address generation
@@ -356,9 +376,9 @@ class Lsu:
 
     def random_align(self) -> int:
         """The alignment a random access of the current size uses."""
-        if self.op_opsize == model.MEM_OPSIZE_BYTE:
+        if self.op.opsize == model.MemOpsize.BYTE:
             return self.rng.randrange(0, 4)
-        if self.op_opsize == model.MEM_OPSIZE_HALF:
+        if self.op.opsize == model.MemOpsize.HALF:
             return self.rng.randrange(0, 2) << 1
         return 0
 
@@ -395,16 +415,16 @@ async def test_load_one_thread_per_bank(dut):
     """A load with no bank conflicts: one thread per bank."""
     lsu = await start(dut, random.Random(0), "test 1")
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_LOAD
-    lsu.op_opsize = model.MEM_OPSIZE_WORD
-    lsu.op_extmode = model.MEM_EXTENDMODE_SIGN
-    lsu.op_imm = 0
-    lsu.op_mask = (1 << model.N_THREADS) - 1
+    lsu.op.loadstore = model.MemLoadstore.LOAD
+    lsu.op.opsize = model.MemOpsize.WORD
+    lsu.op.extendmode = model.MemExtendmode.SIGN
+    lsu.op.imm = 0
+    lsu.op.mask = (1 << model.N_THREADS) - 1
     for index in range(model.N_THREADS):
         # One word per bank: bank = A^B^L, so take the address from the
         # bank number directly.
-        lsu.op_rs1[index] = (index << 12) & 0xFFFFFFFF
-        lsu.op_rs2[index] = 0
+        lsu.op.rs1[index] = (index << 12) & 0xFFFFFFFF
+        lsu.op.rs2[index] = 0
 
     await lsu.run_op("test 1")
 
@@ -416,19 +436,19 @@ async def test_load_bytes_and_halves(dut):
     """The same load, but of a byte and of a half."""
     lsu = await start(dut, random.Random(0), "test 2")
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_LOAD
-    lsu.op_mask = (1 << model.N_THREADS) - 1
+    lsu.op.loadstore = model.MemLoadstore.LOAD
+    lsu.op.mask = (1 << model.N_THREADS) - 1
 
-    lsu.op_opsize = model.MEM_OPSIZE_BYTE
-    lsu.op_extmode = model.MEM_EXTENDMODE_ZERO
+    lsu.op.opsize = model.MemOpsize.BYTE
+    lsu.op.extendmode = model.MemExtendmode.ZERO
     for index in range(model.N_THREADS):
-        lsu.op_rs1[index] = ((index << 12) & 0xFFFFFFFF) | (index % 4)
+        lsu.op.rs1[index] = ((index << 12) & 0xFFFFFFFF) | (index % 4)
     await lsu.run_op("test 2")
 
-    lsu.op_opsize = model.MEM_OPSIZE_HALF
-    lsu.op_extmode = model.MEM_EXTENDMODE_SIGN
+    lsu.op.opsize = model.MemOpsize.HALF
+    lsu.op.extendmode = model.MemExtendmode.SIGN
     for index in range(model.N_THREADS):
-        lsu.op_rs1[index] = ((index << 12) & 0xFFFFFFFF) | (2 * (index % 2))
+        lsu.op.rs1[index] = ((index << 12) & 0xFFFFFFFF) | (2 * (index % 2))
     await lsu.run_op("test 2b")
 
     lsu.finish()
@@ -439,15 +459,15 @@ async def test_all_threads_on_one_bank(dut):
     """All 32 threads on one bank: 32 arbitration cycles, the worst case."""
     lsu = await start(dut, random.Random(0), "test 3")
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_LOAD
-    lsu.op_opsize = model.MEM_OPSIZE_WORD
-    lsu.op_extmode = model.MEM_EXTENDMODE_SIGN
-    lsu.op_imm = 0
-    lsu.op_mask = (1 << model.N_THREADS) - 1
+    lsu.op.loadstore = model.MemLoadstore.LOAD
+    lsu.op.opsize = model.MemOpsize.WORD
+    lsu.op.extendmode = model.MemExtendmode.SIGN
+    lsu.op.imm = 0
+    lsu.op.mask = (1 << model.N_THREADS) - 1
     for index in range(model.N_THREADS):
         # All threads read word 0 of bank 0.
-        lsu.op_rs1[index] = 0
-        lsu.op_rs2[index] = 0
+        lsu.op.rs1[index] = 0
+        lsu.op.rs2[index] = 0
 
     await lsu.run_op("test 3")
 
@@ -459,18 +479,18 @@ async def test_store_then_read_back(dut):
     """A store, then read it back."""
     lsu = await start(dut, random.Random(0), "test 4")
 
-    lsu.op_mask = (1 << model.N_THREADS) - 1
-    lsu.op_imm = 0
+    lsu.op.mask = (1 << model.N_THREADS) - 1
+    lsu.op.imm = 0
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_STORE
-    lsu.op_opsize = model.MEM_OPSIZE_WORD
-    lsu.op_extmode = model.MEM_EXTENDMODE_SIGN
+    lsu.op.loadstore = model.MemLoadstore.STORE
+    lsu.op.opsize = model.MemOpsize.WORD
+    lsu.op.extendmode = model.MemExtendmode.SIGN
     for index in range(model.N_THREADS):
-        lsu.op_rs1[index] = (index << 12) & 0xFFFFFFFF
-        lsu.op_rs2[index] = 0x10000000 + index
+        lsu.op.rs1[index] = (index << 12) & 0xFFFFFFFF
+        lsu.op.rs2[index] = 0x10000000 + index
     await lsu.run_op("test 4a")
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_LOAD
+    lsu.op.loadstore = model.MemLoadstore.LOAD
     await lsu.run_op("test 4b")
 
     lsu.finish()
@@ -481,18 +501,18 @@ async def test_byte_store(dut):
     """A byte store into the pattern."""
     lsu = await start(dut, random.Random(0), "test 5")
 
-    lsu.op_mask = (1 << model.N_THREADS) - 1
-    lsu.op_imm = 0
+    lsu.op.mask = (1 << model.N_THREADS) - 1
+    lsu.op.imm = 0
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_STORE
-    lsu.op_opsize = model.MEM_OPSIZE_BYTE
-    lsu.op_extmode = model.MEM_EXTENDMODE_SIGN
+    lsu.op.loadstore = model.MemLoadstore.STORE
+    lsu.op.opsize = model.MemOpsize.BYTE
+    lsu.op.extendmode = model.MemExtendmode.SIGN
     for index in range(model.N_THREADS):
-        lsu.op_rs1[index] = ((index << 12) & 0xFFFFFFFF) | (index % 4)
-        lsu.op_rs2[index] = 0x000000A0 + index
+        lsu.op.rs1[index] = ((index << 12) & 0xFFFFFFFF) | (index % 4)
+        lsu.op.rs2[index] = 0x000000A0 + index
     await lsu.run_op("test 5a")
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_LOAD
+    lsu.op.loadstore = model.MemLoadstore.LOAD
     await lsu.run_op("test 5b")
 
     lsu.finish()
@@ -505,62 +525,64 @@ async def test_random_operations(dut):
     The mode selects which operations are generated, which is useful to tell
     a load problem from a store problem:
 
-      0  loads and stores mixed (the default)
-      1  loads only
-      2  stores only
-      3  single threaded
-      4  word sized
+      mixed   loads and stores mixed (the default)
+      loads   loads only
+      stores  stores only
+      single  single threaded
+      word    word sized
     """
     lsu = await start(dut, make_rng(), "test 6")
 
-    cocotb.log.info("randomised operations, mode %d", MODE)
+    cocotb.log.info("randomised operations, mode %s", MODE)
 
     for iteration in range(2000):
-        if MODE == 1:
-            lsu.op_loadstore = model.MEM_LOADSTORE_LOAD
-        elif MODE == 2:
-            lsu.op_loadstore = model.MEM_LOADSTORE_STORE
+        if MODE is Mode.LOADS:
+            lsu.op.loadstore = model.MemLoadstore.LOAD
+        elif MODE is Mode.STORES:
+            lsu.op.loadstore = model.MemLoadstore.STORE
         else:
-            lsu.op_loadstore = (
-                model.MEM_LOADSTORE_LOAD
+            lsu.op.loadstore = (
+                model.MemLoadstore.LOAD
                 if lsu.rng.randrange(0, 2) == 0
-                else model.MEM_LOADSTORE_STORE
+                else model.MemLoadstore.STORE
             )
-        lsu.op_opsize = lsu.rng.randrange(0, 3)
-        if MODE == 4:
-            lsu.op_opsize = model.MEM_OPSIZE_WORD
-        lsu.op_extmode = lsu.rng.randrange(0, 2)
-        lsu.op_imm = 0
+        lsu.op.opsize = (
+            model.MemOpsize.WORD
+            if MODE is Mode.WORD
+            else lsu.rng.choice(list(model.MemOpsize))
+        )
+        lsu.op.extendmode = lsu.rng.choice(list(model.MemExtendmode))
+        lsu.op.imm = 0
 
         # A random mask.
-        lsu.op_mask = 0
+        lsu.op.mask = 0
         for index in range(model.N_THREADS):
             if lsu.rng.randrange(0, 4) != 0:
-                lsu.op_mask |= 1 << index
-        if lsu.op_mask == 0:
-            lsu.op_mask = 1
-        if MODE == 3:
-            lsu.op_mask = 1 << lsu.rng.randrange(0, model.N_THREADS)
+                lsu.op.mask |= 1 << index
+        if lsu.op.mask == 0:
+            lsu.op.mask = 1
+        if MODE is Mode.SINGLE:
+            lsu.op.mask = 1 << lsu.rng.randrange(0, model.N_THREADS)
 
         # The addresses: sometimes spread out, sometimes on one bank.
         case = lsu.rng.randrange(0, 4)
         for index in range(model.N_THREADS):
             if case == 0:
                 # One thread per bank.
-                lsu.op_rs1[index] = (index << 12) & 0xFFFFFFFF
+                lsu.op.rs1[index] = (index << 12) & 0xFFFFFFFF
             elif case == 1:
                 # All on one bank.
-                lsu.op_rs1[index] = 0
+                lsu.op.rs1[index] = 0
             elif case == 2:
                 # All on the same address.
-                lsu.op_rs1[index] = 0
+                lsu.op.rs1[index] = 0
             else:
                 # Spread out.
-                lsu.op_rs1[index] = lsu.random_spad_addr()
-            lsu.op_rs1[index] |= lsu.random_align()
+                lsu.op.rs1[index] = lsu.random_spad_addr()
+            lsu.op.rs1[index] |= lsu.random_align()
 
         for index in range(model.N_THREADS):
-            lsu.op_rs2[index] = lsu.rng.getrandbits(model.RLEN)
+            lsu.op.rs2[index] = lsu.rng.getrandbits(model.RLEN)
 
         await lsu.run_op(f"random {iteration}")
 
@@ -568,8 +590,8 @@ async def test_random_operations(dut):
         # went to the wrong place is caught right away.
         if READBACK:
             for index in range(model.N_THREADS):
-                if (lsu.op_mask >> index) & 1:
-                    addr = (lsu.op_rs1[index] + lsu.op_imm) & 0xFFFFFFFF
+                if (lsu.op.mask >> index) & 1:
+                    addr = (lsu.op.rs1[index] + lsu.op.imm) & 0xFFFFFFFF
                     await lsu.check_word(
                         model.spad_bank_of(addr),
                         model.spad_offset_of(addr),
@@ -588,24 +610,24 @@ async def test_byte_and_half_stores(dut):
     """
     lsu = await start(dut, random.Random(0), "test 7")
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_STORE
-    lsu.op_extmode = model.MEM_EXTENDMODE_ZERO
-    lsu.op_imm = 0
-    lsu.op_mask = (1 << model.N_THREADS) - 1
+    lsu.op.loadstore = model.MemLoadstore.STORE
+    lsu.op.extendmode = model.MemExtendmode.ZERO
+    lsu.op.imm = 0
+    lsu.op.mask = (1 << model.N_THREADS) - 1
 
     for offset in range(8):
         for align in range(4):
             # One thread per bank, each storing at the same offset but a
             # different alignment.
             for index in range(model.N_THREADS):
-                lsu.op_rs1[index] = model.addr_of(index, offset) | align
-                lsu.op_rs2[index] = 0xA0 + index
+                lsu.op.rs1[index] = model.addr_of(index, offset) | align
+                lsu.op.rs2[index] = 0xA0 + index
             # The size has to go with the alignment: a half may only be
             # stored at alignment 0 or 2 and a word only at alignment 0, and
             # anything else is 'x in the formatters. A byte may be stored at
             # any alignment, so it covers the two odd ones.
-            lsu.op_opsize = (
-                model.MEM_OPSIZE_HALF if align % 2 == 0 else model.MEM_OPSIZE_BYTE
+            lsu.op.opsize = (
+                model.MemOpsize.HALF if align % 2 == 0 else model.MemOpsize.BYTE
             )
             await lsu.run_op(f"test 7 o{offset} a{align}")
             for index in range(model.N_THREADS):
@@ -621,14 +643,14 @@ async def test_back_pressure(dut):
     """The result is held stable while the back-end is not ready."""
     lsu = await start(dut, random.Random(0), "test 8")
 
-    lsu.op_loadstore = model.MEM_LOADSTORE_LOAD
-    lsu.op_opsize = model.MEM_OPSIZE_WORD
-    lsu.op_extmode = model.MEM_EXTENDMODE_SIGN
-    lsu.op_imm = 0
-    lsu.op_mask = (1 << model.N_THREADS) - 1
+    lsu.op.loadstore = model.MemLoadstore.LOAD
+    lsu.op.opsize = model.MemOpsize.WORD
+    lsu.op.extendmode = model.MemExtendmode.SIGN
+    lsu.op.imm = 0
+    lsu.op.mask = (1 << model.N_THREADS) - 1
     for index in range(model.N_THREADS):
-        lsu.op_rs1[index] = (index << 12) & 0xFFFFFFFF
-        lsu.op_rs2[index] = 0
+        lsu.op.rs1[index] = (index << 12) & 0xFFFFFFFF
+        lsu.op.rs2[index] = 0
 
     lsu.stall_cycles = 5
     await lsu.run_op("test 8")

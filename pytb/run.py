@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -68,8 +69,10 @@ METADATA_KEYS = {
     "options",
 }
 
-# The types an option may have. A flag is off unless it is given.
-OPTION_TYPES = {"int": int, "str": str, "flag": None}
+# The types an option may have. A flag is off unless it is given, and the
+# others take a value of the given type.
+OPTION_TYPES = {"int": int, "str": str}
+OPTION_KINDS = (*OPTION_TYPES, "flag")
 
 # What an option can be worth.
 OptionValue = int | str | bool | None
@@ -87,6 +90,7 @@ class Option:
     name: str
     type: str  # "int", "str" or "flag"
     default: OptionValue = None
+    values: list[str] = field(default_factory=list)  # the ones it accepts
     help: str = ""
 
 
@@ -159,6 +163,18 @@ def load_testbench(folder: Path, metadata: Path) -> Testbench:
         if key not in data:
             raise SystemExit(f"ERROR: {metadata}: '{key}' is missing")
 
+    # The name of the testbench and the names of its options end up in the
+    # names of the environment variables the options are handed over in, so
+    # they have to be usable as such.
+    name = data.get("name", folder.name)
+    for used in [name, *data.get("options", {})]:
+        if not re.fullmatch(r"[A-Za-z0-9_]+", used):
+            raise SystemExit(
+                f"ERROR: {metadata}: '{used}' has to be letters, digits and\n"
+                f"       underscores, because it is used in the name of an\n"
+                f"       environment variable."
+            )
+
     sources = [folder / name for name in data.get("sources", [])]
     project_sources = [PROJECT_DIR / name for name in data.get("project_sources", [])]
     for source in sources + project_sources:
@@ -166,7 +182,7 @@ def load_testbench(folder: Path, metadata: Path) -> Testbench:
             raise SystemExit(f"ERROR: {metadata}: {source} does not exist")
 
     return Testbench(
-        name=data.get("name", folder.name),
+        name=name,
         description=data.get("description", ""),
         toplevel=data["toplevel"],
         module=data["module"],
@@ -192,15 +208,16 @@ def load_options(specs: dict, metadata: Path) -> dict[str, Option]:
                 f"ERROR: {metadata}: the option '{name}' has to be a table"
             )
         kind = spec.get("type", "str")
-        if kind not in OPTION_TYPES:
+        if kind not in OPTION_KINDS:
             raise SystemExit(
                 f"ERROR: {metadata}: the option '{name}' has the unknown type "
-                f"'{kind}'. The types are: {', '.join(sorted(OPTION_TYPES))}"
+                f"'{kind}'. The types are: {', '.join(OPTION_KINDS)}"
             )
         options[name] = Option(
             name=name,
             type=kind,
             default=spec.get("default"),
+            values=list(spec.get("values", [])),
             help=spec.get("help", ""),
         )
     return options
@@ -494,9 +511,17 @@ def add_testbench_options(
                     dest=dest,
                     type=OPTION_TYPES[option.type],
                     default=option.default,
-                    metavar="N" if option.type == "int" else "VALUE",
+                    choices=option.values or None,
+                    metavar=_metavar(option),
                     help=option.help,
                 )
+
+
+def _metavar(option: Option) -> str:
+    """What the value of an option is called on the command line."""
+    if option.values:
+        return "{" + ",".join(option.values) + "}"
+    return "N" if option.type == "int" else "VALUE"
 
 
 def options_help(testbenches: list[Testbench]) -> str:

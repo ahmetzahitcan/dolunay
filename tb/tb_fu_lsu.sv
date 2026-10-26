@@ -47,20 +47,6 @@ module tb_fu_lsu;
     logic [N_SPAD_BANKS-1:0][ADDR_ALIGN-1:0]          spad_wen;
     logic [N_SPAD_BANKS-1:0][RLEN-1:0]                spad_rdata;
 
-    fu_lsu u_dut (
-        .clk            (clk),
-        .rst_n          (rst_n),
-        .in_valid_i     (in_valid),
-        .in_ready_o     (in_ready),
-        .in_operation_i (in_operation),
-        .out_valid_o    (out_valid),
-        .out_ready_i    (out_ready),
-        .out_result_o   (out_result),
-        .spad_addr_o    (spad_addr_o),
-        .spad_wdata_o   (spad_wdata_o),
-        .spad_wen_o     (spad_wen_o),
-        .spad_rdata_i   (spad_rdata)
-    );
 
     // The scratchpad is written by the LSU, except while the testbench fills
     // it with the initial pattern.
@@ -76,6 +62,21 @@ module tb_fu_lsu;
     assign spad_addr   = init_mode ? init_addr   : spad_addr_o;
     assign spad_wdata  = init_mode ? init_wdata  : spad_wdata_o;
     assign spad_wen    = init_mode ? init_wen    : spad_wen_o;
+
+    fu_lsu u_dut (
+        .clk            (clk),
+        .rst_n          (rst_n),
+        .in_valid_i     (in_valid),
+        .in_ready_o     (in_ready),
+        .in_operation_i (in_operation),
+        .out_valid_o    (out_valid),
+        .out_ready_i    (out_ready),
+        .out_result_o   (out_result),
+        .spad_addr_o    (spad_addr_o),
+        .spad_wdata_o   (spad_wdata_o),
+        .spad_wen_o     (spad_wen_o),
+        .spad_rdata_i   (spad_rdata)
+    );
 
     scratchpad u_spad (
         .clk    (clk),
@@ -94,7 +95,7 @@ module tb_fu_lsu;
 
     // The pattern the scratchpad is filled with. Every byte depends on both
     // the bank and the offset, so a routing mistake shows up.
-    function automatic logic [RLEN-1:0] spad_pattern(input int b, input int o);
+    function automatic logic [RLEN-1:0] spad_pattern(input int unsigned b, input int unsigned o);
         spad_pattern = (b << 24) | (o << 8) | ((b + o) & 32'hFF);
     endfunction
 
@@ -105,19 +106,23 @@ module tb_fu_lsu;
         input mem_opsize_e opsize,
         input logic [1:0]  align
     );
-        unique case (opsize)
+        case (opsize)
             MEM_OPSIZE_BYTE: unique case (align)
                 2'b00: model_store_wen = 4'b0001;
                 2'b01: model_store_wen = 4'b0010;
                 2'b10: model_store_wen = 4'b0100;
-                default: model_store_wen = 4'b1000;
+                2'b11: model_store_wen = 4'b1000;
             endcase
-            MEM_OPSIZE_HALF: unique case (align)
+            MEM_OPSIZE_HALF: case (align)
                 2'b00: model_store_wen = 4'b0011;
                 2'b10: model_store_wen = 4'b1100;
-                default: model_store_wen = 4'b0000;
+                default: $fatal(1, "Unaligned access in the golden model!");
             endcase
-            default: model_store_wen = 4'b1111;
+            MEM_OPSIZE_WORD: begin
+                assert (align==2'b00) else $fatal(1, "Unaligned access in the golden model!");
+                model_store_wen = 4'b1111;
+            end
+            default: $fatal(1, "Unknown opsize in the golden model!");
         endcase
     endfunction
 
@@ -131,10 +136,11 @@ module tb_fu_lsu;
         input logic [RLEN-1:0]  data,
         input int               lane
     );
-        unique case (opsize)
+        case (opsize)
             MEM_OPSIZE_BYTE: model_store_byte = data[7:0];
             MEM_OPSIZE_HALF: model_store_byte = data[(lane%2)*8 +: 8];
-            default:         model_store_byte = data[lane*8 +: 8];
+            MEM_OPSIZE_WORD: model_store_byte = data[lane*8 +: 8];
+            default: $fatal(1, "Unknown opsize in the golden model!");
         endcase
     endfunction
 
@@ -149,43 +155,37 @@ module tb_fu_lsu;
         logic [7:0]  byte_v;
         logic [15:0] half_v;
         logic [31:0] word_v;
-        logic        sign;
         logic [RLEN-1:0] result_v;
 
         unique case (align)
             2'b00: byte_v = word[7:0];
             2'b01: byte_v = word[15:8];
             2'b10: byte_v = word[23:16];
-            default: byte_v = word[31:24];
+            2'b11: byte_v = word[31:24];
         endcase
 
-        unique case (align)
+        case (align)
             2'b00: half_v = word[15:0];
             2'b10: half_v = word[31:16];
-            default: half_v = 16'h0000;
+            default: half_v = 'x;
         endcase
 
-        unique case (align)
+        case (align)
             2'b00: word_v = word[31:0];
-            default: word_v = 32'h00000000;
+            default: word_v = 'x;
         endcase
 
-        unique case (opsize)
-            MEM_OPSIZE_BYTE: sign = byte_v[7];
-            MEM_OPSIZE_HALF: sign = half_v[15];
-            default:         sign = 1'b0;
-        endcase
-
-        unique case (opsize)
+        case (opsize)
             MEM_OPSIZE_BYTE: begin
-                if (extmode == MEM_EXTENDMODE_SIGN) result_v = {{RLEN-8{sign}}, byte_v};
+                if (extmode == MEM_EXTENDMODE_SIGN) result_v = {{RLEN-8{byte_v[7]}}, byte_v};
                 else                            result_v = {{RLEN-8{1'b0}}, byte_v};
             end
             MEM_OPSIZE_HALF: begin
-                if (extmode == MEM_EXTENDMODE_SIGN) result_v = {{RLEN-16{sign}}, half_v};
+                if (extmode == MEM_EXTENDMODE_SIGN) result_v = {{RLEN-16{half_v[15]}}, half_v};
                 else                            result_v = {{RLEN-16{1'b0}}, half_v};
             end
-            default:         result_v = word_v;
+            MEM_OPSIZE_WORD: result_v = word_v;
+            default: $fatal(1, "Unknown opsize in the golden model!");
         endcase
 
         model_load_value = result_v;

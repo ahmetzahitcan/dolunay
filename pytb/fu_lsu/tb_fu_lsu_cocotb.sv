@@ -56,6 +56,14 @@ module tb_fu_lsu_cocotb
     output logic [$bits(instr_s)-1:0]        res_instr,
     output logic [$bits(instr_s)-1:0]        op_instr,
 
+    // The parameters of the design, so that the testbench can check that
+    // the model it has is a model of *this* design.
+    output logic [15:0] param_rlen_o,
+    output logic [15:0] param_n_threads_o,
+    output logic [15:0] param_n_spad_banks_o,
+    output logic [15:0] param_spad_bank_depth_o,
+    output logic [15:0] param_addr_align_o,
+
     // While init_mode is high the scratchpad is written with init_* instead
     // of the LSU's outputs, so that the testbench can fill it with a
     // pattern before the test starts.
@@ -64,6 +72,16 @@ module tb_fu_lsu_cocotb
     input  wire logic [N_SPAD_BANKS-1:0][RLEN-1:0]                init_wdata,
     input  wire logic [N_SPAD_BANKS-1:0][ADDR_ALIGN-1:0]          init_wen
 );
+
+    // ---------------------------------------------------------------------------
+    // The parameters of the design
+    // ---------------------------------------------------------------------------
+
+    assign param_rlen_o           = RLEN;
+    assign param_n_threads_o      = N_THREADS;
+    assign param_n_spad_banks_o   = N_SPAD_BANKS;
+    assign param_spad_bank_depth_o = SPAD_BANK_DEPTH;
+    assign param_addr_align_o     = ADDR_ALIGN;
 
     // ---------------------------------------------------------------------------
     // The operation, packed into the struct the LSU takes
