@@ -1,0 +1,26 @@
+{
+  // The Python tools of the project.
+  //
+  // cocotb lives in the virtualenv in .venv. The editor's language server
+  // and the other Python tools look for a virtualenv there by default, and
+  // this file says so explicitly, so that it does not matter whether they
+  // do.
+  //
+  // The virtualenv is per-machine state and is not version controlled; see
+  // pytb/README.md for how to create it.
+  "venvPath": ".",
+  "venv": ".venv",
+
+  // The testbenches are the only Python in the project.
+  "include": ["pytb"],
+
+  // The traditional Pyright rules, and not basedpyright's opinionated
+  // ones, which report hundreds of warnings on code that is fine.
+  "typeCheckingMode": "standard",
+
+  // A testbench is a folder of its own, and the files in it import each
+  // other as top level modules: the folder is put on the import path of
+  // the simulator, so `import lsu_model` finds the model next to the
+  // testbench. That is deliberate, so the rule about it is off.
+  "reportImplicitRelativeImport": "none"
+}

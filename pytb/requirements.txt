@@ -1,0 +1,15 @@
+# The packages of the pytb virtualenv.
+#
+# The virtualenv lives in .venv in the project — it is where the editor's
+# language server and the other Python tools look for it by default. It is
+# per-machine state, so it is not version controlled; see pytb/README.md.
+#
+#     python3 -m venv .venv
+#     .venv/bin/pip install -r pytb/requirements.txt
+#
+# cocotb is pinned exactly: it is the API the testbenches are written against,
+# and a new major version can change it. Its own dependencies are left to pip.
+#
+# cocotb 2.x needs Verilator 5.036 or later; that is not a Python package, so
+# it is not in this list. See pytb/README.md.
+cocotb==2.1.0

@@ -1,0 +1,38 @@
+# The metadata of this testbench. pytb/run.py reads it to find the testbench
+# and to work out what it is built from.
+#
+# The name it is selected by on the command line. It defaults to the name of
+# the folder.
+name = "fu_lsu"
+
+# What it is. It is shown in the list of the testbenches.
+description = "the load/store unit"
+
+# The HDL top module.
+toplevel = "tb_fu_lsu_cocotb"
+
+# The Python module the tests are in. It is imported from this folder, which
+# is put on the import path of the simulator.
+module = "test_fu_lsu"
+
+# The files of the testbench itself, relative to this folder.
+sources = ["tb_fu_lsu_cocotb.sv"]
+
+# The project's own files, relative to the project root, in the order
+# Verilator needs them: the packages first, in dependency order, then the
+# RTL.
+project_sources = [
+    "src/params_pkg.sv",
+    "src/control_unit_pkg.sv",
+    "src/core_pkg.sv",
+    "tb/tb_config_pkg.sv",
+    "src/fu_lsu.sv",
+    "src/mem_read_formatter.sv",
+    "src/mem_write_formatter.sv",
+    "src/ram.sv",
+    "src/scratchpad.sv",
+]
+
+# The files of the Bender checkouts, matched by the end of their path. Only
+# the fpnew package is needed: the testbench never instantiates the FPU.
+bender_sources = ["fpnew_pkg.sv"]

@@ -19,9 +19,11 @@ tmp/
 .Xil/Vivado-219773-fedora/
 obj_dir/
 
-# cocotb
-cocotb/results.xml
-cocotb/sim_build/
-cocotb/__pycache__/
-cocotb/tests/__pycache__/
+# pytb (the cocotb testbenches)
+pytb/**/__pycache__/
+pytb/**/results.xml
+pytb/**/dump.vcd
 dump.vcd
+
+# The Python virtualenv of the project
+.venv/
