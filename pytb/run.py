@@ -109,17 +109,14 @@ class Testbench:
     autorun: bool = True  # run when running all of them
     options: dict[str, Option] = field(default_factory=dict)
 
-    def all_sources(self) -> list[Path]:
-        """Everything it is built from, in the order Verilator needs it.
+    def build_inputs(self) -> tuple[list[Path], dict[str, int], list[Path]]:
+        """The sources it is built from, the defines and the include directories.
 
-        The packages come first, because a package has to be read before
-        the files that use it.
+        The packages come first, because a package has to be read before the
+        files that use it.
         """
-        return (
-            bender_files(self.bender_sources)
-            + self.project_sources
-            + self.sources
-        )
+        sources, defines, includes = bender_script(self.bender_sources)
+        return sources + self.project_sources + self.sources, defines, includes
 
     def option(self, args: argparse.Namespace, name: str) -> OptionValue:
         """The value of one of this testbench's options."""
@@ -223,10 +220,17 @@ def load_options(specs: dict, metadata: Path) -> dict[str, Option]:
     return options
 
 
-def bender_files(patterns: list[str]) -> list[Path]:
-    """The files of the Bender checkouts whose path ends with a pattern."""
+def bender_script(
+    patterns: list[str],
+) -> tuple[list[Path], dict[str, int], list[Path]]:
+    """The files of the Bender checkouts that match, the defines and the
+    include directories.
+
+    A pattern is the end of a path, so ".sv" is every source file of the
+    checkouts.
+    """
     if not patterns:
-        return []
+        return [], {}, []
     if shutil.which("bender") is None:
         raise SystemExit(
             "ERROR: bender is not on the PATH.\n"
@@ -247,22 +251,48 @@ def bender_files(patterns: list[str]) -> list[Path]:
             f"       The checkouts may be missing: run 'bender update'."
         ) from error
 
+    lines = script.splitlines()
+    # The script describes the whole project, the checkouts and the project's
+    # own files. The project's own files are listed in the metadata of the
+    # testbench, in the order Verilator needs them, so only the checkouts are
+    # taken from here. This is the same rule tb/common.sh uses.
+    checkout_lines = [
+        line
+        for line in lines
+        if not any(
+            Path(line).is_relative_to(PROJECT_DIR / directory)
+            for directory in ("src", "tb")
+        )
+    ]
     files = [
         Path(line)
-        for line in script.splitlines()
+        for line in checkout_lines
         if any(line.endswith(pattern) for pattern in patterns)
     ]
     missing = [
         pattern
         for pattern in patterns
-        if not any(path.name == pattern for path in files)
+        if not any(line.endswith(pattern) for line in checkout_lines)
     ]
     if missing:
         raise SystemExit(
             f"ERROR: bender did not give {', '.join(missing)}.\n"
             f"       Run 'bender update' to fetch the checkouts."
         )
-    return files
+
+    defines = {}
+    for line in lines:
+        if line.startswith("+define+"):
+            name, _, value = line[len("+define+") :].partition("=")
+            defines[name] = int(value) if value else 1
+
+    includes = [
+        Path(line[len("+incdir+") :])
+        for line in lines
+        if line.startswith("+incdir+")
+    ]
+
+    return files, defines, includes
 
 
 # -----------------------------------------------------------------------------
@@ -412,10 +442,16 @@ def run_testbench(
     prepare_build_tree(build_dir, fingerprint)
 
     runner = get_runner("verilator")
+    sources, defines, includes = testbench.build_inputs()
     runner.build(
-        sources=[str(source) for source in testbench.all_sources()],
+        sources=[str(source) for source in sources],
+        defines=defines,
+        includes=[str(include) for include in includes],
         hdl_toplevel=testbench.toplevel,
-        build_args=["-Wno-fatal"],
+        # --timing is how the SystemVerilog flow builds too: it tells
+        # Verilator what to do with the event controls it cannot work out
+        # statically, such as the wait for a clock edge in an initial block.
+        build_args=["-Wno-fatal", "--timing"],
         build_dir=build_dir,
         always=True,
         waves=args.waves,

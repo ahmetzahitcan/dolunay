@@ -18,11 +18,20 @@ pytb/
     tb_fu_lsu_cocotb.sv   the harness of the load/store unit testbench
     lsu_model.py          the reference model of the load/store unit
     test_fu_lsu.py        the load/store unit testbench
+  core_middleend/
+    testbench.toml
+    tb_core_middleend_cocotb.sv  the harness of the middle end testbench
+    test_core_middleend.py       the middle end testbench
+  register_file/
+    testbench.toml
+    test_register_file.py the SIMD register file testbench
 ```
 
 `demo` is an example: the smallest testbench that shows the conventions of
 this project. `fu_lsu` is the cocotb version of `tb/tb_fu_lsu.sv`, the
-load/store unit testbench.
+load/store unit testbench, `core_middleend` is the cocotb version of
+`tb/tb_core_middleend.sv`, and `register_file` is the cocotb version of
+`tb/tb_register_file.sv`.
 
 A folder with a `testbench.toml` in it *is* a testbench: `run.py` finds them
 by looking for the file, so a new testbench is a new folder and nothing
@@ -215,6 +224,27 @@ def option(name: str, default: str = "") -> str:
   caught as well.
 - `fu_lsu/test_fu_lsu.py` is the testbench: the eight test groups of the
   SystemVerilog testbench, one cocotb test each.
+
+The register file testbench needs no harness: the register file has a
+simple interface of plain vectors, so it is the top module itself and
+cocotb drives it directly. It checks the widths of the signals against the
+parameters of the model, the same way the load/store unit testbench does.
+
+The middle end testbench needs a harness, because it reads the middle
+end's own signals and holds its function units busy:
+
+- the harness packs the `me_operation_s` and unpacks the `fu_result_s`,
+  because only SystemVerilog knows where their fields are,
+- it reads the signals the middle end dispatches with out of the middle
+  end's own signals, for the same reason, and the operands as the
+  *function unit* receives them, which is the last point where a mistake in
+  the routing of an operand can be caught,
+- and it holds the function units busy by driving a port, with the force
+  itself in the harness, because a force from Python would depend on the
+  simulator's VPI.
+
+The middle end has the FPU in it, so it needs all of the Bender
+checkouts. That is what `bender_sources = [".sv"]` in its metadata means.
 
 ### The packed structs
 

@@ -479,7 +479,9 @@ a testbench needs in its own folder:
 | `pytb/demo/` | an example: the smallest testbench that shows the conventions |
 | `pytb/fu_lsu/tb_fu_lsu_cocotb.sv` | the harness: the LSU, the scratchpad and the init mux |
 | `pytb/fu_lsu/lsu_model.py` | the reference model and the struct bit layouts |
-| `pytb/fu_lsu/test_fu_lsu.py` | the testbench, one cocotb test per test group |
+| `pytb/fu_lsu/test_fu_lsu.py` | the load/store unit testbench, one cocotb test per test group |
+| `pytb/core_middleend/` | the middle end testbench, one cocotb test per test group |
+| `pytb/register_file/test_register_file.py` | the register file testbench, one cocotb test per spec section |
 
 A testbench is a folder with a `testbench.toml` in it, which says what it
 is and what it is built from. `run.py` finds them by looking for the file,
@@ -556,6 +558,26 @@ testbenches is called `pytb/`, because the name `cocotb/` confused a
 linter into rewriting `import cocotb` into `import pytb` — the package
 comes from PyPI and its name has nothing to do with the directory. The
 imports in `pytb/*/test_*.py` have to stay `cocotb`.
+
+**The register file testbench is converted too**, and it needed no harness:
+the register file has a simple interface of plain vectors, so it is the top
+module itself and cocotb drives it directly. Its ten spec sections are ten
+cocotb tests. It found a gap the SystemVerilog testbench has: the
+per-thread write-enable masking was only ever done through port A, so a
+masking bug on port B would not have been caught. The cocotb version masks
+through both.
+
+**The middle end testbench is converted as well.** It is the first one that
+needs a harness for two more reasons than the structs: it reads the middle
+end's own signals, and it holds the function units busy. The harness does
+the reading and the forcing — the force in SystemVerilog, because a force
+from Python would depend on the simulator's VPI. The middle end has the FPU
+in it, so it needs all of the Bender checkouts.
+
+It found a gap the SystemVerilog testbench has as well: the dispatch
+monitor checks the operands as the operand-fetch stage holds them, not as the
+*function unit* receives them, so a mistake in the last step of the routing
+was not caught. The cocotb version checks the function unit's view.
 
 **The language server has to be told about the virtualenv.** cocotb is in
 `.venv` in the project, which is where the tools look for it by default,

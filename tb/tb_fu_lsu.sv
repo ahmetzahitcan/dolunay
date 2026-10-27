@@ -681,7 +681,10 @@ module tb_fu_lsu;
                     op_rs1[i] = addr_of(i, o) | 32'(a);
                     op_rs2[i] = 32'hA0 + 32'(i);
                 end
-                if (a < 2) begin
+                // The size follows the alignment: a half may only be
+                // stored at alignment 0 or 2, and a word only at alignment
+                // 0. Anything else is not an access the design has.
+                if (a % 2 == 0) begin
                     op_opsize = MEM_OPSIZE_HALF;
                 end else begin
                     op_opsize = MEM_OPSIZE_BYTE;
