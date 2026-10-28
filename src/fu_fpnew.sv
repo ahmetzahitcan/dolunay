@@ -90,7 +90,8 @@ module fu_fpnew
         fpu_operands = 'x;
         if (fpu_in_valid_w) begin
             for (integer I = 0; I < N_THREADS; I++) begin
-                unique case(in_skid_operation_r.instr.fpu_op0_sel) // FIXME: Vivado gives unnecessary warnings, even when these unique cases don't execute.
+                // FIXME: Vivado gives unnecessary warnings, even when these unique cases don't execute because fpu_in_valid_w=0
+                unique case(in_skid_operation_r.instr.fpu_op0_sel)
                     FPU_OP0_SEL_RS1: fpu_operands[0][I*RLEN +: RLEN] = in_skid_operation_r.rs1_data[I];
                 endcase
                 unique case(in_skid_operation_r.instr.fpu_op1_sel)
@@ -105,20 +106,12 @@ module fu_fpnew
         end
     end
 
-    // FIXME: For simplicity, we hard code dynamic to RNE
-    // TODO: FRM needs replay! There is no real use for SIMD rounding mode, but coscheduled threads can still have their own FRM.
+    // INFO: For simplicity, we hard code dynamic to RNE. There is not much benefit to dynamic in a GPGPU, I think.
     fpnew_pkg::roundmode_e fpu_rnd_mode;
     assign fpu_rnd_mode = in_skid_operation_r.instr.fpu_roundmode == 3'b111 ? fpnew_pkg::RNE : fpnew_pkg::roundmode_e'(in_skid_operation_r.instr.fpu_roundmode);
 
-    // FIXME: For simplicity, we hard code formats too; but this time, this might make it into the final product!
-    fpnew_pkg::fp_format_e fpu_src_fmt;
-    fpnew_pkg::fp_format_e fpu_dst_fmt;
-    fpnew_pkg::int_format_e fpu_int_fmt;
-    assign fpu_src_fmt = fpnew_pkg::FP32;
-    assign fpu_dst_fmt = fpnew_pkg::FP32;
-    assign fpu_int_fmt = fpnew_pkg::INT32;
-
     // FIXME: I am unsure if SIMD mask should be all ones, or match the thread mask.
+    //        I think both would work? Keep it all ones unless it becomes clear that it needs to be the mask.
     logic [N_THREADS-1:0] fpu_simd_mask;
     assign fpu_simd_mask = '1;
 
@@ -212,15 +205,15 @@ module fu_fpnew
     	.rnd_mode_i    (fpu_rnd_mode),
     	.op_i          (in_skid_operation_r.instr.fpu_opcode),
     	.op_mod_i      (in_skid_operation_r.instr.fpu_op_modifier),
-    	.src_fmt_i     (fpu_src_fmt),
-    	.dst_fmt_i     (fpu_dst_fmt),
-    	.int_fmt_i     (fpu_int_fmt),
-    	.vectorial_op_i(1'b1), // FIXME: This is probably safe to hardcode, right? Do check though.
+    	.src_fmt_i     (fpnew_pkg::FP32),
+    	.dst_fmt_i     (fpnew_pkg::FP32),
+    	.int_fmt_i     (fpnew_pkg::INT32),
+    	.vectorial_op_i(1'b1),
     	.simd_mask_i   (fpu_simd_mask),
     	.tag_i         (in_tag_w),
     	.in_valid_i    (fpu_in_valid_w),
     	.in_ready_o    (fpu_in_ready_w),
-    	.flush_i       (1'b0), // FIXME: This is probably safe to hardcode too, right? Do check though.
+    	.flush_i       (1'b0),
     	.result_o      (result_1d_w),
     	.status_o      (status_w),
     	.tag_o         (out_tag_w),
