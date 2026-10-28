@@ -27,3 +27,4 @@ dump.vcd
 
 # The Python virtualenv of the project
 .venv
+.Xil/
