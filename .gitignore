@@ -26,4 +26,4 @@ pytb/**/dump.vcd
 dump.vcd
 
 # The Python virtualenv of the project
-.venv/
+.venv
