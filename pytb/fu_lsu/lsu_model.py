@@ -28,8 +28,8 @@ is a packed array: thread i is in bits [i*RLEN +: RLEN].
 
 from __future__ import annotations
 
-from enum import IntEnum
 from dataclasses import dataclass, field
+from enum import IntEnum
 
 # -----------------------------------------------------------------------------
 # The parameters of the design

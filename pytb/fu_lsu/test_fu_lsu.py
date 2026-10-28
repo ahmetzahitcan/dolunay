@@ -26,15 +26,14 @@ falling edge, so nothing races with the clock edge.
 
 from __future__ import annotations
 
-from enum import Enum
 import os
 import random
+from enum import Enum
 
 import cocotb
+import lsu_model as model
 from cocotb.clock import Clock
 from cocotb.triggers import FallingEdge, with_timeout
-
-import lsu_model as model
 
 CLK_PERIOD_NS = 10
 
