@@ -5,6 +5,12 @@
 **Task for the next agent:** replace `tb/tb_fu_lsu.sv` (SystemVerilog) with a
 cocotb testbench, without losing coverage.
 
+> **Update (2026-10-26): the conversion is done.** The cocotb testbench is
+> in `pytb/`, the SystemVerilog one is still there and still passes, and
+> §11 below says what was built, what was found on the way, and what is
+> still open. The rest of this document is the specification the conversion
+> was made against, and it still describes the design.
+
 ---
 
 ## 0. Where things stand
@@ -405,10 +411,27 @@ sh tb/run_core_top.sh        # the whole core
 checkout lives in `.bender/` inside the project (gitignored); `bender update`
 refreshes it.
 
-For cocotb you will need the Python package in WSL (`pip install cocotb`) and
-a `Makefile` in the usual cocotb layout. Keep the build tree outside the
-project for the reason above — a cocotb `Makefile` with
-`SIM_BUILD=/home/azc/dolunay-sim/cocotb_lsu` works.
+**The cocotb environment is now set up** — see `pytb/README.md`. Two things
+were needed that the distribution does not provide:
+
+- **cocotb 2.1** is in a virtualenv. It is `.venv` in the project, because
+  that is where the editor's language server and the other Python tools
+  look for it by default; `pyrightconfig.json` says so explicitly as well.
+  `python3 -m venv .venv` and
+  `.venv/bin/pip install -r pytb/requirements.txt` create it.
+- **Verilator 5.048** is unpacked into `~/tools/verilator-5.048` and put in
+  front of the `PATH` by the cocotb runner. cocotb 2.x needs
+  Verilator 5.036 or later: its `verilator.cpp` uses VPI entry points
+  (`VerilatedVpi::evalNeeded` and friends) that do not exist in 5.020, and
+  the compile fails with "is not a member of 'VerilatedVpi'". The
+  distribution Verilator is left alone, because the SystemVerilog
+  testbenches are verified against it.
+
+The example testbench (`python3 pytb/run.py demo`) proves out the flow, and
+the real `fu_lsu` has already been compiled and linked through it with the
+file list that `tb/common.sh` generates from Bender. See `pytb/README.md`
+for the setup and for the two path problems (spaces in the path, CRLF line
+endings) and how they are handled.
 
 ---
 
@@ -437,3 +460,153 @@ project for the reason above — a cocotb `Makefile` with
 - **The core's smoke test does not exercise a load or store** — the test
   kernels never touch the scratchpad, so the integration is verified
   structurally but not end to end.
+
+---
+
+## 11. The cocotb testbench — status
+
+**Done on 2026-10-26**, on the branch `ooo-lite-cocotb`. `tb/tb_fu_lsu.sv` is
+untouched and still passes (43,684 checks, 0 failures); the cocotb version
+is next to it.
+
+The testbenches live in `pytb/`, one folder per testbench, with everything
+a testbench needs in its own folder:
+
+| file | what it is |
+|---|---|
+| `pytb/run.py` | the only entry point: it finds and runs the testbenches |
+| `pytb/README.md` | the setup and the usage |
+| `pytb/demo/` | an example: the smallest testbench that shows the conventions |
+| `pytb/fu_lsu/tb_fu_lsu_cocotb.sv` | the harness: the LSU, the scratchpad and the init mux |
+| `pytb/fu_lsu/lsu_model.py` | the reference model and the struct bit layouts |
+| `pytb/fu_lsu/test_fu_lsu.py` | the load/store unit testbench, one cocotb test per test group |
+| `pytb/core_middleend/` | the middle end testbench, one cocotb test per test group |
+| `pytb/register_file/test_register_file.py` | the register file testbench, one cocotb test per spec section |
+
+A testbench is a folder with a `testbench.toml` in it, which says what it
+is and what it is built from. `run.py` finds them by looking for the file,
+so a new testbench is a new folder and nothing else.
+
+**The options of a testbench are worked out from its metadata**, and they
+are named after it, so that the options of two testbenches do not collide:
+`--fu_lsu+mode` rather than `--mode`. The runner hands them over in the
+environment, one variable each, named after the testbench and the option
+(`DOLUNAY_FU_LSU_MODE`), and the testbench reads them with the same rule.
+This is the bisection tool of the randomised test, so it has to keep
+working.
+
+The values of an option are names rather than numbers, because they are
+something a person types: `--fu_lsu+mode loads`. The values are declared
+in the metadata of the testbench, and the testbench has a `StrEnum` for
+them.
+
+```sh
+python3 pytb/run.py                # every testbench
+python3 pytb/run.py fu_lsu         # one of them
+python3 pytb/run.py --list         # what is there
+```
+
+The eight test groups of §7 are all there, one cocotb test each, and the
+mode and the seed of the randomised test survived as `--mode` and `--seed`
+on the runner (see `pytb/README.md`).
+
+Everything in §2 to §8 was followed: the harness keeps the init mux of §2,
+the timing contract of §4 is the same `n_arb + 2` cycles, the model of §5 is
+the one of §5, and the two bugs of §6 are not repeated.
+
+**The bit layouts of §3 are not repeated in Python.** The first version of
+the cocotb testbench computed them in `lsu_model.py`, the same way
+`tb/tb_layout.sv` prints them, which is a copy of the struct definitions
+that has to be kept in step with them. Instead the *harness*
+(`pytb/fu_lsu/tb_fu_lsu_cocotb.sv`) packs and unpacks the structs, naming
+the fields, and the testbench talks in the fields it cares about: the mask,
+the addresses, the size of the access. A change of a struct is then a
+change of the harness, and the compiler says so, and a field that is added,
+moved or widened needs no change in the testbench or the model at all.
+
+What is left of the layout is how a thread's data is laid out in a
+`simd_data_t`, which is a packed array: thread *i* is in the bits
+`[i*RLEN +: RLEN]`.
+
+**The parameters of the design are checked before anything else.** The
+model is a model of a particular design, so `RLEN`, `N_THREADS`,
+`N_SPAD_BANKS`, `SPAD_BANK_DEPTH` and `ADDR_ALIGN` have to be the ones the
+model has; the harness gives them to the testbench, which checks them.
+It is a precondition and not a check: if the parameters are not the ones
+the model has, the model is not a model of this design, and every check
+that follows would be meaningless, so the test stops there.
+
+### What was found on the way
+
+**The SystemVerilog testbench generates an invalid access.** Test 7 of
+`tb/tb_fu_lsu.sv` stores a *half* at alignment 1, but a half may only be
+stored at alignment 0 or 2 — everything else is `'x` in the formatters
+(§5.4). It passes, because Verilator resolves the `'x` byte enables to
+zero, so the store writes nothing, which is what the model expects. That is
+a property of the simulator, not of the design, so the cocotb testbench
+does not generate it: the size follows the alignment, so alignment 0 and 2
+are half stores and alignment 1 and 3 are byte stores. All four alignments
+and both valid half alignments are still covered.
+
+**Verilator resolves `'x` to zero.** This is worth knowing, because it
+means the `'x` checks of the SystemVerilog testbench (`$isunknown` on the
+result mask) are as weak as §8 says, and it means a testbench cannot
+distinguish "the RTL wrote `'x`" from "the RTL wrote nothing".
+
+**A linter renames the `cocotb` package imports.** The directory of the
+testbenches is called `pytb/`, because the name `cocotb/` confused a
+linter into rewriting `import cocotb` into `import pytb` — the package
+comes from PyPI and its name has nothing to do with the directory. The
+imports in `pytb/*/test_*.py` have to stay `cocotb`.
+
+**The register file testbench is converted too**, and it needed no harness:
+the register file has a simple interface of plain vectors, so it is the top
+module itself and cocotb drives it directly. Its ten spec sections are ten
+cocotb tests. It found a gap the SystemVerilog testbench has: the
+per-thread write-enable masking was only ever done through port A, so a
+masking bug on port B would not have been caught. The cocotb version masks
+through both.
+
+**The middle end testbench is converted as well.** It is the first one that
+needs a harness for two more reasons than the structs: it reads the middle
+end's own signals, and it holds the function units busy. The harness does
+the reading and the forcing — the force in SystemVerilog, because a force
+from Python would depend on the simulator's VPI. The middle end has the FPU
+in it, so it needs all of the Bender checkouts.
+
+It found a gap the SystemVerilog testbench has as well: the dispatch
+monitor checks the operands as the operand-fetch stage holds them, not as the
+*function unit* receives them, so a mistake in the last step of the routing
+was not caught. The cocotb version checks the function unit's view.
+
+**The language server has to be told about the virtualenv.** cocotb is in
+`.venv` in the project, which is where the tools look for it by default,
+and `pyrightconfig.json` says so explicitly as well. The rule about the
+implicit relative imports is off there, because a testbench's files import
+each other as top level modules: the folder of a testbench goes on the
+import path of the simulator.
+
+### The environment
+
+§9 describes the machine the handoff was written on. The conversion was
+made on a different one, so the environment section does not apply to it
+as it is written; what does apply:
+
+- cocotb 2.1.0 in a virtualenv, and Verilator 5.046 from the distribution
+  — 5.046 is new enough for cocotb 2.x, so there is nothing to unpack and
+  `DOLUNAY_VERILATOR` is left unset;
+- the virtualenv is `.venv` in the project, so that the editor's language
+  server finds cocotb without being told. `pyrightconfig.json` says so
+  explicitly as well, and turns off the rule about the implicit relative
+  imports of the testbenches, which is how a testbench's files import each
+  other;
+- the setup is prose in `pytb/README.md` rather than a script, because
+  there is nothing to unpack on a machine whose Verilator is new enough;
+- the file list of §9 is not needed any more: `pytb/run.py` asks Bender
+  for the fpnew package and gives the sources to Verilator on the command
+  line, so a path with a space in it is not a problem;
+- only `fpnew_pkg` is needed, as §9 says.
+
+### What is still open
+
+The same as §10, plus the broadcasting, which is still not implemented.

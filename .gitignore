@@ -18,3 +18,12 @@ bender.verilator
 tmp/
 .Xil/Vivado-219773-fedora/
 obj_dir/
+
+# pytb (the cocotb testbenches)
+pytb/**/__pycache__/
+pytb/**/results.xml
+pytb/**/dump.vcd
+dump.vcd
+
+# The Python virtualenv of the project
+.venv/

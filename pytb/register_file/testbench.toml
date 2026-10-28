@@ -1,0 +1,24 @@
+# The metadata of this testbench. pytb/run.py reads it to find the testbench
+# and to work out what it is built from.
+#
+# The name it is selected by on the command line. It defaults to the name of
+# the folder.
+name = "register_file"
+
+# What it is. It is shown in the list of the testbenches.
+description = "the SIMD register file"
+
+# The HDL top module. The register file has a simple interface of plain
+# vectors, so it is the top module itself and it needs no harness.
+toplevel = "register_file"
+
+# The Python module the tests are in. It is imported from this folder, which
+# is put on the import path of the simulator.
+module = "test_register_file"
+
+# The project's own files, relative to the project root, in the order
+# Verilator needs them: the package first, then the RTL.
+project_sources = [
+    "src/params_pkg.sv",
+    "src/register_file.sv",
+]

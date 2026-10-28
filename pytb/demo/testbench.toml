@@ -1,0 +1,22 @@
+# The metadata of this testbench. pytb/run.py reads it to find the testbench
+# and to work out what it is built from.
+#
+# The name it is selected by on the command line. It defaults to the name of
+# the folder.
+name = "demo"
+
+# What it is. It is shown in the list of the testbenches.
+description = "an example: the smallest testbench that shows the conventions"
+
+# The HDL top module.
+toplevel = "demo"
+
+# The Python module the tests are in. It is imported from this folder, which
+# is put on the import path of the simulator.
+module = "test_demo"
+
+# The files of the testbench itself, relative to this folder.
+sources = ["demo.sv"]
+
+# No autorun
+autorun = false

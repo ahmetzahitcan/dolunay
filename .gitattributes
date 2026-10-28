@@ -1,3 +1,7 @@
 # The toolchain runs under WSL/Linux, where a stray CR at the end of a line
 # breaks shell builtins such as `set -e`. Keep the shell scripts LF-only.
 *.sh text eol=lf
+
+# GNU Make does not strip the CR either: a recipe line would end up being
+# "make sim\r", which fails. The cocotb makefile has to be LF-only as well.
+cocotb/Makefile text eol=lf
