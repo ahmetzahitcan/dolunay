@@ -124,6 +124,7 @@ class Operation:
         rs2: tuple[bool, int, int],
         rs3: tuple[bool, int, int],
         warp: int = 0,
+        mask: int = (1 << N_THREADS) - 1,
     ) -> None:
         self.seq = seq
         self.fu_sel = fu_sel
@@ -131,6 +132,7 @@ class Operation:
         self.rs2 = rs2
         self.rs3 = rs3
         self.warp = warp
+        self.mask = mask
 
     def expected(self) -> tuple[int, int, int, int]:
         """The function unit and the three operands it should get."""
@@ -234,6 +236,9 @@ class MiddleEnd:
         dut.fu_ready_override_en.value = 0
         dut.fu_ready_override.value = 0
         dut.rst_n.value = 0
+        # Every synchronous register has to see a clock edge with the reset
+        # asserted, to reach a defined idle state. Sixteen cycles is what
+        # the SystemVerilog testbench used (its tb_config_pkg::RST_CYCLES).
         for _ in range(16):
             await FallingEdge(dut.clk)
         dut.rst_n.value = 1
@@ -295,7 +300,7 @@ class MiddleEnd:
             await self.tick()
         dut.me_valid.value = 1 << operation.warp
         dut.me_seq.value = operation.seq
-        dut.me_mask.value = (1 << N_THREADS) - 1
+        dut.me_mask.value = operation.mask
         dut.me_pc.value = 0
         dut.me_fu_sel.value = operation.fu_sel
         for source, (used, regfile, index) in (
@@ -341,6 +346,12 @@ class MiddleEnd:
                 self.check(False, f"w={warp} s={seq} wrong rs2 data")
             if int(dut.of_rs3_data.value) != rs3:
                 self.check(False, f"w={warp} s={seq} wrong rs3 data")
+            if int(dut.of_mask.value) != operation.mask:
+                self.check(
+                    False,
+                    f"w={warp} s={seq} wrong mask got={int(dut.of_mask.value):08x} "
+                    f"exp={operation.mask:08x}",
+                )
             last = self.last_seq.get(warp)
             if last is not None and seq <= last:
                 self.check(

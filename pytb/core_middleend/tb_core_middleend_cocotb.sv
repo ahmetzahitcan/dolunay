@@ -86,6 +86,7 @@ module tb_core_middleend_cocotb
     output wire simd_data_t                  of_rs1_data,
     output wire simd_data_t                  of_rs2_data,
     output wire simd_data_t                  of_rs3_data,
+    output wire logic [N_THREADS-1:0]        of_mask,
     output wire logic                        of_valid,
 
     // -----------------------------------------------------------------------
@@ -202,12 +203,13 @@ module tb_core_middleend_cocotb
     assign of_warp_id  = u_dut.of_warp_id_r;
     assign of_seq      = u_dut.of_operation_r.seq;
     assign of_fu_sel   = u_dut.of_fu_sel_r;
-    // The operands as the function unit receives them, not as the operand
-    // fetch stage holds them: that is the last point where a mistake in the
-    // routing of an operand can still be caught.
+    // The operands and the mask as the function unit receives them, not as
+    // the operand-fetch stage holds them: that is the last point where a
+    // mistake in the routing of an operand can still be caught.
     assign of_rs1_data = u_dut.fu_in_operation_w.rs1_data;
     assign of_rs2_data = u_dut.fu_in_operation_w.rs2_data;
     assign of_rs3_data = u_dut.fu_in_operation_w.rs3_data;
+    assign of_mask     = u_dut.fu_in_operation_w.mask;
     assign of_valid    = u_dut.of_valid_r;
 
     // ---------------------------------------------------------------------------

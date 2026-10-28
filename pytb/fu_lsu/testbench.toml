@@ -25,7 +25,6 @@ project_sources = [
     "src/params_pkg.sv",
     "src/control_unit_pkg.sv",
     "src/core_pkg.sv",
-    "tb/tb_config_pkg.sv",
     "src/fu_lsu.sv",
     "src/mem_read_formatter.sv",
     "src/mem_write_formatter.sv",
