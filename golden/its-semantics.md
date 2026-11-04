@@ -1,7 +1,22 @@
 # Dolunay ITS Semantics
 
-The ITS (Independent Thread Scheduling) semantics of Dolunay: what they mean,
-what is still undecided, and what the golden model has to implement.
+> **STATUS: legacy reference — not the specification for the model.**
+>
+> §3 accurately records the *published* variant, and is kept because it is the
+> baseline the next variant is compared against and because a concrete example
+> beats an abstract rule. What is authoritative now is
+> [`CONTRACT.md`](CONTRACT.md); the open questions in §6 and §8 are tracked
+> there and in [`DECISIONS.md`](DECISIONS.md).
+>
+> In particular, **§4 ("the model must own its memory") is not a standing
+> decision.** Its argument rests on leader selection being a path-level
+> operation; with memory redesigned around a scratchpad and DMA, that
+> justification no longer holds, and owning memory becomes one option among
+> several. See `CONTRACT.md` §2.
+
+The ITS (Independent Thread Scheduling) semantics of the **published** variant of
+Dolunay: what they meant, what was undecided, and what that variant would have
+required of the model.
 
 This is the companion to [`README.md`](README.md), which covers the rest of the
 golden model design. **Everything here is about the architecture; nothing here
