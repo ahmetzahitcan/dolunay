@@ -11,3 +11,6 @@ xvlog.pb
 .~lock*
 sim/
 .Xil/Vivado-158289-fedora/.cxl/fpnew-test/
+build/
+.venv
+xelab.pb
