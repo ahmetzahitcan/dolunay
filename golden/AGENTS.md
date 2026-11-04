@@ -98,12 +98,12 @@ contradiction:
 
 - Never claim a build, test, or tool run happened unless you ran it and saw it
   pass. Quote the failing line when it fails.
-- If a tool is missing (see `CONTRACT.md` §5 — Renode, the .NET SDK, the RISC-V
-  toolchain and Verilator are all absent as of 2026-11-04), say so plainly and
-  leave the code in a state that is reviewable without running it.
-- **Do not invent commands or transcripts.** `renode` and `verilator` are not
-  installed, there is no .NET SDK for `dotnet build`, and the RISC-V cross
-  toolchain is not on `PATH`. None of them can be relied on today.
+- If a tool is missing (see `CONTRACT.md` §5), say so plainly and leave the code in
+  a state that is reviewable without running it. That section lists requirements,
+  not an inventory of what is installed here.
+- **Do not invent commands or transcripts.** Run the check before claiming a tool
+  exists. The build scripts need `riscv32-unknown-elf-*` on `PATH`, which each
+  machine provides as shims; a machine without them cannot build kernels.
 - There is currently no model code, project file, or test runner in `golden/`.
   Do not assume one exists, and do not silently create one that the contract does
   not describe.

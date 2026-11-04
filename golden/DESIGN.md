@@ -11,9 +11,11 @@
 > Specifically stale: **§1.1** (it describes the `ooo-lite` tree — on this branch
 > ITS *is* implemented and no instruction rows are disabled), **§5.4** and
 > **§8.2** (there is no `control_unit/cugen/` package; the generator is the
-> single-file `control_unit/generate.py`), **§10.1** (the geometry numbers), and
-> every reference to `pytb/` cocotb testbenches (they do not exist on this
-> branch; the SystemVerilog testbenches in `tb/` do).
+> single-file `control_unit/generate.py`), **§10.1** (the geometry numbers),
+> **§6.1** (the build scripts no longer name `riscv64-linux-gnu-gcc`), **§6.3**
+> (the repository path quoted there is specific to one machine), and every
+> reference to `pytb/` cocotb testbenches (they do not exist on this branch; the
+> SystemVerilog testbenches in `tb/` do).
 >
 > Still valid, and worth reading: the layering argument (§3), the lane-based
 > model and its costs (§4), the C#-rather-than-Python decision (§5.2), the

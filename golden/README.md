@@ -21,7 +21,8 @@ New here? Read in this order:
 |---|---|
 | Machine modelled | the **next** variant: per-lane execution, scratchpad + DMA, barrier logic under revision |
 | Code | **none yet** — this directory is documents only |
-| Substrate | Renode; not yet installed, and the hook surface is unverified |
+| Substrate | Renode is the planned host; the ad-hoc C# hook surface is unverified |
+| Kernel build | the two `generate.sh` scripts call `riscv32-unknown-elf-*`; each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
 
 ## The one thing to get right

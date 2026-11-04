@@ -122,3 +122,24 @@ tests than by a directory boundary.
 Consequences: The rules must be maintained as the first thing an agent reads; a
 root-level pointer is required so agents started at the repository root find
 them. Information starvation is handled by explicit input lists, not by walls.
+
+## D7 — GCC, bare-metal names, per-machine shims
+
+Date: 2026-11-04
+Status: accepted
+
+Decision: The build scripts call `riscv32-unknown-elf-gcc` and
+`riscv32-unknown-elf-objcopy`. Each machine provides those two names as shims to
+whatever its own toolchain is called. The compiler stays GCC.
+
+Because: A name should describe the target — 32-bit, bare metal — rather than a
+distribution's packaging, and one shim per machine is cheaper than detection logic
+that lives in the scripts forever. GCC keeps `-mbranch-cost`, which has no LLVM
+equivalent and matters for a SIMT machine, and it avoids the extension-version
+risk (`zicond`, `zalrsc`) that older Ubuntu LLVM packages carry.
+
+Consequences: A new machine needs two shims before it can build kernels, and
+Windows additionally needs a `hexdump` shim for the scripts' last step; the script
+headers say so. On Windows the compiler shim must put the toolchain's `bin` on
+`PATH`, otherwise `-flto` cannot load the linker's LTO plugin. clang was
+considered and is rejected unless `-mbranch-cost` turns out not to matter.

@@ -164,28 +164,52 @@ it is a request to the RTL owner.
 
 ---
 
-## 5. Environment — verified on the development machine, 2026-11-04
+## 5. Environment
 
-| Tool | State |
-|---|---|
-| Python 3 | **3.12.10, works** (`python3`, `python`) |
-| git | 2.52.0, works |
-| Icarus Verilog | **installed** (`iverilog`, `gtkwave`); `../tb/tb_pipeline.sv` runs the full core against `irom.mem` |
-| .NET SDK | **not installed** — only runtimes 8.0.22 / 9.0.11 / 10.0.1 |
-| Renode | **not found** — absent from `PATH`, `C:\Program Files`, `~/renode` and `%LOCALAPPDATA%` (checked 2026-11-04) |
-| RISC-V cross toolchain | **not on `PATH`** (`riscv64-linux-gnu-gcc`, `riscv32-unknown-elf-gcc` both absent) |
-| Verilator | **not on `PATH`** (POSIX-only tool; the RTL side of G2 will need Linux/WSL) |
+What the work needs, independent of any machine. **Nothing here is a claim about the
+machine you are on.** Paths, versions and "it works here" notes are machine-local,
+change without notice, and must not be recorded in this repository — keep them
+outside the checkout, like build outputs. Report the actual output of the checks
+below when it matters.
+
+| Need | For | Check |
+|---|---|---|
+| Python 3 | generators, small helpers | `python3 --version` |
+| .NET SDK 8 | a pre-built Renode plugin, unit tests | `dotnet --version` |
+| Renode | the ISA layer and the model's host | `renode --version` |
+| RISC-V bare-metal GCC | building kernels | `riscv32-unknown-elf-gcc --version` |
+| Icarus Verilog **or** Verilator | the RTL side of G2, once an RTL exists to test | `iverilog -V` / `verilator --version` |
+
+`../tb/tb_pipeline.sv` instantiates the full core and reads `irom.mem`, so it is a
+starting point for the RTL side; whether it elaborates under Icarus is unverified.
+
+### The toolchain name is fixed; the toolchain is not
+
+The build scripts call `riscv32-unknown-elf-gcc` and `riscv32-unknown-elf-objcopy`,
+because that name describes the target: 32-bit, bare metal. Installations rarely use
+it — Fedora ships `riscv64-linux-gnu-*`, Debian/Ubuntu `riscv64-unknown-elf-*`,
+xPack `riscv-none-elf-*` — so **each machine provides the two names as shims**. The
+`generate.sh` headers say what else a shim must do. A host without `hexdump` (Git
+Bash on Windows has none) needs a stand-in for the scripts' last step as well.
+
+The `-march` string uses `zicond`, so an old GCC rejects it; check before
+concluding that a shim is wrong.
 
 Rules that follow:
 
 - **Do not invent commands.** If a tool is absent, say it is absent and stop.
   A fabricated `dotnet build` transcript is worse than no build.
+- **§5 lists what the work needs, not what is installed.** Run the check and
+  quote its output before claiming a tool is present.
 - Keep build outputs **off** the OneDrive path (spaces and sync daemons break
   GNU Make and Renode's relative-path resolution). Use an off-tree build
   directory — an environment variable such as `DOLUNAY_BUILD_DIR`, pointing
   outside the repository — rather than creating build trees in this directory.
-- The ad-hoc Renode route (`i @file.cs`) needs **no** .NET SDK. That is why it is
-  the planned first probe.
+- The ad-hoc Renode route (`i @file.cs`) needs **no** .NET SDK; the SDK is for the
+  pre-built plugin and for unit tests.
+- **One kernel builder.** The program image's sha256 is part of the observation,
+  so two RISC-V toolchains would produce two "same" programs. Do not add a
+  second one (for example in WSL) without recording why in `DECISIONS.md`.
 
 ---
 
