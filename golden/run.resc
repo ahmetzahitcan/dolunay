@@ -1,0 +1,21 @@
+# Dolunay golden-model skeleton — headless run.
+#
+# The model is a pre-built plugin (DECISIONS.md D8). Renode scans its own
+# installation directory for plugin assemblies, so the build output has to be
+# copied there first. From this directory:
+#
+#   RENODE_BIN=<unpacked renode tree> dotnet build model
+#   cp build/plugin/Dolunay.Golden.dll "$RENODE_BIN/"
+#
+#   renode --config renode.config --disable-xwt --console --plain run.resc
+#
+# renode.config enables the plugin for this run only; without it the plugin is
+# discovered but not enabled, and this script exercises only the platform
+# description. Nothing here asserts machine behaviour: that is not decided yet
+# (CONTRACT.md §2).
+
+mach create "dolunay"
+machine LoadPlatformDescription @Dolunay.repl
+
+cpu PC
+quit

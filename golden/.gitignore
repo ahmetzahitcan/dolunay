@@ -1,0 +1,12 @@
+# Generated outputs of the golden model. Paths are relative to this directory.
+# Add entries here rather than editing the root .gitignore, which describes what
+# the rest of the repository ignores.
+
+# Renode working directories, logs, snapshots and per-run config locks.
+build/
+*.log
+*.lock
+
+# .NET output; the plugin build writes to build/ (see Dolunay.Golden.csproj).
+bin/
+obj/

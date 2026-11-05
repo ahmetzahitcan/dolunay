@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pre-built Renode plugin (golden/DECISIONS.md D8).
+
+    Renode's assemblies are not published on NuGet, so the build needs the
+    unpacked Renode tree:
+
+        RENODE_BIN=/path/to/renode_<version>-portable dotnet build model
+
+    That path is machine-local: it is passed in, never recorded here
+    (golden/CONTRACT.md §5).
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Dolunay.Golden</AssemblyName>
+    <RootNamespace>Antmicro.Renode.Plugins.Dolunay</RootNamespace>
+    <!-- golden/build is gitignored; keep build output out of the source tree. -->
+    <OutputPath>$(MSBuildProjectDirectory)/../build/plugin</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <Target Name="RequireRenodeBin" BeforeTargets="ResolveAssemblyReferences"
+          Condition="'$(RENODE_BIN)' == ''">
+    <Error Text="RENODE_BIN is not set: point it at the unpacked Renode tree containing Infrastructure.dll." />
+  </Target>
+
+  <ItemGroup>
+    <!-- Private=false: Renode supplies its own assemblies at runtime. -->
+    <Reference Include="Infrastructure">
+      <HintPath>$(RENODE_BIN)/Infrastructure.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

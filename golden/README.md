@@ -14,14 +14,17 @@ New here? Read in this order:
    written for the previous variant, and in places against another branch.
 5. [`ITS-SEMANTICS.md`](ITS-SEMANTICS.md) — the published variant's ITS semantics,
    kept as a reference point. **Legacy.**
+6. [`SUBSTRATE.md`](SUBSTRATE.md) — observed Renode host behaviour: plugin
+   discovery and enabling, configuration quirks, and why the target framework is
+   pinned to the host's.
 
 ## Status
 
 | | |
 |---|---|
 | Machine modelled | the **next** variant: per-lane execution, scratchpad + DMA, barrier logic under revision |
-| Code | **none yet** — this directory is documents only |
-| Substrate | Renode is the planned host; the ad-hoc C# hook surface is unverified |
+| Code | **skeleton only** — `Dolunay.repl`, `run.resc`, `model/Dolunay.cs`; no machine behaviour |
+| Substrate | Renode 1.17; the pre-built plugin builds, loads, and resolves `BaseRiscV` (D8). Lane-state swap and memory interception still unverified |
 | Kernel build | the two `generate.sh` scripts call `riscv32-unknown-elf-*`; each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
 
@@ -41,8 +44,10 @@ In order, each independently useful:
    interleaving-independence test) driven by a stub ISA — no tools required.
 2. The ISA decode table / opcode patterns generated from
    `../control_unit/control_unit.csv` — pure Python, no tools required.
-3. The Renode substrate spike: does ad-hoc C# see `BaseRiscV`, is whole-lane
-   state swap cheap, can memory be intercepted or is a scratchpad device enough.
+3. The Renode substrate spike: is whole-lane state swap cheap, and can memory
+   be intercepted, or is a scratchpad device enough. The hook surface itself is
+   proven — the plugin builds, loads, and names `BaseRiscV`, and an ad-hoc `.cs`
+   file also compiles.
 
 Memory, barrier and DMA semantics are **not** on that list: they are being
 redesigned, and they arrive as knobs once the variant settles.

@@ -89,7 +89,7 @@ the ISA stabilises and independent release cadence becomes valuable.
 ## D5 — C# model on Renode, ad-hoc first
 
 Date: 2026-11-04
-Status: provisional
+Status: provisional — the integration route is superseded by D8 (the choice of C# on Renode stands)
 
 Decision: The ISA layer is Renode's RISC-V core; the model and its hooks are C#.
 The first integration attempt uses the ad-hoc `i @file.cs` route, which needs no
@@ -143,3 +143,27 @@ Windows additionally needs a `hexdump` shim for the scripts' last step; the scri
 headers say so. On Windows the compiler shim must put the toolchain's `bin` on
 `PATH`, otherwise `-flto` cannot load the linker's LTO plugin. clang was
 considered and is rejected unless `-mbranch-cost` turns out not to matter.
+
+## D8 — The model is a pre-built Renode plugin
+
+Date: 2026-11-05
+Status: accepted
+
+Decision: The model and its Renode glue ship as a `net8.0` assembly built from
+`golden/model/Dolunay.Golden.csproj` and loaded from Renode's installation
+directory. The ad-hoc `i @file.cs` route is no longer the integration route:
+the part of D5 that chose it to avoid needing the .NET SDK is superseded. The
+rest of D5 — C# on Renode's RISC-V core — stands.
+
+Because: The SDK is installed on every machine this work runs on, so avoiding it
+buys nothing, and only the plugin route gives unit tests outside Renode, several
+source files and ordinary project tooling.
+
+Consequences: Building needs `dotnet` and Renode's assemblies, so the build is
+coupled to the Renode version and must be rebuilt after an upgrade. Renode
+discovers plugins by scanning its own installation directory, non-recursively,
+and only considers types under `Antmicro.Renode.*`; a plugin is loaded only when
+`[plugins] enabled-plugins` names it, which `golden/renode.config` does for a
+single run. Therefore the built DLL has to be copied into the Renode tree:
+`build/plugin` is the source of truth, not the loaded copy. `RENODE_BIN` supplies
+that tree at build time and is machine-local, so it is never recorded here.
