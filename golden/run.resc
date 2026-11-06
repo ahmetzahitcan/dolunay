@@ -7,7 +7,8 @@
 #   RENODE_BIN=<unpacked renode tree> dotnet build model
 #   cp build/plugin/Dolunay.Golden.dll "$RENODE_BIN/"
 #
-#   renode --config renode.config --disable-xwt --console --plain run.resc
+#   cp renode.config build/renode.run.config   # Renode rewrites --config files
+#   renode --config "$PWD/build/renode.run.config" --disable-xwt --console --plain run.resc
 #
 # renode.config enables the plugin for this run only; without it the plugin is
 # discovered but not enabled, and this script exercises only the platform

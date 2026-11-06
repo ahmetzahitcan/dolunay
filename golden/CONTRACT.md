@@ -1,6 +1,7 @@
 # Golden Model Contract
 
-**Status: authoritative for everything under `golden/`.** Written 2026-11-04.
+**Status: authoritative for everything under `golden/`.** Written 2026-11-04;
+amended 2026-11-06 (ISA authority, D9).
 
 This file says what the golden model *is*, what it must guarantee, and what it is
 allowed to assume. It supersedes the **semantics** in [`DESIGN.md`](DESIGN.md)
@@ -72,8 +73,11 @@ detail, stop and ask for that detail to be written into this file *first*.
 - **Barriers.** The barrier algorithm is expected to change. The barrier context
   may move out of memory, possibly into **warp-level registers** — so per-warp
   named state is part of the machine's state space.
-- **ISA.** Described only by `../control_unit/control_unit.csv`. CSR reads are
-  ordinary instructions (`csrr` rows), not a CSR file.
+- **ISA.** The ratified RISC-V specifications plus Dolunay's ISA documents in
+  [`isa/`](isa/) — custom instructions, custom CSRs, and exemptions from the
+  standard (D9). Those documents are **not written yet**; until they are, no
+  custom instruction or CSR is specified, and any in the code is a labelled
+  placeholder.
 - **Repository.** The model lives here; the ISA specification is shared with the
   RTL, so the two cannot drift silently.
 
@@ -103,31 +107,35 @@ The model may read anything in the repository. Only these are authoritative:
 | Rank | Source | Gives | Status |
 |---|---|---|---|
 | 1 | `CONTRACT.md`, `DECISIONS.md` | what we are building, and the choices made | **authoritative** |
-| 2 | `../control_unit/control_unit.csv` | the ISA: encodings and per-instruction behaviour | **authoritative** |
+| 2 | RISC-V ratified specifications + [`isa/`](isa/) | the ISA: encodings and per-instruction behaviour (D9) | **authoritative** |
 | 3 | `../ss/`, `../asm-kernels/` | the software contract and the workloads | **corpus, not truth** |
-| 4 | generated ISA table (path TBD) | the model's decode data | **derived — regenerate, never edit** |
-| 5 | `../src/`, `../tb/`, `../sim/` | how the previous variant was built and driven | **read-only; confers no requirements** |
+| 4 | anything generated from rank 2 (none yet) | the model's decode data | **derived — regenerate, never edit** |
+| 5 | `../control_unit/control_unit.csv` | the RTL's decoder input; a cheatsheet | **evidence, read-only** |
+| 6 | `../src/`, `../tb/`, `../sim/` | how the previous variant was built and driven | **read-only; confers no requirements** |
 
 Notes that save time:
 
-- `../control_unit/control_unit.csv` is the *only* place encodings may come
-  from. Never hand-write an opcode, funct3, or CSR number. The generator is
-  `../control_unit/generate.py` (single file); `../control_unit/cugen/` is empty
-  and the `csv_parser.py` / `model.py` / `sv_emitter.py` names quoted in
-  `DESIGN.md` do not exist.
-- In the CSV, a row whose instruction name starts with `'` is commented out; a
-  row starting with `~` declares enum values but emits no decode case.
+- Every encoding in the model cites the RISC-V specification or the
+  [`isa/`](isa/) section it comes from. Never hand-write an opcode, funct3, or
+  CSR number without that citation.
+- The CSV is useful for finding out what the previous RTL decoded, and nothing
+  more. Its generator is `../control_unit/generate.py` (single file);
+  `../control_unit/cugen/` is empty and the `csv_parser.py` / `model.py` /
+  `sv_emitter.py` names quoted in `DESIGN.md` do not exist. A row whose name
+  starts with `'` is commented out; a row starting with `~` declares enum values
+  but emits no decode case.
 - `../ss/` is **stale against the previous RTL** (it says 4 warps × 8 lanes;
   `../src/params_pkg.sv` says 8 × 8). Use it as a workload corpus and as a
   description of the software contract, not as a source of parameters.
 - `irom.mem` at the repository root is a checked-in assembly-test image
-  (~7.8 KiB), not a kernel build, and it is larger than `core_top`'s default
+  (7804 bytes), not a kernel build, and it is larger than `core_top`'s default
   IROM (`W_IROM_ADDR = 12`, 4 KiB) even though `../tb/tb_pipeline.sv` overrides
   it to 64 KiB. Do not treat it as a reference image.
-- When rank 1–4 and rank 5 disagree, the higher rank wins, and the disagreement
-  is a **finding to report**: the RTL has a delta to absorb, and absorbing it is
-  not `golden/` work. Never resolve a disagreement by editing `../src`, `../tb/`,
-  `../ss/`, `../asm-kernels/` or the CSV.
+- When rank 1–4 and rank 5–6 disagree, the higher rank wins, and the
+  disagreement is a **finding to report** (record it in
+  [`FINDINGS.md`](FINDINGS.md)): the RTL has a delta to absorb, and absorbing it
+  is not `golden/` work. Never resolve a disagreement by editing `../src`,
+  `../tb/`, `../ss/`, `../asm-kernels/` or the CSV.
 
 ---
 
@@ -170,7 +178,8 @@ What the work needs, independent of any machine. **Nothing here is a claim about
 machine you are on.** Paths, versions and "it works here" notes are machine-local,
 change without notice, and must not be recorded in this repository — keep them
 outside the checkout, like build outputs. Report the actual output of the checks
-below when it matters.
+below when it matters. How to set a machine up is in `../ENVIRONMENT.md`; this
+table only states what the model's work depends on.
 
 | Need | For | Check |
 |---|---|---|
@@ -201,12 +210,12 @@ Rules that follow:
   A fabricated `dotnet build` transcript is worse than no build.
 - **§5 lists what the work needs, not what is installed.** Run the check and
   quote its output before claiming a tool is present.
-- Keep build outputs **off** the OneDrive path (spaces and sync daemons break
-  GNU Make and Renode's relative-path resolution). Use an off-tree build
-  directory — an environment variable such as `DOLUNAY_BUILD_DIR`, pointing
-  outside the repository — rather than creating build trees in this directory.
-- The ad-hoc Renode route (`i @file.cs`) needs **no** .NET SDK; the SDK is for the
-  pre-built plugin and for unit tests.
+- Keep build outputs **off** any OneDrive or space-containing path (spaces and
+  sync daemons break GNU Make and Renode's relative-path resolution), and never
+  commit them. Today the plugin build writes to the gitignored `build/` here,
+  which is only safe while the checkout itself is not on such a path.
+- Building the model needs the .NET SDK (D8); the ad-hoc `i @file.cs` route is
+  not used.
 - **One kernel builder.** The program image's sha256 is part of the observation,
   so two RISC-V toolchains would produce two "same" programs. Do not add a
   second one (for example in WSL) without recording why in `DECISIONS.md`.

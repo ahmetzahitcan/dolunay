@@ -17,10 +17,27 @@
 > reference to `pytb/` cocotb testbenches (they do not exist on this branch; the
 > SystemVerilog testbenches in `tb/` do).
 >
+> Superseded by later decisions — do not act on these:
+>
+> - **§5.4**, and the CSV-based pattern generation in **§7** and **§8.2**: the
+>   ISA is no longer the CSV but the RISC-V standard plus `isa/` (**D9**).
+> - **§5.7, §5.8, §8.3, §10.2** (ad-hoc `i @file.cs` first; "can we load C# at
+>   all?"; one-file model): the model is a pre-built plugin (**D8**), and both
+>   routes were shown to load.
+> - **§4.3**, and the "borrowing Renode's memory" row of **§11**: they justify
+>   owning memory by leader selection, which the next variant does not assume.
+>   Memory ownership is open (`CONTRACT.md` §2).
+> - **§9** (milestones): M0 is largely done and the order has changed; the
+>   current list is "Next steps" in [`README.md`](README.md).
+> - **§5.6**, and the "run until a sync point" row of **§11**: per-instruction
+>   stepping was measured at ≈2.4 k instr/s
+>   ([`SUBSTRATE.md`](SUBSTRATE.md#stepping-throughput)), so that rejection is
+>   being reconsidered.
+>
 > Still valid, and worth reading: the layering argument (§3), the lane-based
-> model and its costs (§4), the C#-rather-than-Python decision (§5.2), the
-> pattern language (§5.3), the stepping model (§5.6), the profiling plan (§7),
-> the repository argument (§8.1), and the rejected alternatives (§11).
+> model (§4.1, §4.2, §4.4), the C#-rather-than-Python decision (§5.2), the
+> pattern language (§5.3), the profiling plan (§7, minus its generator), the
+> repository argument (§8.1), and the remaining rejected alternatives (§11).
 
 This document records the design of the **golden model**: an executable reference
 model of the Dolunay SIMT/ITS machine, used to

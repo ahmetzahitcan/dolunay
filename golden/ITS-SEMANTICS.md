@@ -13,12 +13,16 @@
 > operation; with memory redesigned around a scratchpad and DMA, that
 > justification no longer holds, and owning memory becomes one option among
 > several. See `CONTRACT.md` §2.
+>
+> The encodings and CSR numbers in §3.1 and §3.4 are the **previous** variant's.
+> They are not part of the ISA unless the ISA documents in [`isa/`](isa/) adopt
+> them (D9).
 
 The ITS (Independent Thread Scheduling) semantics of the **published** variant of
 Dolunay: what they meant, what was undecided, and what that variant would have
 required of the model.
 
-This is the companion to [`README.md`](README.md), which covers the rest of the
+This is the companion to [`DESIGN.md`](DESIGN.md), which covers the rest of the
 golden model design. **Everything here is about the architecture; nothing here
 is about Renode, the repository layout, or the milestones.**
 
