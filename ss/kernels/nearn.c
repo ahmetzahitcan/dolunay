@@ -16,6 +16,9 @@ simt_barr_t barriers[WARP_COUNT];
 int main(void) {
     simt_barr_t *barr = &barriers[simt_warp_id()];
 
+    // WOW THERE IS A RACE CONDITION HERE
+    // THIS COULD THEORETICALLY OVERWRITE THE FINAL RESULT
+    // LOL!!! WE USE THIS TO TEST GM!
     *result_dist = 0xFFFFFFFF;
     
     int32_t q[DIM_COUNT];
