@@ -345,8 +345,7 @@ tolerance metrics are open (`CONTRACT.md` §2).
 ## D13 — Paths of a warp switch cooperatively
 
 Date: 2026-11-06
-Status: provisional — the exclusion of lanes that cannot execute is the
-agent's reading of the maintainer's rule, pending confirmation
+Status: accepted
 
 Decision: A warp switches from one path to another only at points explicit in
 the code: a branch or jump that diverges, `yield`, waiting at a barrier, and a

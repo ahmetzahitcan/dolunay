@@ -95,8 +95,11 @@ it (**fast mode**).
    instruction budget runs out. Non-termination in general is undecidable, so
    `timeout` is a report, not a verdict. The model may report a stronger class
    (such as a proven livelock) only with a proof from the run. It names the
-   stuck lanes, and never rescues a kernel that does not terminate —
-   `ping_pong` and `spmc` exist to be caught.
+   stuck lanes, and never rescues a kernel that does not terminate.
+   `ping_pong` and `spmc` must complete: they hand off through `yield` and
+   deadlock only under a model that does not honour it, such as one that runs
+   lanes one at a time (`DESIGN.md` §1.2), so they test the model's
+   scheduling.
 3. **Determinacy is *checked*, not assumed.** The model reports a kernel that is
    not determinate on an input, with the conflict or the two executions that
    show it. It does not hide it.
