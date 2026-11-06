@@ -44,3 +44,19 @@ between that store and the final update under `mutex`. If one warp finishes and
 publishes its best result before a lane of another warp has executed the reset,
 the reset discards it, and the final result depends on the schedule.
 `*result_idx` is not reset at all.
+
+## F5 — `spmc` initialises its handoff flag without synchronisation
+
+Found 2026-11-06. Checked: `ss/kernels/spmc.c:51`, `ss/kernels/spmc.c:17-24`,
+`ss/kernels/spmc.c:31-33`.
+Status: **kept on purpose** — like F4, a test the model's determinacy check must
+catch. Do not fix it.
+
+Every lane executes `data_idx = -1;` before calling `producer()` or
+`consumer()`, with no barrier. If a lane executes that store after the producer
+has published an item, it erases the publication: consumers that have not read
+it yet, including that lane, spin on `data_idx < i` forever, and the producer
+spins on `read_cnt` waiting for them. The run never ends, and since the lanes
+spin with `yield` it ends as `timeout`, not `deadlock`. The previous variant
+probably never exposed this, because all warps start together; under the new
+spec, a schedule that starts one warp late is valid (`CONTRACT.md` §1).
