@@ -1,7 +1,8 @@
 # Golden Model Contract
 
 **Status: authoritative for everything under `golden/`.** Written 2026-11-04;
-amended 2026-11-06 (ISA authority, D9).
+amended 2026-11-06 (ISA authority, D9; paths and lockstep, D3; execution and
+memory ownership, D11).
 
 This file says what the golden model *is*, what it must guarantee, and what it is
 allowed to assume. It supersedes the **semantics** in [`DESIGN.md`](DESIGN.md)
@@ -64,12 +65,19 @@ detail, stop and ask for that detail to be written into this file *first*.
 
 ### Decided (stated direction)
 
-- **Execution.** Each lane has its own PC and architectural state. A warp is the
-  unit of rendezvous and of scheduling contention. `yield` is a cooperative
-  handoff, and forward progress is a design goal.
+- **Execution.** Each lane has its own PC and architectural state. The lanes of
+  a warp execute in **lockstep until they diverge**; a set of lanes in lockstep
+  is a **path**, and the scheduler chooses paths, not lanes (D3). Divergence is
+  detected at every branch and jump. Lockstep is a semantic rule, not a
+  requirement for SIMD execution. `yield` is a cooperative handoff, and forward
+  progress is a design goal.
 - **Memory.** A redesigned memory hierarchy around a **scratchpad + DMA**. The
   previous variant's region decode, per-thread TLS port, leader selection and
-  replay are **not** assumed to survive.
+  replay are **not** assumed to survive. **The model owns all shared memory**
+  (D11): every lane reaches it through the model.
+- **Scratchpad accesses are synchronisation.** How lanes are matched to banks is
+  an implementation detail the model does not reproduce, but accesses to the
+  scratchpad are expected to be visible synchronisation in their own right.
 - **Barriers.** The barrier algorithm is expected to change. The barrier context
   may move out of memory, possibly into **warp-level registers** — so per-warp
   named state is part of the machine's state space.
@@ -86,13 +94,15 @@ detail, stop and ask for that detail to be written into this file *first*.
 | Question | Why it matters | Where it lands |
 |---|---|---|
 | Geometry (warps × lanes) | How many lanes exist; every kernel's indices | a parameter, never a constant |
-| Is the path structure architecturally visible (e.g. `xrole`)? | Whether the model needs path bookkeeping at all | scheduler / policy interface |
+| What "lockstep" means precisely (D3) | Which orders between lanes of a path are observable | `isa/`; path model |
+| Reconvergence: when do split paths merge? | Path bookkeeping; what scheduling can observe | path model |
+| Order of conflicting scratchpad accesses within one lockstep instruction — possibly architecturally specified | Whether kernels with such conflicts are deterministic or racy | scratchpad policy (the scratchpad class may reorder internally) |
+| Do LR/SC and AMOs survive, or become warp-level custom instructions with separate lane-level synchronisation? | They linearised memory in the previous variant and are problematic for the new RTL | `isa/` |
 | Barrier context: memory, warp registers, or model-internal? | What is observable | sync interface |
 | Barrier release rule | Semantics | sync interface |
 | Memory ordering of `yield` and of the barrier | Whether the interesting kernels can be judged at all | memory model |
 | DMA interface: MMIO device, or instructions? | Hook surface; whether DMA is a scheduled agent | agent interface |
 | Termination condition | When a run ends | observation |
-| Does the model own memory at all? | May remove the whole load/store hook layer | memory interface |
 
 **Rule:** every open item becomes a *named knob with a declared default*, plus a
 test proving the rest of the model does not depend on it. Resolve, don't
@@ -228,14 +238,15 @@ Use these words with these meanings, and do not resurrect retired ones:
 
 | Term | Meaning |
 |---|---|
-| **lane** | One thread: its own PC and architectural register state. The unit of execution. |
+| **lane** | One thread: its own PC and architectural register state. The unit of state. |
 | **warp** | A set of lanes. The unit of rendezvous and of scheduling contention. |
-| **agent** | Anything the scheduler can advance: a lane, and — if DMA is asynchronous — a transfer. The scheduler schedules *agents*, not lanes. |
-| **policy** | A pluggable, seedable rule for choosing the next agent. Not machine state. |
+| **path** | The lanes of one warp that are in lockstep (D3). Split by divergence; merged by the reconvergence rule (open). |
+| **agent** | Anything the scheduler can advance: a path, and — if DMA is asynchronous — a transfer. The scheduler never schedules an individual lane. |
+| **policy** | A pluggable, seedable rule for choosing the next agent where the ISA leaves the choice free. Not machine state. |
+| **rendezvous** | The point where every lane of the active path has stopped before the same instruction, so the model can resolve it for the whole path (D11). |
 | **scratchpad** | The new memory hierarchy's on-core storage; banked, DMA-fed. |
 | **barrier** | A rendezvous object. Its *implementation* (memory, registers, model-internal) is a knob; its *identity* is an address or name the software passes. |
 | **observation** | The dump in §4. The only thing compared between implementations. |
-| ~~path~~ | Previous variant's mechanism for lanes sharing a PC. Reintroduce only if the open question in §2 resolves to "visible". |
 | ~~leader selection~~ | Previous variant's per-path memory coalescing. Do not implement speculatively. |
 | ~~TLS~~ | Previous variant's per-thread memory region. Do not implement speculatively. |
 

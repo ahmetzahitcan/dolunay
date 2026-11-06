@@ -68,23 +68,36 @@ the wrong machine in the thing meant to judge the right one.
 Consequences: `DESIGN.md` and `ITS-SEMANTICS.md` are downgraded to legacy
 rationale. Anything read from `../src` must be labelled as evidence.
 
-## D3 — Lane-based execution, warp-structured
+## D3 — Paths are the scheduling unit; lanes of a path are in lockstep
 
 Date: 2026-11-04
-Status: provisional
+Revised: 2026-11-06 — reversed by the maintainer: the original said "no implicit
+lockstep within a warp" and scheduled lanes. Paths are architecturally visible.
+Status: provisional — what "lockstep" means precisely is to be defined in `isa/`
 
-Decision: Each lane carries its own PC and architectural state; a warp is the
-unit of rendezvous and of scheduling contention. There is no implicit lockstep
-within a warp.
+Decision: Each lane carries its own PC and architectural state, but the ISA
+treats the lanes of a warp as executing in lockstep until they diverge. A
+**path** is a set of lanes of one warp that are in lockstep; the scheduler
+chooses the next *path*, never an individual lane. Divergence is detected
+explicitly, at every branch and jump, and splits a path.
 
-Because: Divergence then costs nothing to implement, the ITS primitives are stated
-per-lane, and a model that mirrors the RTL's path machinery cannot catch bugs in
-that machinery.
+Because: This is the ISA's execution model. Lockstep is a *semantic*
+statement — it does not require SIMD execution, in the model or in the RTL — so
+the model states it as rules about observable order, not as the RTL's masks and
+stacks, and can still catch bugs in that machinery.
 
-Consequences: The model must supply its own grouping/ordering policy when a test
-needs RTL-like behaviour. Overturned if the path structure turns out to be
-architecturally visible (e.g. `xrole`) — then a path structure has to reappear as
-schedulable state, not as an implementation detail.
+Considered: lane-based scheduling without lockstep (the original D3) — wrong
+model of the ISA. Detecting divergence lazily by comparing PCs at sync events —
+rejected: it does not correspond to anything the RTL does (the RTL implements
+lockstep as SIMD), comparing the active path's PC with every other path is
+costly and not meaningful, and a lane may never reach a sync event (an infinite
+loop), so divergence must be caught at the branch itself.
+
+Consequences: The model keeps path bookkeeping (split at divergence; merge per a
+reconvergence rule still to be specified). Every branch and jump of the active
+path is an event the model sees (D11). Open in `CONTRACT.md` §2: the precise
+meaning of lockstep, the reconvergence rule, and the order of conflicting
+accesses within one lockstep instruction.
 
 ## D4 — The model lives in this repository
 
@@ -108,8 +121,8 @@ the ISA stabilises and independent release cadence becomes valuable.
 ## D5 — C# on Renode's RISC-V core
 
 Date: 2026-11-04
-Revised: 2026-11-06 — the integration route moved to D8; unverified assumptions
-updated with what has since been measured.
+Revised: 2026-11-06 — the integration route moved to D8; assumptions settled by
+the 2026-11-06 probes (D11).
 Status: provisional
 
 Decision: The ISA layer is Renode's RISC-V core; the model and its hooks are
@@ -126,13 +139,13 @@ each to be settled by a probe rather than by argument:
 
 - the model can extend the core — **verified**: `CPU.Dolunay` subclasses
   `RiscV32` and installs custom instructions;
-- whole-lane state save/restore plus stepping is fast enough — **open**:
-  single-stepping measured at ≈2.4 k instructions/s (`SUBSTRATE.md`), which
-  argues for running each lane until a sync point;
-- loads and stores can be intercepted without a hook per instruction —
-  **unverified**, and possibly moot (memory ownership is open, `CONTRACT.md` §2).
+- lanes can be run and stopped fast enough — **answered by D11**: no state
+  swapping (one CPU per lane), and a measured cost of ≈0.85 ms per rendezvous,
+  accepted for now (`PERFORMANCE.md`);
+- loads and stores can be intercepted — **verified**: standard opcodes can be
+  overridden by custom-instruction handlers (`SUBSTRATE.md`).
 
-Overturned if the stepping or interception probe fails.
+Overturned if the slow design of D11 proves unusable even for correctness work.
 
 ## D6 — Agent working rules for `golden/`
 
@@ -252,3 +265,38 @@ correction (D8) cost a new decision.
 Consequences: Review of a change to this file happens in the diff, so substance
 changes must not be bundled silently with unrelated work. Overturned if the log
 grows enough authors that in-place edits become contested.
+
+## D11 — Execution on Renode: one machine per lane, overridden opcodes, slow first
+
+Date: 2026-11-06
+Status: provisional
+
+Decision: Each lane is one RISC-V CPU in its own Renode machine. The model owns
+every shared resource (scratchpad, and later global memory and DMA) and each
+machine reaches it through a bus device. Branches, jumps, shared-memory
+accesses and the custom instructions are installed as custom-instruction
+handlers that override the standard decoder. Lanes wait by halting themselves
+with `PC` left on the instruction; the last lane of a path to arrive lets the
+model decide (split, release, switch path). Start with a rendezvous at every
+branch and accept the cost; speed-ups are deferred (`PERFORMANCE.md`).
+
+Because: Renode executes each lane at full speed between events, so the model
+never saves or restores lane state. Overriding opcodes gives the model every
+event without scanning the program, and halting before an instruction is
+precise (`SUBSTRATE.md`). A Renode machine holds at most 32 cores, and machines
+of one CPU cost no more than packed ones, so one per lane is the simplest layout
+with no geometry limit. Correctness comes first.
+
+Considered: one CPU swapped between lanes (state save/restore plus `Step`) —
+re-implements Renode's CPU state, ≈2.4 k instructions/s. One machine per warp —
+works, but adds a packing rule and a 32-lane limit for no gain. Waiting by
+blocking a CPU thread — stops every CPU of the emulation. Opcode pre-hooks —
+cannot stop before the instruction. Address hooks — precise, but need the
+addresses in advance.
+
+Consequences: Each rendezvous costs ≈0.85 ms, so a path advances at about 1 200
+branches/s until a `PERFORMANCE.md` fix lands. Renode's own instruction counter
+also counts aborted attempts; the model counts instructions itself. Atomics on
+shared memory are the model's job (whether LR/SC and AMOs survive at all is open,
+`CONTRACT.md` §2). Overturned if a probe of the coordinator-driven execution in
+`PERFORMANCE.md` shows a simpler design that is also correct.

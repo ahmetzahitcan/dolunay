@@ -77,6 +77,49 @@ OneDrive.
   `Antmicro.Renode.Peripherals.Timers`; `PrivilegedArchitecture`,
   `InterruptMode` and `PrivilegeLevels` are nested in `BaseRiscV`.
 
+## Execution control (probed 2026-11-06)
+
+Throwaway probes; numbers are from one machine and are order-of-magnitude only.
+
+- **At most 32 cores per machine.** The 33rd fails with `atomic: Maximum number
+  of supported cores exceeded: 32` (a constant in Renode's native translation
+  library). The limit is per machine, not per process: 64 machines × 1 CPU
+  load and run (≈540 MB, ≈750 MIPS aggregate, same as 8 × 8).
+- **Standard opcodes can be overridden.** `InstallCustomInstruction` with a
+  pattern matching a standard instruction (e.g. all of `BRANCH`, or `LW`) takes
+  precedence over the built-in decoder. The handler then *is* the instruction:
+  - if it does not write `PC`, `PC` advances by 4 afterwards (a branch handler
+    must write the target itself);
+  - writing `PC` is honoured, including writing the instruction's own address;
+  - **halt-before works:** set `IsHalted = true` and `PC` = the instruction's
+    own address; the CPU stops before it, and re-executes it once on resume;
+  - a load handler can perform the access with `sysbus.ReadDoubleWord(addr, cpu, null)`;
+  - an aborted attempt still counts in `ExecutedInstructions` — count
+    instructions in the model, not with Renode's counter.
+- **Opcode hooks** (`AddPreOpcodeExecutionHook`) run before the instruction but
+  cannot stop it: setting `IsHalted` there lets the instruction complete, and on
+  a not-taken branch the CPU can run on past it (translation-block chaining) —
+  observed executing one more instruction. `RequestTranslationBlockRestart`
+  returns `false` from a hook.
+- **Address hooks** (`AddHook(addr, …)`, the breakpoint mechanism) stop exactly
+  before the instruction, also mid-block; on resume the hook does not fire again
+  for that instruction. They need the addresses in advance.
+- A restart requested from inside a peripheral access
+  (`TryRestartTranslationBlockOnCurrentCpu`) reports success but does not
+  re-execute the load.
+- **Blocking a CPU thread inside a handler stops every CPU** of the emulation,
+  in parallel and in serial (`SetGlobalSerialExecution`) mode alike. Lanes must
+  wait by halting, never by blocking.
+- **Halting and releasing is slow:** a rendezvous of 8 lanes (each halts, the
+  last releases all) costs ≈0.85 ms of wall time, independent of
+  `SetGlobalQuantum` (default, 10 µs, 1 µs) and `SetGlobalAdvanceImmediately`.
+  See [`PERFORMANCE.md`](PERFORMANCE.md).
+- `sysbus.TryGetCurrentCPU` inside a peripheral access identifies the CPU that
+  made it.
+- LR/SC and AMOs behave correctly within one machine, on RAM and on a peripheral
+  (with a `Atomically accessing MMIO` warning on the latter), including a
+  reservation broken by another CPU's store. Across machines: untested.
+
 ## Stepping throughput
 
 On 2026-11-06, single-stepping a spin loop through the paused `Step` path took

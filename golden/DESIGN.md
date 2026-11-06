@@ -29,13 +29,18 @@
 >   Memory ownership is open (`CONTRACT.md` §2).
 > - **§9** (milestones): M0 is largely done and the order has changed; the
 >   current list is "Next steps" in [`README.md`](README.md).
+> - **§4.1, §4.2, §4.4**, and the "path-based model" row of **§11**: the
+>   lane-based, no-lockstep model is **reversed** — paths are the scheduling
+>   unit and lanes of a path are in lockstep (**D3**).
+> - **§5.5–§5.7** (hooks, stepping, running): the execution design is now
+>   **D11** — one machine per lane, overridden opcodes, rendezvous by halting.
 > - **§5.6**, and the "run until a sync point" row of **§11**: per-instruction
 >   stepping was measured at ≈2.4 k instr/s
 >   ([`SUBSTRATE.md`](SUBSTRATE.md#stepping-throughput)), so that rejection is
 >   being reconsidered.
 >
-> Still valid, and worth reading: the layering argument (§3), the lane-based
-> model (§4.1, §4.2, §4.4), the C#-rather-than-Python decision (§5.2), the
+> Still valid, and worth reading: the layering argument (§3), the
+> C#-rather-than-Python decision (§5.2), the
 > pattern language (§5.3), the profiling plan (§7, minus its generator), the
 > repository argument (§8.1), and the remaining rejected alternatives (§11).
 

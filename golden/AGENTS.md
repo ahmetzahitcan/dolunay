@@ -21,13 +21,18 @@ it.
 | [`isa/`](isa/) | Dolunay's ISA documents (D9) — **not written yet** | **authoritative** once written |
 | [`README.md`](README.md) | orientation, status, how to build and run, what to do next | informative |
 | [`SUBSTRATE.md`](SUBSTRATE.md) | verified Renode host behaviour and quirks | informative; facts, not decisions |
+| [`PERFORMANCE.md`](PERFORMANCE.md) | known performance problem and the deferred fixes, in order | informative |
 | [`FINDINGS.md`](FINDINGS.md) | disagreements and defects found outside `golden/`, to be reported | informative; append to it |
 | [`DESIGN.md`](DESIGN.md) | long design rationale | **legacy** — read its status header first |
 | [`ITS-SEMANTICS.md`](ITS-SEMANTICS.md) | the published variant's ITS semantics | **legacy** — baseline, not spec |
 
-Do not create handoff or session-notes files. Durable facts go in the file that
-owns them (table above); a choice goes in `DECISIONS.md`; machine-local facts
-stay out of the repository (`CONTRACT.md` §5).
+Durable facts go in the file that owns them (table above); a choice goes in
+`DECISIONS.md`; machine-local facts stay out of the repository (`CONTRACT.md`
+§5). The one exception is **`HANDOFF.md`**, written only when the maintainer
+asks for one at the end of a session: it says where the work stands and what
+comes next, and points into the files above rather than restating them. If you
+find one, read it after `CONTRACT.md` and `DECISIONS.md`, and delete it once its
+content has been acted on or moved into its owning file.
 
 ## 1. Authority, in order
 
@@ -86,8 +91,10 @@ geometry and path visibility are undecided. Therefore:
 - **No uncited encodings.** Every opcode, funct field and CSR number cites the
   RISC-V specification or the `isa/` section it comes from. The one exception
   today is the labelled placeholder in `model/DolunayCpu.cs`.
-- Do not implement leader selection, TLS, or path splitting speculatively. They
-  may not exist in the next variant.
+- Do not implement leader selection or TLS speculatively. They may not exist in
+  the next variant. Paths *do* exist (D3), but their open rules — the precise
+  meaning of lockstep, reconvergence — go behind interfaces until `isa/`
+  defines them.
 
 ## 5. Decisions protocol
 

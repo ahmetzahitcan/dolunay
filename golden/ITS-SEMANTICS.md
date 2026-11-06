@@ -14,6 +14,10 @@
 > justification no longer holds, and owning memory becomes one option among
 > several. See `CONTRACT.md` §2.
 >
+> Paths are architecturally visible in the next variant too (D3), so §3.5 and
+> §6 are relevant background again — but their *rules* (leader per path,
+> `xrole`, reconvergence) are the previous variant's and are not assumed.
+>
 > The encodings and CSR numbers in §3.1 and §3.4 are the **previous** variant's.
 > They are not part of the ISA unless the ISA documents in [`isa/`](isa/) adopt
 > them (D9).

@@ -13,6 +13,8 @@ New here? Read in this order:
    **Authoritative.**
 3. [`AGENTS.md`](AGENTS.md) — working rules and a map of every document here.
 4. [`SUBSTRATE.md`](SUBSTRATE.md) — verified Renode host behaviour.
+   [`PERFORMANCE.md`](PERFORMANCE.md) — the known execution-cost problem and
+   the fixes deferred until later.
 5. [`FINDINGS.md`](FINDINGS.md) — problems found outside `golden/`, waiting to
    be reported.
 6. [`DESIGN.md`](DESIGN.md) and [`ITS-SEMANTICS.md`](ITS-SEMANTICS.md) —
@@ -22,10 +24,10 @@ New here? Read in this order:
 
 | | |
 |---|---|
-| Machine modelled | the **next** variant: per-lane execution, scratchpad + DMA, barrier logic under revision |
+| Machine modelled | the **next** variant: lanes in lockstep per path (D3), scratchpad + DMA, barrier logic under revision |
 | ISA | RISC-V standard + [`isa/`](isa/) (D9); `isa/` is **not written yet** |
 | Code | **skeleton** — `model/` plugin with `CPU.Dolunay` (one placeholder instruction), `Dolunay.repl`, `run.resc`, `renode.config` |
-| Substrate | Renode 1.17; the plugin builds, loads, and extends `RiscV32` (D8). Lane-state swap and memory interception unverified; single-stepping measured at ≈2.4 k instr/s ([`SUBSTRATE.md`](SUBSTRATE.md#stepping-throughput)) |
+| Substrate | Renode 1.17; the plugin builds, loads, and extends `RiscV32` (D8). Probed: standard opcodes can be overridden, lanes can stop before an instruction, ≤32 cores per machine, ≈0.85 ms per lane rendezvous ([`SUBSTRATE.md`](SUBSTRATE.md#execution-control-probed-2026-11-06), [`PERFORMANCE.md`](PERFORMANCE.md)) |
 | Kernel build | the two `generate.sh` scripts call `riscv32-unknown-elf-*`; each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
 
@@ -80,12 +82,12 @@ In order; each is independently useful.
    and point `Dolunay.repl` and `run.resc` at `CPU.Dolunay`.
 3. **Decide memory ownership** (`CONTRACT.md` §2) before any load/store
    interception. Memory as a device is the composition-friendly option.
-4. **The concurrency core** — lanes, warps, agent scheduler, policy interface,
-   the interleaving-independence test — driven by a stub ISA. Needs a unit-test
-   project outside Renode (possible since D8).
-5. **The lane-switch probe**: whole-lane state save/restore plus stepping. The
-   measured ≈2.4 k instr/s for `Step` argues for "run until a sync point" rather
-   than per-instruction switching; D5's assumption is open until this is done.
+4. **The concurrency core** — lanes, warps, paths, the path scheduler and
+   policy interface, the interleaving-independence test — driven by a stub ISA.
+   Needs a unit-test project outside Renode (possible since D8).
+5. **The slow execution design** (D11): one machine per lane, overridden
+   opcodes, a rendezvous at every branch. Its
+   speed-ups wait until it is correct and a workload needs them.
 
 Memory, barrier and DMA semantics are **not** on that list: they are being
 redesigned, and they arrive as knobs once the variant settles.
