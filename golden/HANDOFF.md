@@ -49,7 +49,7 @@ standard-only demo in `golden/build/std-only/`.
 | `golden/run.resc` | headless smoke script: create machine, load `.repl`, print PC, quit |
 | `golden/renode.config` | enables the plugin for one run; **comments must use `;`** |
 | `golden/run-renode.sh` | **gitignored**, machine-local launcher: build → copy DLL → run (interactive by default, `--headless` for the smoke test) |
-| `golden/SUBSTRATE.md` | observed Renode host behaviour (one sentence there is now known to be too broad; see "Docs to fix") |
+| `golden/SUBSTRATE.md` | observed Renode host behaviour (one sentence there about discovery vs. enablement is too broad; see “Suggested next steps”) |
 | `golden/build/std-only/` | gitignored experiments: `std.repl`, `prog.s` (sum 1..10), `hello.s`, `dolunay.repl`, scripts |
 | `ENVIRONMENT.md` (root) | portable toolchain/setup notes; machine-local facts deliberately kept out where possible |
 
