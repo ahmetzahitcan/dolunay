@@ -7,7 +7,7 @@ rather than restating them; if it disagrees with them, they win.
 ## Where the work stands
 
 - **Decided this session** (see `DECISIONS.md`):
-  - **D9** the ISA is RISC-V + `isa/`; the CSV is only RTL input.
+  - **D9** the ISA is RISC-V + `spec/`; the CSV is only RTL input.
   - **D10** the decision log is edited in place; git holds history.
   - **D3 (reversed)** paths are the scheduling unit; lanes of a path are in
     lockstep until they diverge; divergence is detected at every branch.
@@ -32,7 +32,7 @@ rather than restating them; if it disagrees with them, they win.
   interfaces, the observation writer. Event-driven: it receives "the whole path
   stopped at instruction X" and returns a decision.
 - `Dolunay.Renode`: the glue. `CPU.Dolunay`, the opcode-override table (each
-  entry citing `isa/`), the coordinator that maps lanes to machines and halts or
+  entry citing `spec/`), the coordinator that maps lanes to machines and halts or
   releases them, the scratchpad bus device, monitor commands.
 - A unit-test project on `Dolunay.Model` only, so tests need no Renode.
 
@@ -52,9 +52,10 @@ branch encodes an architectural rule, it belongs in the model.
 2. Scaffold: `Dolunay.Model`, `Dolunay.Renode`, `Dolunay.Model.Tests` (NUnit).
    Update `run-renode.sh` (gitignored, machine-local) to copy both DLLs.
 3. **The path coordinator in `Dolunay.Model`, test-first.** Split on divergent
-   targets, park and release, yield, done, deadlock detection, and the seed
-   property test from `CONTRACT.md` §1. Reconvergence and conflict ordering are
-   open: put them behind interfaces with declared defaults.
+   targets, park and release, yield, done, deadlock detection, and a policy
+   interface that a seeded, an exploring and a replaying policy can implement
+   (`CONTRACT.md` §1, D12–D15). Reconvergence is open: put it behind an
+   interface with a declared default.
 4. **The adapter.**
    - One machine per lane, each with one `CPU.Dolunay` and a scratchpad device
      forwarding to the model's shared scratchpad.
@@ -62,7 +63,7 @@ branch encodes an architectural rule, it belongs in the model.
      a `.repl` is per machine and identical.
    - Override branches and jumps (`jal` is uniform, but `jalr` can diverge), and
      shared-memory loads and stores.
-5. The ISA documents (`isa/`) are still unwritten, so the custom instructions
+5. The ISA documents (`spec/`) are still unwritten, so the custom instructions
    stay labelled placeholders until the maintainer writes or approves them.
 
 ## How the probes did it (code is in `golden/build/probe/`, gitignored)

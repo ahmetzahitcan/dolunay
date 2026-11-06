@@ -19,7 +19,7 @@
 > `xrole`, reconvergence) are the previous variant's and are not assumed.
 >
 > The encodings and CSR numbers in §3.1 and §3.4 are the **previous** variant's.
-> They are not part of the ISA unless the ISA documents in [`isa/`](isa/) adopt
+> They are not part of the ISA unless the specification documents in [`spec/`](spec/) adopt
 > them (D9).
 
 The ITS (Independent Thread Scheduling) semantics of the **published** variant of

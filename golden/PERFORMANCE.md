@@ -75,7 +75,7 @@ event.
   explicitly, and a lane that loops forever still reports every branch. A lane
   that runs ahead of its path-mates has only changed its own registers, because
   anything shared stops it.
-- **To decide first:** whether this matches what the ISA documents will mean by
+- **To decide first:** whether this matches what the specification documents will mean by
   "lockstep". It is equivalent in what can be observed, not in how execution is
   stepped.
 
@@ -94,8 +94,8 @@ path-mate has not yet reached it.
 ## When to revisit
 
 - When a kernel in `../ss/` or `../asm-kernels/` takes long enough under the
-  model to slow down the work: a property test over many scheduler seeds
-  multiplies every run's cost.
+  model to slow down the work: checking determinacy over many schedules
+  (`CONTRACT.md` §1) multiplies every run's cost.
 - Before any profiling run (job G3 in `CONTRACT.md`) on realistic inputs.
 
 Measure first. The ≈0.85 ms figure comes from a synthetic loop on one machine;

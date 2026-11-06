@@ -18,7 +18,7 @@ it.
 | [`AGENTS.md`](AGENTS.md) | these working rules | binding on agents |
 | [`CONTRACT.md`](CONTRACT.md) | what the model is, guarantees, decided vs. open, inputs, observation format | **authoritative** |
 | [`DECISIONS.md`](DECISIONS.md) | decision log (D1…); each entry is the current rule, history is in git | **authoritative** |
-| [`isa/`](isa/) | Dolunay's ISA documents (D9) — **not written yet** | **authoritative** once written |
+| [`spec/`](spec/) | Dolunay's specification documents: the ISA and the execution model (D9) — **not written yet** | **authoritative** once written |
 | [`README.md`](README.md) | orientation, status, how to build and run, what to do next | informative |
 | [`SUBSTRATE.md`](SUBSTRATE.md) | verified Renode host behaviour and quirks | informative; facts, not decisions |
 | [`PERFORMANCE.md`](PERFORMANCE.md) | known performance problem and the deferred fixes, in order | informative |
@@ -37,7 +37,7 @@ content has been acted on or moved into its owning file.
 ## 1. Authority, in order
 
 1. `CONTRACT.md` and `DECISIONS.md`
-2. the ratified RISC-V specifications plus [`isa/`](isa/) — the ISA (D9)
+2. the ratified RISC-V specifications plus [`spec/`](spec/) — the ISA (D9)
 3. `../ss/`, `../asm-kernels/` — the software contract and the workloads
 4. anything generated from rank 2 — derived; regenerate it, never edit it
 5. `../control_unit/control_unit.csv` — the RTL's decoder input; a cheatsheet,
@@ -73,9 +73,9 @@ you learn there is not a requirement until it is written into the contract.
 - **Read-only:** everything else, in particular `../src/`, `../tb/`, `../sim/`,
   `../ss/`, `../asm-kernels/`, `../control_unit/`.
 - A genuine RTL bug, a stale `../ss/`, or a CSV row that disagrees with
-  `isa/` is a finding for `FINDINGS.md`, not a fix to land from here.
+  `spec/` is a finding for `FINDINGS.md`, not a fix to land from here.
 - If a task seems to require editing outside `golden/`, say so and stop.
-- Changing `isa/` is an ISA change: it needs a decision first (§5).
+- Changing `spec/` is a specification change: it needs a decision first (§5).
 
 ## 4. Variant discipline
 
@@ -89,11 +89,11 @@ geometry and path visibility are undecided. Therefore:
 - **No constants for geometry.** Warps × lanes is a parameter with one place it
   is read from.
 - **No uncited encodings.** Every opcode, funct field and CSR number cites the
-  RISC-V specification or the `isa/` section it comes from. The one exception
+  RISC-V specification or the `spec/` section it comes from. The one exception
   today is the labelled placeholder in `model/DolunayCpu.cs`.
 - Do not implement leader selection or TLS speculatively. They may not exist in
   the next variant. Paths *do* exist (D3), but their open rules — the precise
-  meaning of lockstep, reconvergence — go behind interfaces until `isa/`
+  meaning of lockstep, reconvergence — go behind interfaces until `spec/`
   defines them.
 
 ## 5. Decisions protocol
@@ -115,7 +115,7 @@ contradiction:
   marker (logs once, nothing else); `DolunayCpu.cs` defines `CPU.Dolunay`, a
   `RiscV32` subclass that installs custom instructions in its constructor.
 - The only custom instruction is a **placeholder**: `0x0000700B` logs
-  `Hello World`. It is not an ISA decision and will be replaced from `isa/`.
+  `Hello World`. It is not an ISA decision and will be replaced from `spec/`.
 - `Dolunay.repl` still instantiates the stock `CPU.RiscV32` with no memory;
   `run.resc` is a smoke test that prints the PC.
 - There is no unit-test project and no test runner yet. Do not claim tests ran.
@@ -155,8 +155,9 @@ that waste an hour if missed (details and evidence in
   reviewable without running it.
 - **Do not invent commands or transcripts.** Run the check before claiming a
   tool exists.
-- The strongest check the contract names is the property test over scheduler
-  seeds (`CONTRACT.md` §1, guarantee 3); it does not exist yet. If your change
+- The strongest checks the contract names are the determinacy check
+  (`CONTRACT.md` §1, guarantee 3) and replay against the RTL (D15); neither
+  exists yet. If your change
   has no test, say what a test would assert.
 
 ## 10. Housekeeping

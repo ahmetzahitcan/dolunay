@@ -73,7 +73,7 @@ rationale. Anything read from `../src` must be labelled as evidence.
 Date: 2026-11-04
 Revised: 2026-11-06 — reversed by the maintainer: the original said "no implicit
 lockstep within a warp" and scheduled lanes. Paths are architecturally visible.
-Status: provisional — what "lockstep" means precisely is to be defined in `isa/`
+Status: provisional — what "lockstep" means precisely is to be defined in `spec/`
 
 Decision: Each lane carries its own PC and architectural state, but the ISA
 treats the lanes of a warp as executing in lockstep until they diverge. A
@@ -95,9 +95,10 @@ loop), so divergence must be caught at the branch itself.
 
 Consequences: The model keeps path bookkeeping (split at divergence; merge per a
 reconvergence rule still to be specified). Every branch and jump of the active
-path is an event the model sees (D11). Open in `CONTRACT.md` §2: the precise
-meaning of lockstep, the reconvergence rule, and the order of conflicting
-accesses within one lockstep instruction.
+path is an event the model sees (D11). Which path runs next is a choice point
+(D12), switched cooperatively (D13); the order of conflicting accesses within
+one lockstep instruction is fixed by the spec (D14). Open in `CONTRACT.md` §2:
+the precise meaning of lockstep and the reconvergence rule.
 
 ## D4 — The model lives in this repository
 
@@ -155,7 +156,7 @@ Status: accepted
 
 Decision: Agents work from the repository root with the whole tree readable, but
 `golden/` is the only write scope, and authority is explicit: contract and
-decisions first, the ISA (RISC-V + `isa/`) second, software corpus third, the
+decisions first, the ISA (RISC-V + `spec/`) second, software corpus third, the
 CSV and the RTL as evidence only. Enforced by `AGENTS.md` and `CONTRACT.md`, not
 by hiding directories.
 
@@ -219,14 +220,18 @@ soon as the DLL is there; only the `[Plugin]` class additionally needs
 (`SUBSTRATE.md`). `RENODE_BIN` supplies the Renode tree at build time and is
 machine-local, so it is never recorded here.
 
-## D9 — The ISA is the RISC-V standard plus Dolunay's own ISA documents
+## D9 — The machine is the RISC-V standard plus Dolunay's own specification documents
 
 Date: 2026-11-06
+Revised: 2026-11-06 — the directory was renamed from `isa/` to `spec/`,
+because it specifies the execution model and the rules for valid kernels as
+well as the ISA.
 Status: accepted
 
-Decision: The ISA is defined by the ratified RISC-V specifications plus
-Dolunay's ISA documents in `golden/isa/`, which specify the custom
-instructions, the custom CSRs, and every exemption from the standard.
+Decision: The machine is defined by the ratified RISC-V specifications plus
+Dolunay's specification documents in `golden/spec/`, which specify the custom
+instructions, the custom CSRs, every exemption from the standard, and the
+execution model (`spec/README.md` lists the scope).
 `../control_unit/control_unit.csv` is the RTL's code-generation input and a
 cheatsheet; it confers no requirements on the model.
 
@@ -240,10 +245,10 @@ Considered: the CSV as the sole ISA source (the original rule) — rejected for
 the reason above.
 
 Consequences: Encodings in the model must trace to a section of the RISC-V
-specifications or of `golden/isa/`; a hand-written constant without that
-citation is forbidden. A disagreement between the CSV and `golden/isa/` is an
+specifications or of `golden/spec/`; a hand-written constant without that
+citation is forbidden. A disagreement between the CSV and `golden/spec/` is an
 RTL finding, not a model bug. `DESIGN.md` §5.4 (generate the model's patterns
-from the CSV) is void. Until `golden/isa/` exists, no custom instruction or CSR
+from the CSV) is void. Until `golden/spec/` exists, no custom instruction or CSR
 may be implemented except as a placeholder labelled as such.
 
 ## D10 — This log records current decisions; git records history
@@ -300,3 +305,109 @@ also counts aborted attempts; the model counts instructions itself. Atomics on
 shared memory are the model's job (whether LR/SC and AMOs survive at all is open,
 `CONTRACT.md` §2). Overturned if a probe of the coordinator-driven execution in
 `PERFORMANCE.md` shows a simpler design that is also correct.
+
+## D12 — The spec leaves choices open; implementations refine it; valid kernels are determinate
+
+Date: 2026-11-06
+Status: accepted
+
+Decision: Where software does not care, the spec leaves a **choice point** open
+to the implementation (which path runs first after a split, how warps
+interleave). An implementation is correct when each of its executions is a
+valid execution of the spec. A **valid kernel is determinate**: for each of its
+test inputs, every valid execution produces the same output, as defined by an
+**output descriptor** the kernel supplies — memory regions, compared bitwise for
+integers and within a tolerance for floats, with fields that only count when a
+condition on other fields holds. The model checks determinacy when a kernel is
+validated; afterwards it runs any one execution (fast mode).
+
+Because: Fixing every choice in the spec would make the reference depend on one
+implementation's choices, and constrain faster hardware for no benefit to
+software. A kernel whose output depends on the schedule is almost certainly
+buggy. Kernels change far less often than the RTL, so the expensive check runs
+rarely.
+
+Considered: a fully deterministic spec — the reason above. Bitwise comparison
+of floats — forbids floating-point reductions, which are too common to forbid.
+Requiring kernels to zero unused output fields — simpler to check, but pushes
+work onto software that does not otherwise need it.
+
+Consequences: A choice motivated by the implementation may enter the spec only
+when it is high-level enough that going against it would mean a significant
+redesign (D13 is one). Determinacy is per input, so fast mode is trustworthy
+only on validated inputs. The readable timing CSRs (`cycle`, `time`, `instret`,
+the HPM counters) are unconstrained; a kernel whose output depends on them is
+not valid. How a run ends is part of the output, so a kernel that deadlocks
+under some executions only is not determinate. Checking determinacy needs
+schedule exploration (`CONTRACT.md` §1). The descriptor's format and its
+tolerance metrics are open (`CONTRACT.md` §2).
+
+## D13 — Paths of a warp switch cooperatively
+
+Date: 2026-11-06
+Status: provisional — the exclusion of lanes that cannot execute is the
+agent's reading of the maintainer's rule, pending confirmation
+
+Decision: A warp switches from one path to another only at points explicit in
+the code: a branch or jump that diverges, `yield`, waiting at a barrier, and a
+path finishing. `yield` guarantees that before the yielding path executes its
+next instruction, every other lane of its warp that can execute — not finished,
+not waiting at a barrier — executes at least one instruction. Warps execute
+concurrently with each other.
+
+Because: Switching paths to cover a memory stall would help the hardware, but
+another warp can cover it instead; explicit switching keeps the schedules within
+a warp few and visible in the code. The guarantee is stated over lanes, not
+paths: `yield` neither diverges nor reconverges, so the yielding path is
+unchanged until it runs again, while the other paths may split or merge in the
+meantime — "every other path" has no stable meaning.
+
+Considered: switching at any instruction — multiplies the schedules for little
+gain. Stating the guarantee over paths — the reason above.
+
+Consequences: Two paths of one warp never execute concurrently. An
+implementation that switches paths on a stall violates the spec. A path that
+spins with `yield` cannot starve the rest of its warp. Whether warps have a
+progress guarantee towards each other is open (`CONTRACT.md` §2).
+
+## D14 — The order within one lockstep instruction is specified
+
+Date: 2026-11-06
+Status: accepted
+
+Decision: When the lanes of one path execute an instruction whose accesses
+conflict, the spec defines the order in which they take effect; it is not a
+choice point.
+
+Because: A lockstep instruction is one SIMD instruction fed to every lane of the
+path; there is no hardware reason for the order to vary, and fixing it removes a
+source of nondeterminism.
+
+Consequences: `spec/` states the order. The scratchpad may reorder internally,
+provided the result is as if the accesses took effect in that order.
+
+## D15 — The RTL is checked by replaying its choices
+
+Date: 2026-11-06
+Status: accepted
+
+Decision: An RTL simulation logs its choice at every choice point to standard
+output, in code guarded by `` `ifndef SYNTHESIS ``. The model replays that log
+as its policy and compares the full architectural state bitwise. Comparing the
+RTL's output with any one model execution through the output descriptor (fast
+mode, D12) is the fallback for runs without a log.
+
+Because: Under replay a mismatch is a definite defect in the RTL or in the
+model, and the run stops where the two first diverge. It works for kernels that
+are not determinate, and because both sides perform the same operations in the
+same order, floats need no tolerance. The model stays independent of the RTL: it
+takes a schedule as input and decides nothing on the RTL's behalf.
+
+Considered: searching the valid executions for one that matches the RTL — slow,
+and on failure it can only say that none matched.
+
+Consequences: `golden/` defines the log format (`CONTRACT.md` §4); producing it
+is RTL work. Every choice point must be identifiable in the spec's terms: within
+a warp, which path (warp, lane mask, PC) runs next; between warps, the order in
+which conflicting accesses to each address took effect. The second is the
+requirement that reaches into the memory system's design.

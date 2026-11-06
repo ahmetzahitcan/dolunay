@@ -47,6 +47,7 @@ void consumer(void) {
 }
 
 int main(void) {
+    // POSSIBLE RACE CONDITION?!
     data_idx = -1;
     
     if (simt_global_id() == 0) {

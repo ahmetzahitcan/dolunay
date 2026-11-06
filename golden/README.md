@@ -25,7 +25,7 @@ New here? Read in this order:
 | | |
 |---|---|
 | Machine modelled | the **next** variant: lanes in lockstep per path (D3), scratchpad + DMA, barrier logic under revision |
-| ISA | RISC-V standard + [`isa/`](isa/) (D9); `isa/` is **not written yet** |
+| Specification | RISC-V standard + [`spec/`](spec/) (D9); `spec/` is **not written yet**. Choice points left to the implementation; RTL checked by replay (D12–D15) |
 | Code | **skeleton** — `model/` plugin with `CPU.Dolunay` (one placeholder instruction), `Dolunay.repl`, `run.resc`, `renode.config` |
 | Substrate | Renode 1.17; the plugin builds, loads, and extends `RiscV32` (D8). Probed: standard opcodes can be overridden, lanes can stop before an instruction, ≤32 cores per machine, ≈0.85 ms per lane rendezvous ([`SUBSTRATE.md`](SUBSTRATE.md#execution-control-probed-2026-11-06), [`PERFORMANCE.md`](PERFORMANCE.md)) |
 | Kernel build | the two `generate.sh` scripts call `riscv32-unknown-elf-*`; each machine supplies shims (`CONTRACT.md` §5) |
@@ -75,15 +75,16 @@ reads `DOTNET_ROOT` from its own environment, not the shell's:
 
 In order; each is independently useful.
 
-1. **Write the ISA documents** in [`isa/`](isa/): custom instructions, custom
-   CSRs, exemptions. Needs the maintainer — it is an ISA change.
+1. **Write the specification documents** in [`spec/`](spec/): custom
+   instructions, custom CSRs, exemptions, the execution model. Needs the
+   maintainer — it is a specification change.
 2. **Implement them** in `CPU.Dolunay`: replace the placeholder `0x0000700B`
    with the documented encodings, register custom CSRs in the same constructor,
    and point `Dolunay.repl` and `run.resc` at `CPU.Dolunay`.
 3. **Decide memory ownership** (`CONTRACT.md` §2) before any load/store
    interception. Memory as a device is the composition-friendly option.
 4. **The concurrency core** — lanes, warps, paths, the path scheduler and
-   policy interface, the interleaving-independence test — driven by a stub ISA.
+   policy interface, the determinacy check — driven by a stub ISA.
    Needs a unit-test project outside Renode (possible since D8).
 5. **The slow execution design** (D11): one machine per lane, overridden
    opcodes, a rendezvous at every branch. Its

@@ -1,8 +1,9 @@
 # Golden Model Contract
 
 **Status: authoritative for everything under `golden/`.** Written 2026-11-04;
-amended 2026-11-06 (ISA authority, D9; paths and lockstep, D3; execution and
-memory ownership, D11).
+amended 2026-11-06 (spec authority, D9; paths and lockstep, D3; execution and
+memory ownership, D11; choice points, refinement and kernel determinacy, D12;
+cooperative paths, D13; order within an instruction, D14; replay, D15).
 
 This file says what the golden model *is*, what it must guarantee, and what it is
 allowed to assume. It supersedes the **semantics** in [`DESIGN.md`](DESIGN.md)
@@ -30,22 +31,75 @@ order:
 
 | # | Job | What "correct" means |
 |---|-----|----------------------|
-| G1 | Verify the kernels | A kernel that is correct under the ISA produces its intended result: the expected memory image and exit state. |
-| G2 | Verify the machine | Same program, same initial state ⇒ the model and the RTL agree on *architectural* state (see §4). |
+| G1 | Verify the kernels | A kernel is valid: it is determinate (below) and produces its intended output. |
+| G2 | Verify the machine | Every RTL execution is a valid execution of the spec. Checked by replaying the RTL's choices in the model and comparing architectural state (D15, §4). |
 | G3 | Profile the kernels | A dynamic instruction histogram and a memory-access trace good enough to answer "is extension X worth implementing?". |
+
+### Executions, choice points and correctness (D12)
+
+The spec is **not deterministic**. Where software does not care, it leaves a
+**choice point** open to the implementation:
+
+- **within a warp**, which path executes next — after a divergent branch or
+  jump, a `yield`, a path starting to wait at a barrier, or a path finishing.
+  Paths switch at no other point (D13);
+- **between warps**, how their instructions interleave; warps execute
+  concurrently, so every access to shared memory is a choice point;
+- the values of the readable timing CSRs (`cycle`, `time`, `instret`, the HPM
+  counters), which the spec leaves unconstrained;
+- later, as they are specified: DMA progress and reconvergence.
+
+The order of conflicting accesses within one lockstep instruction is **not** a
+choice point; the spec defines it (D14).
+
+A **valid execution** is one that makes some choice at every choice point and
+otherwise follows the spec. An implementation is **correct** when each of its
+executions is a valid execution.
+
+A **valid kernel is determinate**: for each of its test inputs, every valid
+execution produces the same **output**. The output is defined by the kernel's
+**output descriptor**: the memory regions that hold its result, with integers
+compared bitwise, floats within a stated tolerance, and fields that count only
+when a condition on other fields holds. How the run ends (§4 `termination`) is
+always part of the output. Determinacy is a property of a kernel *and an input*.
+
+Checking determinacy (G1) needs more than one execution. The methods, cheapest
+first, all expressed as policies:
+
+1. **One execution and a conflict check.** If no two conflicting accesses
+   (same address, at least one a write, different paths or warps) have an order
+   that a choice point decides, every valid execution performs the same accesses
+   with the same values, and the kernel is determinate on that input. Orders
+   fixed by program order and barriers count; orders chosen by the scheduler do
+   not. This covers kernels that write disjoint outputs and barrier-phased
+   kernels.
+2. **Systematic exploration** of only the reported conflicts' orders (partial-order
+   reduction, with a bound on context switches), for kernels whose order is free
+   but whose result is meant not to depend on it: locks and atomics around
+   commutative updates, flag handoffs, allocators. Exhaustive at a small
+   geometry.
+3. **Random sampling** (PCT-style priority schedules, not uniform choice) at full
+   geometry, where exploration is too large.
+
+Once a kernel is validated on an input, the model may run any one execution of
+it (**fast mode**).
 
 ### Guarantees the model must satisfy
 
-1. **Determinism.** Same program, same initial state, same scheduler seed ⇒
-   byte-identical observation. Nothing observable may depend on wall-clock time,
-   OS thread scheduling, hash-set ordering, or file enumeration order.
-2. **Forward progress.** A kernel that obeys its own synchronisation contract
-   terminates under *every* policy and seed. If it does not, the model reports
-   non-termination and names the stuck agents. The model never rescues a kernel
-   that deadlocks by construction — `ping_pong` and `spmc` exist to be caught.
-3. **Interleaving independence is *tested*, not assumed.** The same program under
-   N seeds must produce identical final memory, or the kernel has a latent race.
-   The model reports which; it does not hide it.
+1. **Reproducibility.** Same program, same initial state, same policy and seed —
+   or the same replayed schedule — ⇒ byte-identical observation. Nothing
+   observable may depend on wall-clock time, OS thread scheduling, hash-set
+   ordering, or file enumeration order.
+2. **Termination is classified, never rescued.** A run ends as `all-wdone`;
+   `deadlock`, when no lane can execute, which is exact; or `timeout`, when an
+   instruction budget runs out. Non-termination in general is undecidable, so
+   `timeout` is a report, not a verdict. The model may report a stronger class
+   (such as a proven livelock) only with a proof from the run. It names the
+   stuck lanes, and never rescues a kernel that does not terminate —
+   `ping_pong` and `spmc` exist to be caught.
+3. **Determinacy is *checked*, not assumed.** The model reports a kernel that is
+   not determinate on an input, with the conflict or the two executions that
+   show it. It does not hide it.
 4. **The observation is the interface.** Model and RTL are compared only through
    the format in §4.
 
@@ -69,8 +123,15 @@ detail, stop and ask for that detail to be written into this file *first*.
   a warp execute in **lockstep until they diverge**; a set of lanes in lockstep
   is a **path**, and the scheduler chooses paths, not lanes (D3). Divergence is
   detected at every branch and jump. Lockstep is a semantic rule, not a
-  requirement for SIMD execution. `yield` is a cooperative handoff, and forward
-  progress is a design goal.
+  requirement for SIMD execution.
+- **Scheduling.** Paths of a warp switch **cooperatively**, only at points
+  explicit in the code (D13). `yield` guarantees that before the yielding path
+  executes its next instruction, every other lane of its warp that can
+  execute — not finished, not waiting at a barrier — executes at least one
+  instruction. Warps execute concurrently. Which path or warp goes first is a
+  choice point (§1, D12).
+- **Order within an instruction.** Conflicting accesses by the lanes of one
+  lockstep instruction take effect in an order the spec defines (D14).
 - **Memory.** A redesigned memory hierarchy around a **scratchpad + DMA**. The
   previous variant's region decode, per-thread TLS port, leader selection and
   replay are **not** assumed to survive. **The model owns all shared memory**
@@ -81,9 +142,9 @@ detail, stop and ask for that detail to be written into this file *first*.
 - **Barriers.** The barrier algorithm is expected to change. The barrier context
   may move out of memory, possibly into **warp-level registers** — so per-warp
   named state is part of the machine's state space.
-- **ISA.** The ratified RISC-V specifications plus Dolunay's ISA documents in
-  [`isa/`](isa/) — custom instructions, custom CSRs, and exemptions from the
-  standard (D9). Those documents are **not written yet**; until they are, no
+- **Specification.** The ratified RISC-V specifications plus Dolunay's
+  specification documents in [`spec/`](spec/) — custom instructions, custom
+  CSRs, exemptions from the standard, and the execution model (D9). Those documents are **not written yet**; until they are, no
   custom instruction or CSR is specified, and any in the code is a labelled
   placeholder.
 - **Repository.** The model lives here; the ISA specification is shared with the
@@ -94,10 +155,12 @@ detail, stop and ask for that detail to be written into this file *first*.
 | Question | Why it matters | Where it lands |
 |---|---|---|
 | Geometry (warps × lanes) | How many lanes exist; every kernel's indices | a parameter, never a constant |
-| What "lockstep" means precisely (D3) | Which orders between lanes of a path are observable | `isa/`; path model |
+| What "lockstep" means precisely (D3) | Which orders between lanes of a path are observable | `spec/`; path model |
 | Reconvergence: when do split paths merge? | Path bookkeeping; what scheduling can observe | path model |
-| Order of conflicting scratchpad accesses within one lockstep instruction — possibly architecturally specified | Whether kernels with such conflicts are deterministic or racy | scratchpad policy (the scratchpad class may reorder internally) |
-| Do LR/SC and AMOs survive, or become warp-level custom instructions with separate lane-level synchronisation? | They linearised memory in the previous variant and are problematic for the new RTL | `isa/` |
+| *Which* order conflicting accesses within one lockstep instruction take effect in (that there is one is decided, D14) | What such kernels compute | `spec/`; scratchpad (may reorder internally if the result is as if in that order) |
+| Progress between warps: must every warp that can execute eventually execute? | Whether a kernel that waits on another warp without a barrier terminates; whether `timeout` can mean a spec violation | `spec/`; policy (default: yes) |
+| Output descriptor: format, tolerance metric for floats (ULP, absolute, relative), NaN and signed zero | What "same output" means (D12) | the kernel corpus; determinacy check |
+| Do LR/SC and AMOs survive, or become warp-level custom instructions with separate lane-level synchronisation? | They linearised memory in the previous variant and are problematic for the new RTL | `spec/` |
 | Barrier context: memory, warp registers, or model-internal? | What is observable | sync interface |
 | Barrier release rule | Semantics | sync interface |
 | Memory ordering of `yield` and of the barrier | Whether the interesting kernels can be judged at all | memory model |
@@ -117,7 +180,7 @@ The model may read anything in the repository. Only these are authoritative:
 | Rank | Source | Gives | Status |
 |---|---|---|---|
 | 1 | `CONTRACT.md`, `DECISIONS.md` | what we are building, and the choices made | **authoritative** |
-| 2 | RISC-V ratified specifications + [`isa/`](isa/) | the ISA: encodings and per-instruction behaviour (D9) | **authoritative** |
+| 2 | RISC-V ratified specifications + [`spec/`](spec/) | the ISA: encodings and per-instruction behaviour (D9) | **authoritative** |
 | 3 | `../ss/`, `../asm-kernels/` | the software contract and the workloads | **corpus, not truth** |
 | 4 | anything generated from rank 2 (none yet) | the model's decode data | **derived — regenerate, never edit** |
 | 5 | `../control_unit/control_unit.csv` | the RTL's decoder input; a cheatsheet | **evidence, read-only** |
@@ -126,7 +189,7 @@ The model may read anything in the repository. Only these are authoritative:
 Notes that save time:
 
 - Every encoding in the model cites the RISC-V specification or the
-  [`isa/`](isa/) section it comes from. Never hand-write an opcode, funct3, or
+  [`spec/`](spec/) section it comes from. Never hand-write an opcode, funct3, or
   CSR number without that citation.
 - The CSV is useful for finding out what the previous RTL decoded, and nothing
   more. Its generator is `../control_unit/generate.py` (single file);
@@ -149,22 +212,24 @@ Notes that save time:
 
 ---
 
-## 4. The observation format — the model/RTL interface
+## 4. The model/RTL interface: observation and replay log
 
-This is the only contract between the two implementations, so it is worth
-freezing early and versioning. **v0 draft; expected to be revised.** What must
-not change are its invariants:
+These are the only contracts between the two implementations, so they are worth
+freezing early and versioning. **v0 drafts; expected to be revised.** What must
+not change are their invariants:
 
 - deterministic ordering (sort every collection; never emit hash order),
 - no timestamps, no absolute paths, no host-dependent values,
 - canonical hex, little-endian byte order for memory dumps,
 - every field named, so a diff is meaningful without a decoder.
 
+### Observation
+
 ```
 # dolunay-observation v0
 program       <sha256 of the loaded image>
 geometry      <warps>x<lanes>
-seed          0x<hex>
+schedule      replay <sha256 of the log> | policy <name> seed=0x<hex>
 termination   all-wdone | timeout | deadlock
 lane <w>.<l>  pc=0x<hex> exit=<reason>
 warp <w>      barrier[<addr>] total=0x<hex> parked=0x<hex>
@@ -172,11 +237,35 @@ warp <w>      wreg[<name>]=0x<hex>
 spad          0x<addr> : <hex bytes ...>
 ```
 
-Memory dumps are ranges, not whole spaces, and the compared set is chosen per
-test. Per-lane regions (the previous variant's TLS, or whatever replaces it), if
-the new variant keeps any, are dumped per lane in lane order.
+How an observation is compared depends on how the run was scheduled:
 
-The RTL side must be able to emit the same file. Until it can, G2 is untested —
+- **Replay (D15):** the model ran the RTL's own choices, so the whole
+  architectural state must match **bitwise** — every line above except
+  `schedule`, floats included.
+- **Fast mode, or one execution against another while checking determinacy
+  (D12):** only the kernel's **output** is compared — `termination`, and the
+  regions its output descriptor names, under the descriptor's rules. Lines the
+  descriptor does not cover are diagnostics.
+
+Memory dumps are ranges, not whole spaces. Per-lane regions (the previous
+variant's TLS, or whatever replaces it), if the new variant keeps any, are
+dumped per lane in lane order.
+
+### Replay log (D15)
+
+The RTL simulation writes one line to standard output per choice point it
+resolves, from code guarded by `` `ifndef SYNTHESIS ``, with a fixed prefix
+so the lines can be separated from other output. The format is not drafted yet.
+It must identify each choice in the spec's terms, never the RTL's:
+
+- **within a warp:** the path that executes next, as warp, lane mask and PC, so
+  the model stops at the first choice whose path is not ready in its own state;
+- **between warps:** for each address, the order in which conflicting accesses
+  took effect — a per-address order, not a global one; accesses to different
+  addresses need no order;
+- the value read from a timing CSR, and later DMA progress, once specified.
+
+The RTL side must be able to emit both files. Until it can, G2 is untested —
 say so rather than implying agreement. Making that happen is not `golden/` work;
 it is a request to the RTL owner.
 
@@ -238,15 +327,20 @@ Use these words with these meanings, and do not resurrect retired ones:
 
 | Term | Meaning |
 |---|---|
-| **lane** | One thread: its own PC and architectural register state. The unit of state. |
+| **lane** | One thread (the two words are synonyms; prefer *lane*): its own PC and architectural register state. The unit of state. |
 | **warp** | A set of lanes. The unit of rendezvous and of scheduling contention. |
 | **path** | The lanes of one warp that are in lockstep (D3). Split by divergence; merged by the reconvergence rule (open). |
 | **agent** | Anything the scheduler can advance: a path, and — if DMA is asynchronous — a transfer. The scheduler never schedules an individual lane. |
-| **policy** | A pluggable, seedable rule for choosing the next agent where the ISA leaves the choice free. Not machine state. |
+| **choice point** | A point where the spec leaves the next step open to the implementation (§1, D12). |
+| **valid execution** | An execution that makes some choice at every choice point and otherwise follows the spec. |
+| **policy** | A pluggable rule for resolving choice points: seeded random, PCT, systematic exploration, or replay of a log. Not machine state. |
+| **determinate** | Of a kernel and an input: every valid execution produces the same output (D12). |
+| **output descriptor** | What a kernel declares as its output, and how each part is compared (D12). |
+| **replay log** | The RTL's record of its choices, which the model replays (§4, D15). |
 | **rendezvous** | The point where every lane of the active path has stopped before the same instruction, so the model can resolve it for the whole path (D11). |
 | **scratchpad** | The new memory hierarchy's on-core storage; banked, DMA-fed. |
 | **barrier** | A rendezvous object. Its *implementation* (memory, registers, model-internal) is a knob; its *identity* is an address or name the software passes. |
-| **observation** | The dump in §4. The only thing compared between implementations. |
+| **observation** | The dump in §4. With the replay log, the only thing exchanged between implementations. |
 | ~~leader selection~~ | Previous variant's per-path memory coalescing. Do not implement speculatively. |
 | ~~TLS~~ | Previous variant's per-thread memory region. Do not implement speculatively. |
 

@@ -32,3 +32,15 @@ Found 2026-11-06. Checked: `ss/hdr/simt.h:10-11`, `src/params_pkg.sv:25-26`.
 
 `simt.h` says 4 warps × 8 lanes; the RTL says 8 × 8. (Geometry for the model is
 undecided either way — `CONTRACT.md` §2.)
+
+## F4 — `nearn` resets its result without synchronisation
+
+Found 2026-11-06. Checked: `ss/kernels/nearn.c:22`, `ss/kernels/nearn.c:46-55`.
+Status: **kept on purpose** — the maintainer left it, with a comment, as a test
+the model's determinacy check must catch (`CONTRACT.md` §1). Do not fix it.
+
+Every lane executes `*result_dist = 0xFFFFFFFF;` at the start, with no barrier
+between that store and the final update under `mutex`. If one warp finishes and
+publishes its best result before a lane of another warp has executed the reset,
+the reset discards it, and the final result depends on the schedule.
+`*result_idx` is not reset at all.

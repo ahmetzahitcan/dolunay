@@ -20,7 +20,7 @@
 > Superseded by later decisions — do not act on these:
 >
 > - **§5.4**, and the CSV-based pattern generation in **§7** and **§8.2**: the
->   ISA is no longer the CSV but the RISC-V standard plus `isa/` (**D9**).
+>   ISA is no longer the CSV but the RISC-V standard plus `spec/` (**D9**).
 > - **§5.7, §5.8, §8.3, §10.2** (ad-hoc `i @file.cs` first; "can we load C# at
 >   all?"; one-file model): the model is a pre-built plugin (**D8**), and both
 >   routes were shown to load.
