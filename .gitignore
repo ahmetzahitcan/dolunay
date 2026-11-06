@@ -21,3 +21,5 @@ tmp/lsu_exp/
 .Xil/Vivado-219773-fedora/
 irom.coe
 irom.mem
+ss/a.out
+ss/kernel.bin
