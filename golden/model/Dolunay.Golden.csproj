@@ -35,6 +35,11 @@
       <HintPath>$(RENODE_BIN)/Infrastructure.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- RiscV32's constructor takes ELFSharp.ELF.Endianess. -->
+    <Reference Include="ELFSharp">
+      <HintPath>$(RENODE_BIN)/ELFSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
 </Project>

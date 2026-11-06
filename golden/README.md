@@ -23,10 +23,28 @@ New here? Read in this order:
 | | |
 |---|---|
 | Machine modelled | the **next** variant: per-lane execution, scratchpad + DMA, barrier logic under revision |
-| Code | **skeleton only** — `Dolunay.repl`, `run.resc`, `model/Dolunay.cs`; no machine behaviour |
+| Code | **skeleton only** — `Dolunay.repl`, `run.resc`, `renode.config`, `model/` plugin project; no machine behaviour |
 | Substrate | Renode 1.17; the pre-built plugin builds, loads, and resolves `BaseRiscV` (D8). Lane-state swap and memory interception still unverified |
 | Kernel build | the two `generate.sh` scripts call `riscv32-unknown-elf-*`; each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
+
+## Running the skeleton
+
+The plugin is built and then copied into Renode's installation directory, because
+plugin discovery scans that directory rather than the repository
+([`SUBSTRATE.md`](SUBSTRATE.md)). Each machine keeps its own launcher for this —
+`run-renode.sh` here — which is **gitignored**, since shell conventions differ
+between the machines this is used on. A launcher on any platform is expected to:
+
+1. build `model/` with `RENODE_BIN` pointing at the Renode tree, from this
+   directory so `global.json` pins the SDK Renode's runtime needs;
+2. copy `build/plugin/Dolunay.Golden.dll` into `$RENODE_BIN`;
+3. run `renode --config renode.config ... run.resc`.
+
+Without one, those are the three commands documented at the top of `run.resc`.
+
+The launcher is an aid, not a requirement: nothing in the model or the contract
+depends on it existing.
 
 ## The one thing to get right
 

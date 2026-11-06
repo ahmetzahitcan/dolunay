@@ -1,15 +1,17 @@
-// Dolunay golden model — Renode plugin skeleton.
+// Dolunay golden model — Renode plugin marker.
 //
 // Built as a net8.0 assembly and loaded from Renode's plugins directory
-// (golden/DECISIONS.md D8). Deliberately empty of machine semantics: warp/lane
-// geometry, the memory map, the barrier context, memory ordering and the DMA
-// interface are open questions (golden/CONTRACT.md §2), and inventing them here
-// is the failure mode golden/AGENTS.md §2 calls "inventing the machine".
+// (golden/DECISIONS.md D8). The machine-facing code lives in DolunayCpu.cs:
+// the model's ISA additions are installed by the CPU subclass itself, the way
+// Renode's own cores do it.
+//
+// Deliberately empty of machine semantics: warp/lane geometry, the memory map,
+// the barrier context, memory ordering and the DMA interface are open
+// questions (golden/CONTRACT.md §2).
 
 using System;
 
 using Antmicro.Renode.Logging;
-using Antmicro.Renode.Peripherals.CPU;
 using Antmicro.Renode.Plugins;
 using Antmicro.Renode.UserInterface;
 
@@ -17,8 +19,8 @@ namespace Antmicro.Renode.Plugins.Dolunay
 {
     /// <summary>
     /// The type Renode discovers when this assembly sits in its plugins
-    /// directory. Its constructor proves the plugin was loaded; it does nothing
-    /// else yet.
+    /// directory. Its constructor proves the assembly was loaded; it does
+    /// nothing else.
     /// </summary>
     [Plugin(
         Name = "Dolunay Golden Model",
@@ -30,16 +32,6 @@ namespace Antmicro.Renode.Plugins.Dolunay
         public GoldenPlugin(Monitor monitor)
         {
             Logger.Log(LogLevel.Info, "Dolunay.Golden plugin loaded (skeleton)");
-        }
-
-        /// <summary>
-        /// Proof that the model can name the ISA layer's CPU type. This is the
-        /// substrate probe, not machine behaviour: no lane state, no memory, no
-        /// scheduling.
-        /// </summary>
-        public static string CpuTypeName(BaseRiscV cpu)
-        {
-            return cpu.GetType().Name;
         }
 
         public void Dispose()
