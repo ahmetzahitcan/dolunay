@@ -20,15 +20,22 @@ Two different things happen, and confusing them costs time:
   becomes `CPU.Dolunay` in a `.repl`. So `CPU.Dolunay` works **with no config at
   all**, as long as the DLL is in the installation directory before start-up.
 - **`[Plugin]` instantiation — opt-in.** A class marked `[Plugin]` is only
-  constructed when `[plugins] enabled-plugins` names it. Without that, the
-  `Dolunay.Golden plugin loaded` log line is absent even though the CPU type
-  works. `enabled-plugins` accepts both `Name` and `Name:Version:Vendor`.
+  constructed when `[plugins] enabled-plugins` names it; the types work without
+  it. `enabled-plugins` accepts both `Name` and `Name:Version:Vendor`. The
+  model has no `[Plugin]` class (D8), so it needs no config file.
+- **Dependencies resolve from the same directory.** `Dolunay.Renode.dll`
+  references `Dolunay.Model.dll`; with both in the installation directory, a
+  CPU constructor calling into `Dolunay.Model` works (probed 2026-11-06 with a
+  throwaway CPU type that logged a `Geometry`).
 - *Inferred from IL, not tested:* extension methods (monitor commands) are also
   registered by the scan and work without enabling the plugin.
 
 To test the "no plugin" case, remove the DLL from the installation directory.
 
 ## The `--config` file
+
+The model does not use one (D8). These facts matter if a `[Plugin]` class or
+another setting ever needs it.
 
 - Renode **rewrites the file given to `--config`**: it merges in its defaults,
   normalises values (`Dolunay Golden Model` became
@@ -93,6 +100,9 @@ Throwaway probes; numbers are from one machine and are order-of-magnitude only.
   - writing `PC` is honoured, including writing the instruction's own address;
   - **halt-before works:** set `IsHalted = true` and `PC` = the instruction's
     own address; the CPU stops before it, and re-executes it once on resume;
+    the handler runs again then, so it needs a per-lane "let it pass this
+    time" flag;
+  - another lane's handler can release a halted CPU (`other.IsHalted = false`);
   - a load handler can perform the access with `sysbus.ReadDoubleWord(addr, cpu, null)`;
   - an aborted attempt still counts in `ExecutedInstructions` — count
     instructions in the model, not with Renode's counter.
@@ -139,7 +149,13 @@ nothing from the model.
   newer SDK gets its own nested `global.json`.
 - `dotnet build` emits ~60 `MSB3277` warnings: Renode's assemblies reference
   newer `System.*` versions than the `net8.0` reference pack. They are benign;
-  `-nowarn:MSB3277` silences exactly those.
+  `Dolunay.Renode.csproj` silences exactly those.
+- `dotnet test model` builds only the test project and what it references, so
+  it works without `RENODE_BIN`.
+- **Name clash:** `CPU.Dolunay` is the class
+  `Antmicro.Renode.Peripherals.CPU.Dolunay`. Inside that namespace, `Dolunay`
+  means the class, so `Dolunay.Model.Geometry` does not compile; put
+  `using Dolunay.Model;` at the top of the file, or write `global::Dolunay.Model`.
 
 ## The plugin targets Renode's own framework (`net8.0`)
 
@@ -176,12 +192,13 @@ therefore converts a start-up failure into a latent one, which is worse.
 
 Do it in `build/` (gitignored), never on the real project:
 
-1. copy `model/Dolunay.cs` into a throwaway directory;
+1. put a minimal type that logs a distinct message (a `RiscV32` subclass will
+   do) into a throwaway project;
 2. give that directory its own `global.json` pinning a newer SDK, because
    `golden/global.json` deliberately pins 8.0.x;
 3. set `RENODE_BIN` and build it with `TargetFramework` changed;
-4. copy the produced DLL into Renode's installation directory, name it in
-   `[plugins] enabled-plugins`, run, then remove it again.
+4. copy the produced DLL into Renode's installation directory, instantiate the
+   type from a `.repl`, run, then remove the DLL again.
 
 ### If a later framework is ever needed
 

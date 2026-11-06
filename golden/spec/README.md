@@ -23,7 +23,7 @@ leaves a **choice point** open for the implementation; `../CONTRACT.md` §1
 says what that means for correctness.
 
 Until these documents exist, no custom instruction or CSR is specified. The
-model's only custom instruction (`../model/DolunayCpu.cs`) is a labelled
+model's only custom instruction (`../model/Dolunay.Renode/DolunayCpu.cs`) is a labelled
 placeholder.
 
 `../../control_unit/control_unit.csv` is the RTL's decoder input and may be used

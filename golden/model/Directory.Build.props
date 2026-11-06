@@ -1,0 +1,16 @@
+<Project>
+  <!--
+    Settings shared by every project under model/ (golden/DECISIONS.md D8).
+    net8.0 and C# 12 are Renode 1.17's own settings (golden/SUBSTRATE.md).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <!-- golden/build is gitignored; keep every build output out of the source tree. -->
+    <GoldenBuildDir>$(MSBuildThisFileDirectory)../build/</GoldenBuildDir>
+    <BaseIntermediateOutputPath>$(GoldenBuildDir)obj/$(MSBuildProjectName)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(GoldenBuildDir)bin/$(MSBuildProjectName)/</BaseOutputPath>
+  </PropertyGroup>
+</Project>

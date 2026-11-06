@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Pre-built Renode plugin (golden/DECISIONS.md D8).
+    The Renode glue (golden/DECISIONS.md D8, D11): CPU.Dolunay, the opcode
+    overrides, the lane coordinator, the scratchpad bus device. Architectural
+    rules belong in Dolunay.Model, not here.
 
     Renode's assemblies are not published on NuGet, so the build needs the
     unpacked Renode tree:
@@ -9,19 +11,17 @@
         RENODE_BIN=/path/to/renode_<version>-portable dotnet build model
 
     That path is machine-local: it is passed in, never recorded here
-    (golden/CONTRACT.md §5).
+    (golden/CONTRACT.md §5). The output, build/plugin/, holds both DLLs to copy
+    into that tree.
   -->
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>12</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <AssemblyName>Dolunay.Golden</AssemblyName>
-    <RootNamespace>Antmicro.Renode.Plugins.Dolunay</RootNamespace>
-    <!-- golden/build is gitignored; keep build output out of the source tree. -->
-    <OutputPath>$(MSBuildProjectDirectory)/../build/plugin</OutputPath>
+    <RootNamespace>Antmicro.Renode.Peripherals.CPU</RootNamespace>
+    <OutputPath>$(GoldenBuildDir)plugin/</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Renode's assemblies reference newer System.* versions than the net8.0
+         reference pack; benign (golden/SUBSTRATE.md, "Building the plugin"). -->
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
   </PropertyGroup>
 
   <Target Name="RequireRenodeBin" BeforeTargets="ResolveAssemblyReferences"
@@ -40,6 +40,10 @@
       <HintPath>$(RENODE_BIN)/ELFSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Dolunay.Model/Dolunay.Model.csproj" />
   </ItemGroup>
 
 </Project>

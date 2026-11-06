@@ -192,33 +192,50 @@ Windows additionally needs a `hexdump` shim for the scripts' last step; the scri
 headers say so. On Windows the compiler shim must put the toolchain's `bin` on
 `PATH`, otherwise `-flto` cannot load the linker's LTO plugin.
 
-## D8 — The model is a pre-built Renode plugin
+## D8 — The model is two pre-built assemblies: a pure model and a Renode adapter
 
 Date: 2026-11-05
-Revised: 2026-11-06 — corrected what enabling the plugin controls; recorded the
-ad-hoc route under Considered.
+Revised: 2026-11-06 — split into `Dolunay.Model` and `Dolunay.Renode` with NUnit
+tests on the model; the `[Plugin]` class and `golden/renode.config` were
+removed.
 Status: accepted
 
-Decision: The model and its Renode glue ship as a `net8.0` assembly built from
-`golden/model/Dolunay.Golden.csproj` and loaded from Renode's installation
-directory.
+Decision: The code is a `net8.0` solution, `golden/model/Dolunay.sln`, of
+three projects:
 
-Because: The SDK is installed on every machine this work runs on, and only the
-plugin route gives unit tests outside Renode, several source files and ordinary
-project tooling.
+- `Dolunay.Model` — pure C# with no Renode reference: geometry, lanes, warps,
+  paths, the scheduler and its policies, the sync and scratchpad rules behind
+  interfaces, the observation writer. It receives events such as "the whole
+  path stopped at instruction X" and returns decisions.
+- `Dolunay.Renode` — the glue: `CPU.Dolunay`, the opcode overrides (each citing
+  `spec/`), the coordinator that maps lanes to machines and halts or releases
+  them, the scratchpad bus device, monitor commands.
+- `Dolunay.Model.Tests` — NUnit tests of `Dolunay.Model` only.
 
-Considered: the ad-hoc `i @file.cs` route — it works and needs no SDK, but gives
-one file, no project, and no tests outside Renode.
+A signature that mentions a Renode type belongs in the adapter; a branch that
+encodes an architectural rule belongs in the model. Both DLLs are copied into
+Renode's installation directory.
 
-Consequences: Building needs `dotnet` and Renode's assemblies, so the build is
-coupled to the Renode version and must be rebuilt after an upgrade. Renode
-registers types by scanning its own installation directory, non-recursively, at
-start-up, so the built DLL has to be copied into the Renode tree: `build/plugin`
-is the source of truth, not the loaded copy. Types such as `CPU.Dolunay` work as
-soon as the DLL is there; only the `[Plugin]` class additionally needs
-`[plugins] enabled-plugins`, which `golden/renode.config` sets for one run
-(`SUBSTRATE.md`). `RENODE_BIN` supplies the Renode tree at build time and is
-machine-local, so it is never recorded here.
+Because: Only a model that does not reference Renode can be tested without
+Renode, and the architectural rules are what most needs testing. The SDK is
+installed on every machine this work runs on, and pre-built assemblies give
+several source files and ordinary project tooling.
+
+Considered: one assembly holding both — its tests would still need Renode's
+assemblies, and nothing would stop architectural rules leaking into the glue.
+The ad-hoc `i @file.cs` route — it works and needs no SDK, but gives one file,
+no project, and no tests outside Renode. A `[Plugin]` class enabled through a
+tracked `renode.config` — it only logged a line, while the types it shipped
+with register without it, and the config file needed a copy-before-use ritual
+because Renode rewrites it.
+
+Consequences: Only `Dolunay.Renode` is coupled to the Renode version and must be
+rebuilt after an upgrade; `RENODE_BIN` supplies the Renode tree at build time
+and is machine-local, so it is never recorded here. Renode registers types by
+scanning its own installation directory, non-recursively, at start-up, so
+`build/plugin` is the source of truth and the copies in the Renode tree are not;
+`Dolunay.Model.dll` resolves from there at run time (`SUBSTRATE.md`). A future
+`[Plugin]` class would again need `[plugins] enabled-plugins`.
 
 ## D9 — The machine is the RISC-V standard plus Dolunay's own specification documents
 

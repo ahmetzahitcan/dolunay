@@ -90,7 +90,7 @@ geometry and path visibility are undecided. Therefore:
   is read from.
 - **No uncited encodings.** Every opcode, funct field and CSR number cites the
   RISC-V specification or the `spec/` section it comes from. The one exception
-  today is the labelled placeholder in `model/DolunayCpu.cs`.
+  today is the labelled placeholder in `model/Dolunay.Renode/DolunayCpu.cs`.
 - Do not implement leader selection or TLS speculatively. They may not exist in
   the next variant. Paths *do* exist (D3), but their open rules — the precise
   meaning of lockstep, reconvergence — go behind interfaces until `spec/`
@@ -111,14 +111,17 @@ contradiction:
 
 ## 6. Current state of the code
 
-- `model/` is a `net8.0` Renode plugin (D8): `Dolunay.cs` is the `[Plugin]`
-  marker (logs once, nothing else); `DolunayCpu.cs` defines `CPU.Dolunay`, a
-  `RiscV32` subclass that installs custom instructions in its constructor.
+- `model/Dolunay.sln` holds three `net8.0` projects (D8). `Dolunay.Model` is
+  pure C# with no Renode reference; so far it holds only `Geometry`.
+  `Dolunay.Renode` holds `CPU.Dolunay` (`DolunayCpu.cs`), a `RiscV32` subclass
+  that installs custom instructions in its constructor. `Dolunay.Model.Tests`
+  is NUnit, on the model only.
 - The only custom instruction is a **placeholder**: `0x0000700B` logs
   `Hello World`. It is not an ISA decision and will be replaced from `spec/`.
-- `Dolunay.repl` still instantiates the stock `CPU.RiscV32` with no memory;
-  `run.resc` is a smoke test that prints the PC.
-- There is no unit-test project and no test runner yet. Do not claim tests ran.
+- `Dolunay.repl` instantiates `CPU.Dolunay` with no memory; `run.resc` is a
+  smoke test that prints the PC.
+- `dotnet test model` runs the unit tests. Say how many ran and passed; do not
+  claim a run you did not see.
 
 ## 7. Building and running — the traps
 
@@ -127,10 +130,16 @@ that waste an hour if missed (details and evidence in
 [`SUBSTRATE.md`](SUBSTRATE.md)):
 
 - Run `dotnet` from `golden/` or below, so `global.json` pins SDK 8.
-- The DLL must be copied into Renode's installation directory **before** Renode
-  starts; it is not found anywhere else.
-- **Never pass the tracked `renode.config` to `--config`**: Renode rewrites it.
-  Pass a copy under `build/`, by absolute path.
+- Both DLLs must be copied into Renode's installation directory **before**
+  Renode starts; they are not found anywhere else.
+- **Cap every Renode run** (`timeout -k 5 60 renode …`). A blocked handler or a
+  failed script line leaves Renode waiting silently.
+- **Never block a CPU thread in a handler**: it stops every CPU in the
+  emulation.
+- A probe DLL copied into the Renode tree is loaded on every later start; remove
+  it when the probe is done.
+- If a `--config` file is ever needed, never pass a tracked one: Renode rewrites
+  it. Pass a copy under `build/`, by absolute path.
 - A stray Renode process holds `~/.config/renode/config.lock` and makes later
   runs hang silently. Check `pgrep -af renode` first.
 - `cpu Step` on an aborted CPU (PC outside mapped memory) blocks the monitor.

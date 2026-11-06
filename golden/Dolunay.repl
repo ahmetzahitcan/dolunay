@@ -5,9 +5,10 @@
 // condition are open questions (golden/CONTRACT.md §2). Nothing here may be
 // read as an answer to them, and nothing here is derived from ../src.
 //
-// The CPU type is provisional: the ISA is the RISC-V standard plus our own
-// custom-extension documents, and those documents do not exist yet.
+// CPU.Dolunay comes from Dolunay.Renode.dll; naming it here is what proves the
+// DLL was found. Its only custom instruction is a labelled placeholder, and
+// cpuType is provisional until spec/ says which extensions the core implements.
 
-cpu: CPU.RiscV32 @ sysbus
+cpu: CPU.Dolunay @ sysbus
     cpuType: "rv32imac"
     hartId: 0

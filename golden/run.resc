@@ -1,19 +1,15 @@
-# Dolunay golden-model skeleton — headless run.
+# Dolunay golden-model skeleton — headless smoke test.
 #
-# The model is a pre-built plugin (DECISIONS.md D8). Renode scans its own
-# installation directory for plugin assemblies, so the build output has to be
-# copied there first. From this directory:
+# Renode registers types only from its own installation directory, so the build
+# output has to be copied there first (DECISIONS.md D8). From this directory:
 #
 #   RENODE_BIN=<unpacked renode tree> dotnet build model
-#   cp build/plugin/Dolunay.Golden.dll "$RENODE_BIN/"
+#   cp build/plugin/Dolunay.Model.dll build/plugin/Dolunay.Renode.dll "$RENODE_BIN/"
+#   timeout -k 5 60 renode --disable-xwt --console --plain run.resc
 #
-#   cp renode.config build/renode.run.config   # Renode rewrites --config files
-#   renode --config "$PWD/build/renode.run.config" --disable-xwt --console --plain run.resc
-#
-# renode.config enables the plugin for this run only; without it the plugin is
-# discovered but not enabled, and this script exercises only the platform
-# description. Nothing here asserts machine behaviour: that is not decided yet
-# (CONTRACT.md §2).
+# Passes if Renode prints the PC (0x1000) and quits: the platform names
+# CPU.Dolunay, which exists only if the DLLs were found. Nothing here asserts
+# machine behaviour; that is not decided yet (CONTRACT.md §2).
 
 mach create "dolunay"
 machine LoadPlatformDescription @Dolunay.repl

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The model itself: pure C#, no reference to Renode (golden/DECISIONS.md D8).
+    If a signature here would mention a Renode type, it belongs in
+    Dolunay.Renode instead; if a branch encodes an architectural rule, it
+    belongs here.
+  -->
+
+  <PropertyGroup>
+    <RootNamespace>Dolunay.Model</RootNamespace>
+  </PropertyGroup>
+
+</Project>

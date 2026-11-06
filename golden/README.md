@@ -26,33 +26,39 @@ New here? Read in this order:
 |---|---|
 | Machine modelled | the **next** variant: lanes in lockstep per path (D3), scratchpad + DMA, barrier logic under revision |
 | Specification | RISC-V standard + [`spec/`](spec/) (D9); `spec/` is **not written yet**. Choice points left to the implementation; RTL checked by replay (D12–D15) |
-| Code | **skeleton** — `model/` plugin with `CPU.Dolunay` (one placeholder instruction), `Dolunay.repl`, `run.resc`, `renode.config` |
-| Substrate | Renode 1.17; the plugin builds, loads, and extends `RiscV32` (D8). Probed: standard opcodes can be overridden, lanes can stop before an instruction, ≤32 cores per machine, ≈0.85 ms per lane rendezvous ([`SUBSTRATE.md`](SUBSTRATE.md#execution-control-probed-2026-11-06), [`PERFORMANCE.md`](PERFORMANCE.md)) |
+| Code | **skeleton** — `model/Dolunay.sln` (D8): `Dolunay.Model` (only `Geometry` so far), `Dolunay.Renode` (`CPU.Dolunay`, one placeholder instruction), NUnit tests; `Dolunay.repl`, `run.resc` |
+| Substrate | Renode 1.17; both assemblies build and load, and `CPU.Dolunay` extends `RiscV32` (D8). Probed: standard opcodes can be overridden, lanes can stop before an instruction, ≤32 cores per machine, ≈0.85 ms per lane rendezvous ([`SUBSTRATE.md`](SUBSTRATE.md#execution-control-probed-2026-11-06), [`PERFORMANCE.md`](PERFORMANCE.md)) |
 | Kernel build | the two `generate.sh` scripts call `riscv32-unknown-elf-*`; each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
 
 ## Building and running
 
-The plugin is copied into Renode's installation directory because plugin
-discovery scans only that directory, at start-up ([`SUBSTRATE.md`](SUBSTRATE.md)).
-From this directory, so that `global.json` pins SDK 8:
+From this directory, so that `global.json` pins SDK 8. The solution is
+`model/Dolunay.sln` (D8): `Dolunay.Model`, `Dolunay.Renode`, and
+`Dolunay.Model.Tests`.
 
 ```sh
-RENODE_BIN=<unpacked renode tree> dotnet build model -c Release --nologo -nowarn:MSB3277
-cp build/plugin/Dolunay.Golden.dll "$RENODE_BIN/"
+# Unit tests: the model only, no Renode needed.
+dotnet test model
 
-# Renode rewrites the file given to --config; give it a copy, by absolute path.
-cp renode.config build/renode.run.config
-renode --config "$PWD/build/renode.run.config" --disable-xwt --console --plain run.resc
+# The Renode adapter needs the unpacked Renode tree to build against.
+RENODE_BIN=<unpacked renode tree> dotnet build model -c Release
+
+# Renode registers types only from its own installation directory, at start-up.
+cp build/plugin/Dolunay.Model.dll build/plugin/Dolunay.Renode.dll "$RENODE_BIN/"
+timeout -k 5 60 renode --disable-xwt --console --plain run.resc
 ```
 
-Expected: `Dolunay.Golden plugin loaded (skeleton)`, then the PC (`0x1000`),
-then Renode quits.
+Expected: the PC (`0x1000`), then Renode quits. `Dolunay.repl` names
+`CPU.Dolunay`, so this fails if the DLLs were not found. Always cap a Renode
+run: a hung handler or a script error leaves it waiting silently.
+
+A machine that ran the previous layout has a `Dolunay.Golden.dll` in its Renode
+tree; delete it, or it is loaded alongside the new DLLs.
 
 Each machine may keep a **gitignored** launcher that does those steps
-(`run-renode.sh` here: `--headless` runs `run.resc`; no flag opens an
-interactive monitor with the machine created). Shell conventions differ between
-machines, so it is not shared; nothing depends on it existing.
+(`run-renode.sh` here). Shell conventions differ between machines, so it is not
+shared; nothing depends on it existing.
 
 ### Editor setup
 
@@ -75,20 +81,23 @@ reads `DOTNET_ROOT` from its own environment, not the shell's:
 
 In order; each is independently useful.
 
-1. **Write the specification documents** in [`spec/`](spec/): custom
-   instructions, custom CSRs, exemptions, the execution model. Needs the
-   maintainer — it is a specification change.
-2. **Implement them** in `CPU.Dolunay`: replace the placeholder `0x0000700B`
-   with the documented encodings, register custom CSRs in the same constructor,
-   and point `Dolunay.repl` and `run.resc` at `CPU.Dolunay`.
-3. **Decide memory ownership** (`CONTRACT.md` §2) before any load/store
-   interception. Memory as a device is the composition-friendly option.
-4. **The concurrency core** — lanes, warps, paths, the path scheduler and
-   policy interface, the determinacy check — driven by a stub ISA.
-   Needs a unit-test project outside Renode (possible since D8).
-5. **The slow execution design** (D11): one machine per lane, overridden
-   opcodes, a rendezvous at every branch. Its
-   speed-ups wait until it is correct and a workload needs them.
+1. **The model core in `Dolunay.Model`, test-first, against a stub ISA:**
+   path bookkeeping (split at divergence, cooperative switching, the `yield`
+   rule, D13), a policy interface with a seeded random and a replay policy
+   (D12, D15), exact deadlock detection and a `timeout` budget, and the
+   one-execution conflict check (`CONTRACT.md` §1), which should catch
+   `FINDINGS.md` F4 and F5. Reconvergence goes behind an interface with a
+   declared default.
+2. **Write the first specification documents** in [`spec/`](spec/). Needs the
+   maintainer. Real kernels need `yield`, the barrier pair, the warp-id and
+   thread-id CSRs, and the order within one lockstep instruction (D14); the
+   kernels' mutex also needs an answer on LR/SC.
+3. **The adapter (D11):** one machine per lane, each with one `CPU.Dolunay` and
+   a scratchpad device forwarding to the model; geometry as one parameter, with
+   a generated `.resc`; branches, jumps and shared-memory accesses overridden.
+4. **Later, in any order:** the output descriptor and replay log formats, and
+   the request to the RTL owner; exploration (partial-order reduction, PCT);
+   the [`PERFORMANCE.md`](PERFORMANCE.md) fixes.
 
 Memory, barrier and DMA semantics are **not** on that list: they are being
 redesigned, and they arrive as knobs once the variant settles.

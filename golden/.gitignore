@@ -7,10 +7,10 @@ build/
 *.log
 *.lock
 
-# .NET output; the plugin build writes to build/ (see Dolunay.Golden.csproj).
+# .NET output; every project writes to build/ (see model/Directory.Build.props).
 bin/
 obj/
 
-# Machine-local launcher (see README.md "Running the skeleton"). Shell
+# Machine-local launcher (see README.md "Building and running"). Shell
 # conventions differ per machine, so this file is not shared.
 /run-renode.sh
