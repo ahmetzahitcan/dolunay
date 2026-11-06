@@ -19,3 +19,5 @@ bender.verilator
 *.fst
 tmp/lsu_exp/
 .Xil/Vivado-219773-fedora/
+irom.coe
+irom.mem
