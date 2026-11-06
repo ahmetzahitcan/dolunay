@@ -303,7 +303,8 @@ xPack `riscv-none-elf-*` — so **each machine provides the two names as shims**
 `generate.sh` headers say what else a shim must do. A host without `hexdump` (Git
 Bash on Windows has none) needs a stand-in for the scripts' last step as well.
 
-The `-march` string uses `zicond`, so an old GCC rejects it; check before
+The `-march` strings use `zicond` and `zalrsc`, so an old GCC rejects them —
+GCC 14.2 already rejects `zalrsc` (`FINDINGS.md` F6); check the compiler before
 concluding that a shim is wrong.
 
 Rules that follow:
