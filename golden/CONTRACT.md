@@ -41,8 +41,8 @@ The spec is **not deterministic**. Where software does not care, it leaves a
 **choice point** open to the implementation:
 
 - **within a warp**, which path executes next — after a divergent branch or
-  jump, a `yield`, a path starting to wait at a barrier, or a path finishing.
-  Paths switch at no other point (D13);
+  jump (one of the paths it created), a `yield`, a path starting to wait at a
+  barrier, or a path finishing. Paths switch at no other point (D13);
 - **between warps**, how their instructions interleave; warps execute
   concurrently, so every access to shared memory is a choice point;
 - the values of the readable timing CSRs (`cycle`, `time`, `instret`, the HPM
@@ -158,8 +158,8 @@ detail, stop and ask for that detail to be written into this file *first*.
 | Question | Why it matters | Where it lands |
 |---|---|---|
 | Geometry (warps × lanes) | How many lanes exist; every kernel's indices | a parameter, never a constant |
-| What "lockstep" means precisely (D3) | Which orders between lanes of a path are observable | `spec/`; path model |
-| Reconvergence: when do split paths merge? | Path bookkeeping; what scheduling can observe | path model |
+| What "lockstep" means precisely (D3) — drafted as the warp program order | Which orders between lanes of a path are observable | `spec/EXECUTION-MODEL.md` |
+| Reconvergence: paths combine only through `bsync`, never implicitly (D3) — but `bsync`'s identity, expected set, release condition and resulting PC are open | Path bookkeeping; barrier semantics | `spec/EXECUTION-MODEL.md` |
 | *Which* order conflicting accesses within one lockstep instruction take effect in (that there is one is decided, D14) | What such kernels compute | `spec/`; scratchpad (may reorder internally if the result is as if in that order) |
 | Progress between warps: must every warp that can execute eventually execute? | Whether a kernel that waits on another warp without a barrier terminates; whether `timeout` can mean a spec violation | `spec/`; policy (default: yes) |
 | Output descriptor: format, tolerance metric for floats (ULP, absolute, relative), NaN and signed zero | What "same output" means (D12) | the kernel corpus; determinacy check |
@@ -336,6 +336,7 @@ Use these words with these meanings, and do not resurrect retired ones:
 | **path** | The lanes of one warp that are in lockstep (D3). Split by divergence; merged by the reconvergence rule (open). |
 | **agent** | Anything the scheduler can advance: a path, and — if DMA is asynchronous — a transfer. The scheduler never schedules an individual lane. |
 | **choice point** | A point where the spec leaves the next step open to the implementation (§1, D12). |
+| **TBD**, **unspecified**, **illegal** | The spec's three words for a gap, a free choice among listed outcomes, and something software must not do ([`spec/README.md`](spec/README.md#terminology)). |
 | **valid execution** | An execution that makes some choice at every choice point and otherwise follows the spec. |
 | **policy** | A pluggable rule for resolving choice points: seeded random, PCT, systematic exploration, or replay of a log. Not machine state. |
 | **determinate** | Of a kernel and an input: every valid execution produces the same output (D12). |

@@ -73,6 +73,8 @@ rationale. Anything read from `../src` must be labelled as evidence.
 Date: 2026-11-04
 Revised: 2026-11-06 — reversed by the maintainer: the original said "no implicit
 lockstep within a warp" and scheduled lanes. Paths are architecturally visible.
+Revised: 2026-11-07 — paths combine only through `bsync`; implicit merging is
+forbidden.
 Status: provisional — what "lockstep" means precisely is to be defined in `spec/`
 
 Decision: Each lane carries its own PC and architectural state, but the ISA
@@ -93,12 +95,16 @@ lockstep as SIMD), comparing the active path's PC with every other path is
 costly and not meaningful, and a lane may never reach a sync event (an infinite
 loop), so divergence must be caught at the branch itself.
 
-Consequences: The model keeps path bookkeeping (split at divergence; merge per a
-reconvergence rule still to be specified). Every branch and jump of the active
-path is an event the model sees (D11). Which path runs next is a choice point
-(D12), switched cooperatively (D13); the order of conflicting accesses within
-one lockstep instruction is fixed by the spec (D14). Open in `CONTRACT.md` §2:
-the precise meaning of lockstep and the reconvergence rule.
+Consequences: The model keeps path bookkeeping: split at divergence, combine
+only through `bsync`. Two paths that reach the same PC stay separate; an
+implementation must not merge them implicitly, because a merge changes the
+order in which their accesses take effect (`spec/EXECUTION-MODEL.md` §4.2) —
+Dolunay keeps a hardware path list, not a reconvergence stack. Every branch and
+jump of the active path is an event the model sees (D11). Which path runs next
+is a choice point (D12), switched cooperatively (D13); the order of conflicting
+accesses within one lockstep instruction is fixed by the spec (D14). The rules
+themselves are being drafted in `spec/EXECUTION-MODEL.md`; open in
+`CONTRACT.md` §2: the details of `bsync`.
 
 ## D4 — The model lives in this repository
 
@@ -362,11 +368,14 @@ tolerance metrics are open (`CONTRACT.md` §2).
 ## D13 — Paths of a warp switch cooperatively
 
 Date: 2026-11-06
+Revised: 2026-11-07 — after a divergent instruction, the next active path is one
+of the paths it created.
 Status: accepted
 
 Decision: A warp switches from one path to another only at points explicit in
 the code: a branch or jump that diverges, `yield`, waiting at a barrier, and a
-path finishing. `yield` guarantees that before the yielding path executes its
+path finishing. After a divergent instruction, the next active path is one of
+the paths it created; the warp's other paths keep waiting. `yield` guarantees that before the yielding path executes its
 next instruction, every other lane of its warp that can execute — not finished,
 not waiting at a barrier — executes at least one instruction. Warps execute
 concurrently with each other.
@@ -379,7 +388,9 @@ unchanged until it runs again, while the other paths may split or merge in the
 meantime — "every other path" has no stable meaning.
 
 Considered: switching at any instruction — multiplies the schedules for little
-gain. Stating the guarantee over paths — the reason above.
+gain. Stating the guarantee over paths — the reason above. Switching to any path
+after a divergent instruction — a wider choice point with no use: running one of
+the new paths is what an implementation does anyway.
 
 Consequences: Two paths of one warp never execute concurrently. An
 implementation that switches paths on a stall violates the spec. A path that
