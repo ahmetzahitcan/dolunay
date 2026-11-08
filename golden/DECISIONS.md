@@ -438,3 +438,54 @@ is RTL work. Every choice point must be identifiable in the spec's terms: within
 a warp, which path (warp, lane mask, PC) runs next; between warps, the order in
 which conflicting accesses to each address took effect. The second is the
 requirement that reaches into the memory system's design.
+
+## D16 — The model core's defaults for the open questions
+
+Date: 2026-11-07
+Status: provisional — each default stands until `spec/` settles its question
+
+Decision: `Dolunay.Model` puts every open rule behind a knob, with these
+defaults:
+
+- **`bsync`** (`IBarrierRule`): `WholeWarpBarrier`, a placeholder. It combines
+  once every lane of the warp is in the active path or blocked on the same
+  barrier, and the combined path continues after the active path's `bsync`;
+  otherwise it blocks. Lanes of one path that name different barriers are
+  reported as `illegal`.
+- **Order within a lockstep instruction** (`ILockstepOrder`, D14): ascending
+  lane index.
+- **Memory:** accesses take effect in the order the model executes them, which
+  is sequentially consistent and so one valid execution under
+  `spec/EXECUTION-MODEL.md` §3. Weaker orders are not explored.
+- **Seeded policies** use their own SplitMix64, not `System.Random`.
+- **Termination:** an illegal act the model can detect, such as `wdone` from a
+  path that does not hold the whole warp, ends the run as `illegal`, with the
+  warp, lanes, PC and rule.
+
+The conflict check (`CONTRACT.md` §1, method 1) orders accesses only by each
+lane's program order, the warp program order within one path, the order within
+one lockstep instruction, splits, and `bsync` combines.
+
+Because: Every open question needs a declared default so the model can run
+(`CONTRACT.md` §2), and each of these is the smallest choice that leaves the
+rest unchanged. The barrier rule is a placeholder because the release model is
+being rethought with the memory redesign. The previous variant's rule relied
+on its memory design. The whole-warp rule matches the `bsync` before `wdone` in
+the previous variant's `crt0.s`. A sequentially consistent memory is enough for
+kernels the conflict check passes, since they have no unordered conflicting
+accesses. `System.Random`'s algorithm is not promised to stay the same across
+runtimes, which would break reproducibility (guarantee 1). An `illegal` class
+reports a detectable kernel bug as the kernel's fault, not the model's.
+
+Considered: for `bsync`, combining with every path blocked on the same barrier
+as soon as no path is paused. It is kept in the tests as the second rule that
+proves the engine does not depend on the default. For an illegal `wdone`,
+aborting the run without an observation, which would treat a kernel bug as a
+model failure.
+
+Consequences: Kernels that need a partial-warp barrier deadlock under the
+default. Weak-memory behaviour is invisible until the memory model is settled
+and explored. No synchronisation between warps is specified, so every
+conflicting access between warps is reported. Changing a default is a change
+to this entry, and a test must show that the rest of the model still does not
+depend on it.

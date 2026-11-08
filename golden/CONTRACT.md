@@ -3,7 +3,8 @@
 **Status: authoritative for everything under `golden/`.** Written 2026-11-04;
 amended 2026-11-06 (spec authority, D9; paths and lockstep, D3; execution and
 memory ownership, D11; choice points, refinement and kernel determinacy, D12;
-cooperative paths, D13; order within an instruction, D14; replay, D15).
+cooperative paths, D13; order within an instruction, D14; replay, D15);
+amended 2026-11-07 (the `illegal` termination class, D16).
 
 This file says what the golden model *is*, what it must guarantee, and what it is
 allowed to assume. It supersedes the **semantics** in [`DESIGN.md`](DESIGN.md)
@@ -91,8 +92,10 @@ it (**fast mode**).
    observable may depend on wall-clock time, OS thread scheduling, hash-set
    ordering, or file enumeration order.
 2. **Termination is classified, never rescued.** A run ends as `all-wdone`;
-   `deadlock`, when no lane can execute, which is exact; or `timeout`, when an
-   instruction budget runs out. Non-termination in general is undecidable, so
+   `deadlock`, when no lane can execute, which is exact; `timeout`, when an
+   instruction budget runs out; or `illegal`, when the model detects an act the
+   spec makes *illegal* (`spec/README.md`), such as `wdone` from a path that
+   does not hold the whole warp. Non-termination in general is undecidable, so
    `timeout` is a report, not a verdict. The model may report a stronger class
    (such as a proven livelock) only with a proof from the run. It names the
    stuck lanes, and never rescues a kernel that does not terminate.
@@ -233,12 +236,15 @@ not change are their invariants:
 program       <sha256 of the loaded image>
 geometry      <warps>x<lanes>
 schedule      replay <sha256 of the log> | policy <name> seed=0x<hex>
-termination   all-wdone | timeout | deadlock
+termination   all-wdone | timeout | deadlock | illegal
+illegal       warp <w> lanes=0x<mask> pc=0x<hex>: <rule broken>
 lane <w>.<l>  pc=0x<hex> exit=<reason>
 warp <w>      barrier[<addr>] total=0x<hex> parked=0x<hex>
 warp <w>      wreg[<name>]=0x<hex>
 spad          0x<addr> : <hex bytes ...>
 ```
+
+The `illegal` line appears only with `termination illegal`.
 
 How an observation is compared depends on how the run was scheduled:
 

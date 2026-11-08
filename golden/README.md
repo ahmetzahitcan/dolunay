@@ -26,7 +26,7 @@ New here? Read in this order:
 |---|---|
 | Machine modelled | the **next** variant: lanes in lockstep per path (D3), scratchpad + DMA, barrier logic under revision |
 | Specification | RISC-V standard + [`spec/`](spec/) (D9); `spec/` is **not written yet**. Choice points left to the implementation; RTL checked by replay (D12–D15) |
-| Code | **skeleton** — `model/Dolunay.sln` (D8): `Dolunay.Model` (only `Geometry` so far), `Dolunay.Renode` (`CPU.Dolunay`, one placeholder instruction), NUnit tests; `Dolunay.repl`, `run.resc` |
+| Code | **model core, first slice** — `model/Dolunay.sln` (D8): `Dolunay.Model` (paths, the engine, policies with record and replay, termination, model-owned memory, the conflict check; open rules behind knobs, D16), `Dolunay.Renode` (`CPU.Dolunay`, one placeholder instruction), NUnit tests on a scripted stub ISA; `Dolunay.repl`, `run.resc` |
 | Substrate | Renode 1.17; both assemblies build and load, and `CPU.Dolunay` extends `RiscV32` (D8). Probed: standard opcodes can be overridden, lanes can stop before an instruction, ≤32 cores per machine, ≈0.85 ms per lane rendezvous ([`SUBSTRATE.md`](SUBSTRATE.md#execution-control-probed-2026-11-06), [`PERFORMANCE.md`](PERFORMANCE.md)) |
 | Kernel build | the two `generate.sh` scripts call `riscv32-unknown-elf-*`; each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
@@ -81,13 +81,14 @@ reads `DOTNET_ROOT` from its own environment, not the shell's:
 
 In order; each is independently useful.
 
-1. **The model core in `Dolunay.Model`, test-first, against a stub ISA:**
-   path bookkeeping (split at divergence, cooperative switching, the `yield`
-   rule, D13), a policy interface with a seeded random and a replay policy
-   (D12, D15), exact deadlock detection and a `timeout` budget, and the
-   one-execution conflict check (`CONTRACT.md` §1), which should catch
-   `FINDINGS.md` F4 and F5. Reconvergence goes behind an interface with a
-   declared default.
+1. **The model core — first slice done.** It has paths, the engine, the D13
+   `yield` rule, policies (first, seeded random, record and replay),
+   `all-wdone`, `deadlock`, `timeout` and `illegal`, and the conflict check. On
+   the stub ISA, the check catches the shapes of F4 and F5. The defaults are in
+   D16. Still to do:
+   - the observation writer (`CONTRACT.md` §4);
+   - PCT and systematic exploration (methods 2–3);
+   - the real `bsync` rule, once the memory redesign settles it.
 2. **Write the first specification documents** in [`spec/`](spec/). Needs the
    maintainer. Real kernels need `yield`, the barrier pair, the warp-id and
    thread-id CSRs, and the order within one lockstep instruction (D14); the

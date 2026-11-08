@@ -123,7 +123,8 @@ executed `wdone` holds only blocked paths, and since only the warp's own active
 path can release them, it will never run again. The model reports that as the
 `deadlock` termination (`../CONTRACT.md` §1, guarantee 2, and §4): exact, and
 local to the warp. A typical cause is two paths that should meet calling
-`bsync` on different barriers.
+`bsync` on different barriers. An illegal `wdone` (§5.1) is detected when it is
+executed, and the model reports it as the `illegal` termination.
 
 ### 4.4 Traps (provisional)
 
@@ -171,7 +172,7 @@ The previous variant ends a kernel in `crt0.s`: the whole warp reconverges with
   forever.
 - **Only the warp finishes.** `wdone` is legal only when the active path holds
   every lane of the warp, as after `crt0.s`'s `bsync`; executing it otherwise is
-  an error to be specified. Simpler, and nothing waits for a finished lane,
+  *illegal*. Simpler, and nothing waits for a finished lane,
   but a kernel cannot let some lanes stop early except by spinning or blocking.
 
 In both, the observation's `termination` (`../CONTRACT.md` §4) needs a defined

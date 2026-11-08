@@ -112,10 +112,15 @@ contradiction:
 ## 6. Current state of the code
 
 - `model/Dolunay.sln` holds three `net8.0` projects (D8). `Dolunay.Model` is
-  pure C# with no Renode reference; so far it holds only `Geometry`.
+  pure C# with no Renode reference. It holds `Geometry`, and the `Machine`
+  engine over warps and paths. Lanes reach it through the `IInstructionSet`
+  seam. It also holds the schedule policies, `SharedMemory`, and the
+  `ConflictChecker`. Every open rule is a knob with the default recorded in
+  D16.
   `Dolunay.Renode` holds `CPU.Dolunay` (`DolunayCpu.cs`), a `RiscV32` subclass
   that installs custom instructions in its constructor. `Dolunay.Model.Tests`
-  is NUnit, on the model only.
+  is NUnit, on the model only. It drives the engine through a scripted stub ISA
+  (`Stub/ScriptedIsa.cs`) that encodes no real instruction.
 - The only custom instruction is a **placeholder**: `0x0000700B` logs
   `Hello World`. It is not an ISA decision and will be replaced from `spec/`.
 - `Dolunay.repl` instantiates `CPU.Dolunay` with no memory; `run.resc` is a
