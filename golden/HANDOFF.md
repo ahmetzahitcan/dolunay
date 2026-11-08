@@ -88,8 +88,6 @@ in authoritative files, so check with the maintainer:
   `ENVIRONMENT.md` (F6).
 - **Ask before committing, and before any architectural choice.** The
   maintainer gives approval per commit (`AGENTS.md` §5).
-- **The untracked `.vscode/` at the repository root is not part of this work.**
-  Leave it out of commits.
 - **Toolchain:** the kernels need GCC 15 (F6). `CONTRACT.md` §5 says what the
   work needs. Each machine sets up its own, and those details stay out of the
   repository.
