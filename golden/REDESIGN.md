@@ -5,7 +5,7 @@ discussions with the maintainer and revised several times the same day. It
 decides nothing: every choice is marked *proposed*, or listed as open. It is a
 separate file so that [`CONTRACT.md`](CONTRACT.md),
 [`DECISIONS.md`](DECISIONS.md) and the other documents stay untouched;
-unifying them is a later step (§9). Where this file disagrees with them, they
+unifying them is a later step (§10). Where this file disagrees with them, they
 win until the maintainer says otherwise. It uses the word *thread* where they
 say *lane* (§1).
 
@@ -15,6 +15,13 @@ observation that async-versus-sync is a question of execution and not of three
 instruction sets (§6) are the maintainer's. The conclusion of §4, to run the
 spec literally first, and the options of §5 are proposals the maintainer is still
 weighing.
+
+Revised 2026-11-14. Stated by the maintainer that day: a Renode CPU of Dolunay's
+own is worth considering, and it should hold one warp, as a `RiscV32` is one hart
+(§5); the kernels in `ss/` and `asm-kernels/` belong to the previous variant and
+will be rewritten, so nothing in them is a requirement (§5); floats should be
+compared within an acceptable error, to be settled later (§9). §5 was rewritten
+with the results of a probe run that day.
 
 ## 1. Terminology
 
@@ -35,7 +42,7 @@ proposes flipping that.
 
 The identifiers follow: `LaneRef` becomes `ThreadRef`, `LaneSet` becomes
 `ThreadSet`, and "lane mask" in the observation and replay log becomes "thread
-mask". That rename is mechanical, and it should be its own step (§9), not
+mask". That rename is mechanical, and it should be its own step (§10), not
 mixed into any other change.
 
 ## 2. Why the seam has to change
@@ -165,55 +172,152 @@ The asynchronous design that this file's earlier drafts built (§6) is not wrong
 It is an optimisation of this engine, and the literal engine is its oracle: run
 a kernel on both and compare.
 
-## 5. The instruction layer: Renode or a custom interpreter (open)
+## 5. The instruction layer: a custom Renode CPU per warp (leaning), and the other options
 
 The literal engine needs something that executes one instruction of one thread.
-Three ways to get it, none chosen.
+Four ways to get it. None is chosen; the maintainer suggested the last, and
+asked that a CPU hold one warp.
 
-- **A. Renode, stepped.** The model drives one Renode CPU per thread, one
-  instruction at a time, on one host thread. This is the closest to what exists:
-  the seam is already per-thread stepping. Opcode overrides are still needed
-  wherever the model must intercept an instruction (shared memory, the custom
-  instructions), so the integration cost of D8 and D11 stays: DLLs copied into
-  the Renode tree, one machine per thread, a Renode on every machine.
-- **B. A custom interpreter** in C#. The model becomes plain C# with no seam to
-  Renode, and `dotnet test` covers all of it. It costs writing, and verifying,
-  an RV32 interpreter, and it gives up D5's main argument: Renode is an
-  *independent* implementation of the ISA, while an interpreter written by the
-  RTL's author could share the author's misreadings.
-- **C. B, with Renode kept as a differential oracle.**
+- **A. Renode's `RiscV32`, stepped.** One Renode CPU per thread, driven one
+  instruction at a time on one host thread. It is the closest to what exists
+  (the seam is per-thread stepping), but it keeps D11's whole integration load:
+  opcode overrides wherever the model must intercept an instruction, one machine
+  per thread, DLLs copied into the Renode tree.
+- **B. A custom interpreter in plain C#**, no Renode. `dotnet test` covers all of
+  it. It costs writing and verifying an RV32 interpreter, and gives up D5's main
+  argument: Renode is an *independent* implementation of the ISA.
+- **C. B, with Renode as a differential oracle.**
   [`spec/EXECUTION-MODEL.md`](spec/EXECUTION-MODEL.md) §4.1 says a warp of one
-  thread must be a plain RISC-V hart, so any single-thread program can run on
-  both and be compared. That keeps the independent check without the
-  integration cost.
+  thread must be a plain RISC-V hart, so a single-thread program can run on both
+  and be compared.
+- **C′. Dolunay as a Renode CPU of its own** (proposed lean). A subclass of
+  Renode's `BaseCPU`, not of `RiscV32`, **one per warp**, the way a `RiscV32` is
+  one hart. The interpreter is still ours, as in B and C, but Renode supplies the
+  machine description, the bus and peripherals, image loading, the monitor and
+  logging, and a stock `RiscV32` can sit in the same machine as the oracle of C.
 
-What the repository says about the size of B: the `ss` kernels are built for
-`rv32i_zicsr_zicond_zalrsc_zba_zicntr_zihpm`, with no M, C or F, and only
-`asm-kernels/fpu_test.s` uses F (single-precision arithmetic, fused
-multiply-add, `fsqrt`, conversions, `fclass`). So an interpreter would be RV32I
-plus Zicsr, Zicond, Zba, Zalrsc and the counters, and F is the large and risky
-part, since a replay compares floats bitwise (D15). Whether a softfloat library
-could be reused is unchecked.
+### Why one CPU per warp
 
-What is not known, and needs a short time-capped probe
-([`AGENTS.md`](AGENTS.md) §7 applies) before the choice is made:
+A warp is the hart of the spec: [`spec/EXECUTION-MODEL.md`](spec/EXECUTION-MODEL.md)
+§5.3 and D16's weak-memory argument read "warp" as "hart". A CPU per warp gives
+the warp id a natural home (`CPUCore.MultiprocessingId`, the `mhartid` analogue),
+lets warp-private devices register per CPU, and makes the geometry a machine
+description. `PC` is the active path's PC; registers are addressed per thread.
 
-1. **The direct step rate of a Renode CPU.** The 2.4 k instructions/s of
-   [`SUBSTRATE.md`](SUBSTRATE.md) went through the monitor, and
-   [`PERFORMANCE.md`](PERFORMANCE.md) fix 1 says a direct `ExecuteInstructions`
-   call should be far cheaper; nobody has measured it.
-2. **The cost of resetting machines between runs.** Determinacy checking may need
-   thousands of runs.
-3. **Whether Renode 1.17 supports Zicond, Zba, Zalrsc and Zihpm.** The platform
-   description uses `rv32imac`.
+The cost is concurrency. By default Renode runs every CPU on its own host thread,
+and then nothing about the order of the warps' steps is reproducible
+(`CONTRACT.md` guarantee 1; the probe below). Serial execution fixes that, and
+then *Renode*, not the model's policy, decides which warp runs next. Proposed
+way to live with it:
 
-My lean, for the maintainer to overrule: **C**. The integration load of A has
-been most of the project's difficulty so far, and the reason to keep Renode, an
-independent check, survives as the oracle. A would win if the probe shows
-stepping is fast, reset is cheap and the extensions are supported, since it is
-the cheapest to build. D11 already says it is "overturned if a probe of the
-coordinator-driven execution ... shows a simpler design that is also correct".
-No number here has been measured.
+- The pure model exposes a **per-warp step** (one path step of one warp) over a
+  shared world (memory, the conflict check). Today `Machine` owns both levels of
+  scheduling and would be split along that line. The choices within a warp (D13)
+  stay in the model's policy.
+- Which warp goes next is, inside Renode, one more policy: *the host decides*,
+  unless the shell gates the warps (see the probe). A Renode run is then one
+  valid execution, which is what debugging and bring-up need.
+- Exploration (PCT, partial-order reduction) and RTL replay run on a **headless
+  runner** over the same pure model, where the model's policy decides. The probe
+  suggests they could be gated through Renode too, but every gated warp wastes
+  calls, which grow with the number of warps, and Renode schedules things the
+  model does not control. The guarantees are better carried where the model owns
+  the loop.
+
+### The layering rule that keeps it safe
+
+1. The interpreter, the decoder and everything architectural live in a **pure**
+   project with no Renode reference (D8's rule). It is tested with `dotnet test`.
+2. `Dolunay.Renode` is a thin shell: a `BaseCPU` subclass that calls the per-warp
+   step and forwards bus accesses to devices. Nothing architectural lives there.
+3. The headless runner and the shell share the pure model. If the shell grows
+   into something the model depends on, this is option A again.
+4. The model loads program images itself, so the image's sha256 (the observation
+   header) and headless runs do not need Renode.
+
+### Probe, 2026-11-14
+
+A throwaway `BaseCPU` subclass, built outside the repository against Renode
+1.17.0 and removed from the Renode tree afterwards. Numbers are from one machine
+and are orders of magnitude.
+
+- **It loads.** Implementing only the four abstract members (`ExecuteInstructions`,
+  `ExecutedInstructions`, `PC`, `Architecture`) was enough for a `.repl` to
+  instantiate it. `sysbus LoadELF` set the PC of every CPU on the bus, `cpu Step
+  N` made N calls of `ExecuteInstructions(1)`, and `PC`, `ExecutedInstructions`
+  and registers by number (through `ICPUWithRegisters`) read back. Registers by
+  *name* (`GetRegisterUlong "x5"`) failed without a name mapping, which was not
+  investigated.
+- **Calls under `RunFor`.** Renode asked for `ExecuteInstructions(10000)` per
+  call, on a host thread per CPU. A trivial body ran tens of thousands of calls
+  per second.
+- **Parallel mode is not reproducible; serial mode is.** Two CPUs, a hash of the
+  order of calls: three runs in parallel mode gave three different hashes; three
+  runs after `emulation SetGlobalSerialExecution True` gave one. It also held
+  with partial returns (219 distinct counts over 20 000 calls) and with calls that
+  return zero instructions. This body had no shared state, so it shows the
+  scheduling, not the model.
+- **Early returns are accepted.** Returning fewer instructions than asked, or
+  none, hung nothing. A warp can therefore stop at a shared-memory access by
+  returning early. Holding a warp back is subtler; see the next item.
+- **The order can be steered in serial mode, by burning the quantum.** A shared
+  policy chose which warp steps next, and the others returned without executing.
+  Returning *zero* instructions stalled serial mode: five runs reached the 60 s
+  cap with no result (cause not diagnosed; probably virtual time not advancing).
+  Reporting the whole requested count as done, while executing nothing, worked:
+  2000 of 2000 steps followed the policy's order, for 2 and 8 warps and two
+  seeds, with identical wasted-call counts on repeated runs, at about 40 to 90 ms
+  per 2000 steps. In parallel mode, zero returns also followed the order, but only
+  while the step runs under a lock, which is serial execution by another name,
+  and the call order was still not reproducible. This steers *who executes*. It
+  does not steer anything Renode schedules itself (timers, peripherals, the time
+  source). [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) discusses what this does and
+  does not give.
+- **Bus cost.** Reading an instruction word through `Bus.ReadDoubleWord` cost
+  about 0.5 µs (10 million reads in 5.7 s). The model should fetch from its own
+  copy of the image and use the bus for devices.
+- **Reset.** 200 `machine Reset` commands on a two-CPU machine took 23 ms, with a
+  harmless warning. This says nothing yet about a real model's state.
+- **The oracle fits.** A stock `RiscV32` coexisted with the probe CPU in one
+  machine and took the same ELF. It accepted the `cpuType` strings `rv32i`,
+  `rv32ia`, `rv32if`, with `zicsr`, `zicond` and `zba`, and rejected `zalrsc`,
+  `zicntr` and `zihpm` with `Undefined instructions set extension`. Whether `a`
+  covers LR/SC and the counters are always present was not tested.
+
+Still unknown: the same determinacy test with real shared state; more than 32
+CPUs (the limit seen in [`SUBSTRATE.md`](SUBSTRATE.md) is a constant in the
+translation library, so it may not apply, but nothing was tried); the register
+name mapping; what GDB, tracing and disassembly would need.
+
+### What it costs
+
+- **Independence from Renode** is lost, except for the single-thread oracle.
+- **`BaseCPU` is a larger coupling** than a `RiscV32` subclass: the lifecycle,
+  time sync, halting, registers and registration. `MSP430X`, a managed
+  interpreter on `BaseCPU`, additionally overrides register access, hooks, GDB
+  features and disassembly. Renode's debugging features for translated cores
+  (address hooks, execution tracing) do not come for free. The model counts
+  instructions for job G3 itself anyway.
+- **Speed is unmeasured.** A C# interpreter running every thread of a path is
+  slower than translated code, and determinacy exploration multiplies runs. This
+  is why the headless runner is part of the proposal.
+- **The unit of `ExecuteInstructions`.** Proposed: one unit is one path step of
+  the warp. Renode's own instruction count then counts path steps, and the model
+  keeps the real instruction count and the budget.
+
+### What is not known about the instruction set
+
+The kernels in `ss/` and `asm-kernels/` belong to the previous variant and will
+be rewritten (maintainer, 2026-11-14). So what an earlier draft of this file said
+about the interpreter's size, from those kernels (RV32I with Zicsr, Zicond, Zba,
+Zalrsc and the counters, and F only in `fpu_test.s`), is not a requirement of the
+next variant, and neither is anything about UART, printf or MMIO. Peripherals
+keep their value as an option, and a CPU on a normal bus makes them cheap. The
+instruction table of §7 has to be data-driven from the start, and the instruction
+set is whatever `spec/` says. Floating point is the largest unknown (§9).
+
+My lean: **C′**, on the condition that the layering rule holds. Fall back to **C**
+if the probe's open items turn bad.
 
 ## 6. Deferred: asynchronous execution
 
@@ -344,12 +448,40 @@ change what it reads, so no proof is available. Open: widen the definition of
 `deadlock` or add a class, how narrow the recognised cases are, and whether it is
 per warp or per machine.
 
-## 9. Unification and small steps
+## 9. Floats under replay (open)
+
+[`CONTRACT.md`](CONTRACT.md) §4 and D15 say the replay comparison is bitwise,
+floats included. The maintainer's view (2026-11-14) is that floats should be
+compared within an acceptable error. Not decided, and the maintainer will return
+to it.
+
+What the contract's rule rested on: two comparisons are involved. Across
+schedules (determinacy, D12) floats already compare within the output
+descriptor's tolerance, because reductions depend on order. Under replay the
+model and the RTL perform the same operations in the same order, so D15 argued
+that no tolerance is needed and any difference is a definite defect. That only
+holds if the RTL's floating-point unit is exact to the specification.
+
+What a tolerance has to deal with: under replay a slightly different float can
+flip a float compare and so a branch, after which the RTL's recorded choices no
+longer apply in the model. That would look like an RTL defect and be roundoff. A
+rule that avoids it would be: integer state and PCs exact, float values within a
+tolerance, and the model adopts the RTL's float value where they differ. That
+needs the RTL's values at each such instruction, not only its choices.
+
+Why it matters to the rest: bit-exact floats mean a softfloat in the interpreter
+(.NET has no rounding-mode or `fflags` control); a tolerance may not. Amending it
+touches D15, `CONTRACT.md` §4 and guarantee 4.
+
+## 10. Unification and small steps
 
 When this is unified with the existing documents, these will need to change: D3
 (the PC rule; divergence is found where threads' next PCs differ), D5, D8 and D11
-(whatever §5 decides), `CONTRACT.md` §6 (the vocabulary), guarantee 2
-(`deadlock`), `PERFORMANCE.md` (whether the deferred design of §6 is kept),
+(whatever §5 decides; under C′ D11's machine per thread goes away and
+[`SUBSTRATE.md`](SUBSTRATE.md)'s execution-control findings become history),
+`CONTRACT.md` §6 (the vocabulary), guarantee 2 (`deadlock`), D15 with
+`CONTRACT.md` §4 and guarantee 4 (floats under replay, §9), `PERFORMANCE.md`
+(whether the deferred design of §6 is kept),
 [`spec/EXECUTION-MODEL.md`](spec/EXECUTION-MODEL.md) §5.2 (the PC rule and
 illegal `bsync`) and `HANDOFF.md`. In code, `IInstructionSet` and `LaneOutcome`
 change shape, and `WholeWarpBarrier` has to start checking PCs.
@@ -357,7 +489,9 @@ change shape, and `WholeWarpBarrier` has to start checking PCs.
 Suggested order, each a small step on its own, none started:
 
 1. The maintainer reviews this file and decides §4.
-2. A short, time-capped probe of the three unknowns in §5; then decide §5.
+2. Decide §5. The probe of 2026-11-14 answered what it could; what is left (real
+   shared state under serial execution, more than 32 CPUs, register names) is
+   listed there and is a second, short probe.
 3. Rename *lane* to *thread* across code and tests, with no other change; it can
    be done at any point, and the 39 tests that passed on 2026-11-13 are the
    check.

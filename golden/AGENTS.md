@@ -18,13 +18,24 @@ it.
 | [`AGENTS.md`](AGENTS.md) | these working rules | binding on agents |
 | [`CONTRACT.md`](CONTRACT.md) | what the model is, guarantees, decided vs. open, inputs, observation format | **authoritative** |
 | [`DECISIONS.md`](DECISIONS.md) | decision log (D1…); each entry is the current rule, history is in git | **authoritative** |
-| [`spec/`](spec/) | Dolunay's specification documents: the ISA and the execution model (D9) — **not written yet** | **authoritative** once written |
+| [`spec/`](spec/) | Dolunay's specification documents: the ISA and the execution model (D9). Only a draft of the execution model exists | **authoritative** once approved; a draft is not |
 | [`README.md`](README.md) | orientation, status, how to build and run, what to do next | informative |
 | [`SUBSTRATE.md`](SUBSTRATE.md) | verified Renode host behaviour and quirks | informative; facts, not decisions |
 | [`PERFORMANCE.md`](PERFORMANCE.md) | known performance problem and the deferred fixes, in order | informative |
 | [`FINDINGS.md`](FINDINGS.md) | disagreements and defects found outside `golden/`, to be reported | informative; append to it |
+| [`REDESIGN.md`](REDESIGN.md) | a draft proposal for the execution engine and the instruction layer | **proposal** — decides nothing |
+| [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) | what guarantee 1 is for, and what Renode's scheduler lets us control | analysis — decides nothing |
+| [`DECISION-AUDIT.md`](DECISION-AUDIT.md) | an assistant's assessment of D1 to D16 | assessment — changes no entry |
 | [`DESIGN.md`](DESIGN.md) | long design rationale | **legacy** — read its status header first |
 | [`ITS-SEMANTICS.md`](ITS-SEMANTICS.md) | the published variant's ITS semantics | **legacy** — baseline, not spec |
+
+The three proposal and analysis files record work in progress that the
+maintainer has not decided. **Do not cite them as decisions, and do not edit
+`CONTRACT.md`, `DECISIONS.md` or `spec/` to match them** without the maintainer
+(§5). One consequence for naming: `REDESIGN.md` proposes *thread* for what
+`CONTRACT.md` §6 and the code call *lane*. Until `CONTRACT.md` §6 changes, keep
+*lane* in authoritative files and in code, and do not rename piecemeal; the rename
+is its own change.
 
 Durable facts go in the file that owns them (table above); a choice goes in
 `DECISIONS.md`; machine-local facts stay out of the repository (`CONTRACT.md`
@@ -38,7 +49,9 @@ content has been acted on or moved into its owning file.
 
 1. `CONTRACT.md` and `DECISIONS.md`
 2. the ratified RISC-V specifications plus [`spec/`](spec/) — the ISA (D9)
-3. `../ss/`, `../asm-kernels/` — the software contract and the workloads
+3. `../ss/`, `../asm-kernels/` — the software contract and the workloads of the
+   previous variant, to be rewritten (maintainer, 2026-11-14): a corpus, not a
+   source of requirements for the next variant
 4. anything generated from rank 2 — derived; regenerate it, never edit it
 5. `../control_unit/control_unit.csv` — the RTL's decoder input; a cheatsheet,
    **confers no requirements** (D9)
@@ -148,6 +161,11 @@ that waste an hour if missed (details and evidence in
 - A stray Renode process holds `~/.config/renode/config.lock` and makes later
   runs hang silently. Check `pgrep -af renode` first.
 - `cpu Step` on an aborted CPU (PC outside mapped memory) blocks the monitor.
+- **If you probe a CPU of your own** (`REDESIGN.md` §5): Renode's default is one
+  host thread per CPU, and the order of their calls differs from run to run; use
+  `emulation SetGlobalSerialExecution True` for anything that needs a reproducible
+  order. In serial mode a CPU that returns zero instructions can stall the whole
+  machine, so cap every run. Remove the probe DLL from the Renode tree afterwards.
 
 ## 8. Style
 
