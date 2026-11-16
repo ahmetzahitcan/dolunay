@@ -653,3 +653,22 @@ Consequences: A kernel cannot let some threads stop early, except by having them
 spin or block until the warp reconverges for `wdone`. Finishing is not a path
 switch point (D13). The model reports an illegal `wdone` as `illegal`
 termination (`CONTRACT.md` §1, guarantee 2).
+
+## D25 — Every instruction is 32 bits wide
+
+Date: 2026-11-16
+Status: accepted
+
+Decision: Every Dolunay instruction, standard or custom, is 32 bits wide.
+Dolunay implements no C extension and no longer instruction formats.
+
+Because: Variable instruction lengths add fetch and decode complexity for no
+benefit the maintainer wants to pay for.
+
+Considered: the C extension (the previous variant's `.repl` named `rv32imac`) —
+not worth the complexity.
+
+Consequences: The sequential next PC is always `pc + 4`. `-march` carries no
+`c`, and custom instructions take 32-bit encodings. Instruction addresses are
+multiples of 4, as RISC-V requires without C (IALIGN = 32); what a jump to a
+misaligned target does follows the open question on traps (`CONTRACT.md` §2).
