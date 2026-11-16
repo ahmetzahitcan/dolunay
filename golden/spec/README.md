@@ -42,9 +42,11 @@ is too narrow), *undefined* (suggests anything may happen), *reserved* (in
 RISC-V it suggests a future use, and Dolunay does not aim for forward
 compatibility).
 
-Until these documents exist, no custom instruction or CSR is specified. The
-model's only custom instruction (`../model/Dolunay.Renode/DolunayCpu.cs`) is a labelled
-placeholder.
+Until a document here is approved, no custom instruction or CSR is specified,
+and any in the model's code is a labelled placeholder. Exemptions already
+decided, to be written into the first ISA document: floating point with static
+rounding only (`../DECISIONS.md` D17), no A or Zalrsc (D22), and every
+instruction 32 bits wide, with no C extension (D25).
 
 `../../control_unit/control_unit.csv` is the RTL's decoder input and may be used
 as a cheatsheet of what the previous variant decoded; it is not a source for

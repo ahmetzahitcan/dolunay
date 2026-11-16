@@ -1,11 +1,13 @@
 # Execution model: warp program order, paths, lockstep
 
 **Status: draft — not authoritative.** Started from the maintainer's proposal of
-2026-11-07. §1–§3 are the rules as agreed so far; §4 is analysis behind them and
-§5 the open questions. Nothing here binds the model or the RTL until the
-maintainer approves the document and a decision records it (`../AGENTS.md` §5).
-Points already recorded as decisions cite them. *TBD*, *unspecified* and
-*illegal* have the meanings in [`README.md`](README.md#terminology).
+2026-11-07; revised 2026-11-16 for the redesign (the PC rule, D21; finishing,
+D24; no standard atomics, D22; *thread* for *lane*, D20). §1–§3 are the rules as
+agreed so far; §4 is analysis behind them and §5 the open questions. Nothing
+here binds the model or the RTL until the maintainer approves the document and
+a decision records it (`../AGENTS.md` §5). Points already recorded as decisions
+cite them. *TBD*, *unspecified* and *illegal* have the meanings in
+[`README.md`](README.md#terminology).
 
 ---
 
@@ -16,12 +18,12 @@ Model") defines **program order** informally as the architectural order in
 which a hart executes its instructions. Dolunay defines the **warp program
 order** (WPO) of a warp the same way: the architectural order in which the warp
 executes its instructions. Each element of the WPO is one instruction executed
-by the warp's active path, on all of that path's lanes.
+by the warp's active path, on all of that path's threads.
 
 At every point of the WPO, the warp's **path state** is:
 
-- a set of **paths**; each path is a set of lanes with one PC, and every lane of
-  the warp belongs to exactly one path;
+- a set of **paths**; each path is a set of threads with one PC, and every
+  thread of the warp belongs to exactly one path;
 - each path in exactly one of three states:
   - **active** — exactly one path; it executes the next instruction;
   - **paused** — zero or more paths; ready to run, waiting for control;
@@ -32,17 +34,24 @@ The path state is architectural state, carried through the WPO like any other.
 
 ## 2. How an instruction changes the path state
 
-**Every instruction generates a set of next PCs.** It maps each lane of the
-active path to one next PC — an N → 1 mapping from lanes to PCs. For most
-instructions the set has one element, `pc + 4` (`pc + 2` for a compressed
-instruction), so nothing changes; a branch or jump whose lanes all agree is the
-same case. When the set has more than one element:
+**Every instruction generates a set of next PCs.** It maps each thread of the
+active path to one next PC — an N → 1 mapping from threads to PCs. For most
+instructions the set has one element, `pc + 4` (D25), so nothing changes; a branch or jump whose threads all agree is
+the same case. When the set has more than one element:
 
 - the active path is split by the mapping, one new path per PC;
 - the next active path is **one of the new paths** — which one is
   *unspecified* (a choice point, `../CONTRACT.md` §1);
 - the other new paths are paused;
 - every other path keeps its state.
+
+**The PC rule (D21).** A thread's next PC is a function of its own PC and
+registers, and of memory and warp registers as the spec orders them at that
+instruction. It never depends on another thread's PC or registers, in its own
+path or any other. The rule constrains only the PC: an instruction may move
+data between threads. Warp registers are written only by instructions that take
+effect for the whole path at once. So where a path splits is a fact about each
+thread alone.
 
 Further rules:
 
@@ -60,10 +69,17 @@ Further rules:
   does not hold while no path is paused is **illegal**: it would leave the warp
   without an active path. A correctly used barrier never gets there, because
   once every other path is blocked, the condition holds.
+
+  The paths a `bsync` combines must be blocked at the same `bsync` instruction
+  as the active path. Combining threads at different instructions is
+  **illegal** (D21). The combined path continues after that instruction.
 - **No implicit merging.** Two paths are never combined except by `bsync`, even
   when they reach the same PC. An implementation must not merge them, for
   example at a post-dominator (§4.2). Dolunay keeps a hardware path list, not a
   reconvergence stack.
+- **Finishing (D24).** Only the whole warp finishes. `wdone` is legal only when
+  the active path holds every thread of the warp; executed by any other path it
+  is **illegal**.
 
 ## 3. Memory
 
@@ -72,18 +88,17 @@ Further rules:
 particular, RVWMO's Load Value Axiom then says that a load returns the latest
 store, to each byte, among those before it in the WPO and those before it in the
 global memory order. So within a warp, a load sees the latest earlier store of
-*any* lane, unless a store from another warp intervenes.
+*any* thread, unless a store from another warp intervenes.
 
 Exceptions to the substitution:
 
-- **Dependencies are per lane.** Address, data and control dependencies flow
-  through registers, which are per lane, so they relate only instructions of
-  the same lane.
-- **Standard LR/SC is per lane.** A reservation belongs to a lane, and a store
-  by another lane of the same warp invalidates it, as a store by another hart
-  would. (The expectation is that LR/SC is removed and replaced by a custom
-  extension that works per warp; `../CONTRACT.md` §2.)
-- **One WPO element holds the accesses of several lanes.** Their order is the
+- **Dependencies are per thread.** Address, data and control dependencies flow
+  through registers, which are per thread, so they relate only instructions of
+  the same thread.
+- **No standard atomics.** Dolunay implements neither A nor Zalrsc (D22).
+  Atomics between warps are warp-level and execute once for the active path;
+  how they enter the axioms is to be written with them (§5).
+- **One WPO element holds the accesses of several threads.** Their order is the
   one the spec fixes for a lockstep instruction (D14), which RVWMO does not
   have.
 
@@ -93,87 +108,76 @@ Exceptions to the substitution:
 
 ### 4.1 Two sanity properties
 
-- **A warp of one lane is a RISC-V hart.** It has one path, the WPO is its
-  program order, and every rule above must reduce to the standard. This is a
-  cheap test for every later rule.
-- **Each lane's program order is the WPO restricted to the instructions its
-  path executed.** Per-lane RISC-V semantics (registers, dependencies) are
-  untouched; the WPO only adds an order between lanes.
+- **A warp of one thread is a RISC-V hart**, with Dolunay's exemptions from the
+  standard: no `frm` (D17), no A or Zalrsc (D22), and no C (D25). It has one path, the WPO
+  is its program order, and every rule above must reduce to the standard. This
+  is a cheap test for every later rule, and what lets a stock RISC-V hart serve
+  as an oracle for single-thread programs (D19).
+- **Each thread's program order is the WPO restricted to the instructions its
+  path executed.** Per-thread RISC-V semantics (registers, dependencies) are
+  untouched; the WPO only adds an order between threads.
 
 ### 4.2 Why implicit merging is observable
 
-Take path A = lanes {0, 2} and path B = lanes {1, 3} at the same store
-instruction; lanes 1 and 2 store to `x`, lanes 0 and 3 store to `y`. As two
-paths, the stores take effect A then B (lanes 0, 2, 1, 3: `x` from lane 1, `y`
-from lane 3) or B then A (1, 3, 0, 2: `x` from lane 2, `y` from lane 0). Merged
-into one path, they take effect in the lane order of D14 — if that is ascending,
-0, 1, 2, 3: `x` from lane 2, `y` from lane 3, which neither order produces. So a
-merge is not a hidden optimisation; it changes the result, hence §2 forbids it.
+Take path A = threads {0, 2} and path B = threads {1, 3} at the same store
+instruction; threads 1 and 2 store to `x`, threads 0 and 3 store to `y`. As two
+paths, the stores take effect A then B (threads 0, 2, 1, 3: `x` from thread 1,
+`y` from thread 3) or B then A (1, 3, 0, 2: `x` from thread 2, `y` from thread
+0). Merged into one path, they take effect in the thread order of D14 — if that
+is ascending, 0, 1, 2, 3: `x` from thread 2, `y` from thread 3, which neither
+order produces. So a merge is not a hidden optimisation; it changes the result,
+hence §2 forbids it.
 
 ### 4.3 Finishing, and misused barriers
 
-Finishing is per warp (agreed direction, §5.1): `wdone` stops a warp. Apart
-from that, the only way a warp could be left without an active path is the
-illegal `bsync` of §2 — a split always activates one of its new paths, and
-`yield` with no paused path does nothing. The spec does not define "deadlock";
-it only makes the misuse illegal.
+Finishing is per warp (D24): `wdone` stops a warp. Apart from that, the only
+way a warp could be left without an active path is the illegal `bsync` of §2 —
+a split always activates one of its new paths, and `yield` with no paused path
+does nothing. The spec does not define "deadlock"; it only makes the misuse
+illegal.
 
 The model still has to notice it. A warp with no active path that has not
 executed `wdone` holds only blocked paths, and since only the warp's own active
 path can release them, it will never run again. The model reports that as the
 `deadlock` termination (`../CONTRACT.md` §1, guarantee 2, and §4): exact, and
 local to the warp. A typical cause is two paths that should meet calling
-`bsync` on different barriers. An illegal `wdone` (§5.1) is detected when it is
-executed, and the model reports it as the `illegal` termination.
+`bsync` on different barriers. An illegal `wdone` or an illegal `bsync` is
+detected when it is executed, and the model reports it as the `illegal`
+termination.
 
 ### 4.4 Traps (provisional)
 
 The previous variant had no traps, and this one may not either. If traps are
-added, a trapping instruction fits §2 as a split: the lanes that pass go to
-`pc + 4`, the lanes that trap go to the trap vector, and the path splits like
-any divergent branch. Where the trapped lanes go, and what they may observe, is
-open.
+added, a trapping instruction fits §2 as a split: the threads that pass go to
+`pc + 4`, the threads that trap go to the trap vector, and the path splits like
+any divergent branch. This respects the PC rule, since whether a thread traps
+depends on its own state. Where the trapped threads go, and what they may
+observe, is open.
 
 ### 4.5 Consequences
 
-- **Kernels:** communication between the paths of one warp needs no fences;
-  `ping_pong`'s two paths see each other's increments after a `yield`. That is
-  what the kernel already assumes.
-- **Hardware:** a warp's later loads must see its earlier stores from any lane,
-  which means a per-warp store queue with forwarding across lanes rather than a
-  per-lane one.
+- **Kernels:** communication between the paths of one warp needs no fences; two
+  paths that hand off through `yield` see each other's stores. Mutual exclusion
+  between the paths of one warp needs no atomics either, because paths switch
+  only at explicit points (D13).
+- **Hardware:** a warp's later loads must see its earlier stores from any
+  thread, which means a per-warp store queue with forwarding across threads
+  rather than a per-thread one.
 
 ---
 
 ## 5. Open questions
 
-1. **Finishing.** Direction agreed: only the whole warp finishes (option B
-   below). `wdone` executed by a path that does not hold every lane of the warp
-   is *illegal*.
-2. **`bsync`:** what identifies a barrier; the expected set of lanes and who sets
-   it (does `binit` survive?); the release condition, and which blocked paths a
-   combination takes in; and the PC of a combined path when the blocked paths wait at
-   different `bsync` instructions for the same barrier.
-3. **RVWMO with "warp" for "hart":** confirm by analysis that it holds, in
-   particular fences across lanes and the interaction with D14.
-4. **The lockstep order of D14:** which order (ascending lane index is the
-   obvious default).
+1. **`bsync`:** what identifies a barrier; the expected set of threads and who
+   sets it (does `binit` survive?); the release condition, and which blocked
+   paths a combination takes in. (The PC of a combined path is settled by D21:
+   all its threads are at the same `bsync`.)
+2. **RVWMO with "warp" for "hart":** confirm by analysis that it holds, in
+   particular fences across threads and the interaction with D14.
+3. **The lockstep order of D14:** which order (ascending thread index is the
+   obvious default), or whether conflicting accesses within one lockstep
+   instruction become illegal instead (`../CONTRACT.md` §2).
+4. **Synchronisation (D22):** the data instructions within a warp, and whether
+   they may read threads outside the active path; the warp-level atomics, and
+   how both enter the WPO and the axioms of §3.
 5. **Traps:** whether there are any, and the semantics of §4.4.
-
-### Options for finishing (B agreed as the direction, 2026-11-07)
-
-The previous variant ends a kernel in `crt0.s`: the whole warp reconverges with
-`bsync`, then executes `wdone`, then spins (`j .`). That suggests two models:
-
-- **Lanes finish individually.** An instruction maps the active path's lanes to
-  *finished* instead of to a PC, so finishing is one more case of §2's split.
-  Finished lanes leave the path state; the next active path is a choice among
-  the paused paths. A barrier must then stop waiting for finished lanes, or wait
-  forever.
-- **Only the warp finishes.** `wdone` is legal only when the active path holds
-  every lane of the warp, as after `crt0.s`'s `bsync`; executing it otherwise is
-  *illegal*. Simpler, and nothing waits for a finished lane,
-  but a kernel cannot let some lanes stop early except by spinning or blocking.
-
-In both, the observation's `termination` (`../CONTRACT.md` §4) needs a defined
-end: every warp finished, as opposed to every warp stuck in `j .`.
