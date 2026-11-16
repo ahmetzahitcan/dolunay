@@ -1,17 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The Renode glue (golden/DECISIONS.md D8, D11): CPU.Dolunay, the opcode
-    overrides, the lane coordinator, the scratchpad bus device. Architectural
-    rules belong in Dolunay.Model, not here.
+    The Renode shell (golden/DECISIONS.md D8, D19): a BaseCPU subclass, one per
+    warp, that calls the model's step of one warp and forwards bus accesses to
+    devices. Nothing architectural belongs here.
 
     Renode's assemblies are not published on NuGet, so the build needs the
     unpacked Renode tree:
 
-        RENODE_BIN=/path/to/renode_<version>-portable dotnet build model
+        RENODE_BIN=/path/to/renode_<version>-portable dotnet build model/Dolunay.Renode
 
     That path is machine-local: it is passed in, never recorded here
-    (golden/CONTRACT.md §5). The output, build/plugin/, holds both DLLs to copy
+    (golden/CONTRACT.md §5). The output, build/plugin/, holds the DLLs to copy
     into that tree.
   -->
 
@@ -35,7 +35,7 @@
       <HintPath>$(RENODE_BIN)/Infrastructure.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- RiscV32's constructor takes ELFSharp.ELF.Endianess. -->
+    <!-- BaseCPU's constructor takes ELFSharp.ELF.Endianess. -->
     <Reference Include="ELFSharp">
       <HintPath>$(RENODE_BIN)/ELFSharp.dll</HintPath>
       <Private>false</Private>

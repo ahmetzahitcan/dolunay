@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The headless runner (golden/DECISIONS.md D8, D19): a program over
+    Dolunay.Model that owns the loop for exploration, sampling and replay.
+    No reference to Renode.
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Dolunay.Runner</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Dolunay.Model/Dolunay.Model.csproj" />
+  </ItemGroup>
+
+</Project>

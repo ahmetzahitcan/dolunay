@@ -2,9 +2,11 @@
 
   <!--
     The model itself: pure C#, no reference to Renode (golden/DECISIONS.md D8).
-    If a signature here would mention a Renode type, it belongs in
-    Dolunay.Renode instead; if a branch encodes an architectural rule, it
-    belongs here.
+    It will hold the step of one warp over the world the warps share (D18, D23),
+    the interpreter and the decoder, the policies, the conflict check and the
+    observation writer. If a signature here would mention a Renode type, it
+    belongs in Dolunay.Renode instead; if a branch encodes an architectural
+    rule, it belongs here.
   -->
 
   <PropertyGroup>
