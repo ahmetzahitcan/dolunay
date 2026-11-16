@@ -12,96 +12,97 @@ New here? Read in this order:
 2. [`DECISIONS.md`](DECISIONS.md) — the choices made so far, with reasons.
    **Authoritative.**
 3. [`AGENTS.md`](AGENTS.md) — working rules and a map of every document here.
-4. [`SUBSTRATE.md`](SUBSTRATE.md) — verified Renode host behaviour.
-   [`PERFORMANCE.md`](PERFORMANCE.md) — the known execution-cost problem and
-   the fixes deferred until later.
-5. [`FINDINGS.md`](FINDINGS.md) — problems found outside `golden/`, waiting to
+4. [`spec/`](spec/) — Dolunay's specification documents; only a draft of the
+   execution model exists.
+5. [`SUBSTRATE.md`](SUBSTRATE.md) — verified Renode host behaviour.
+6. [`FINDINGS.md`](FINDINGS.md) — problems found outside `golden/`, waiting to
    be reported.
-6. [`DESIGN.md`](DESIGN.md) and [`ITS-SEMANTICS.md`](ITS-SEMANTICS.md) —
-   **legacy** rationale for the previous variant. Read their status headers.
 
 ## Status
 
 | | |
 |---|---|
-| Machine modelled | the **next** variant: lanes in lockstep per path (D3), scratchpad + DMA, barrier logic under revision |
-| Specification | RISC-V standard + [`spec/`](spec/) (D9); `spec/` is **not written yet**. Choice points left to the implementation; RTL checked by replay (D12–D15) |
-| Code | **model core, first slice** — `model/Dolunay.sln` (D8): `Dolunay.Model` (paths, the engine, policies with record and replay, termination, model-owned memory, the conflict check; open rules behind knobs, D16), `Dolunay.Renode` (`CPU.Dolunay`, one placeholder instruction), NUnit tests on a scripted stub ISA; `Dolunay.repl`, `run.resc` |
-| Substrate | Renode 1.17; both assemblies build and load, and `CPU.Dolunay` extends `RiscV32` (D8). Probed: standard opcodes can be overridden, lanes can stop before an instruction, ≤32 cores per machine, ≈0.85 ms per lane rendezvous ([`SUBSTRATE.md`](SUBSTRATE.md#execution-control-probed-2026-11-06), [`PERFORMANCE.md`](PERFORMANCE.md)) |
-| Kernel build | the two `generate.sh` scripts call `riscv32-unknown-elf-*`; each machine supplies shims (`CONTRACT.md` §5) |
+| Machine modelled | the **next** variant: threads in lockstep per path (D3), the PC rule (D21), whole-warp finishing (D24), scratchpad + DMA, barrier logic under revision |
+| Specification | RISC-V standard + [`spec/`](spec/) (D9); only a draft of the execution model. ISA restrictions decided: F with static rounding (D17), no A or Zalrsc (D22), 32-bit instructions only (D25) |
+| Design | the model executes the spec literally (D18); one Renode CPU of Dolunay's own per warp, with a headless runner for exploration and replay (D19) |
+| Code | **an empty skeleton** — `model/Dolunay.sln` with the four projects of D8, no architectural code |
+| Substrate | Renode 1.17; a `BaseCPU` of our own probed twice ([`SUBSTRATE.md`](SUBSTRATE.md)) |
+| Kernel build | the previous variant's kernels, to be rewritten; the build scripts call `riscv32-unknown-elf-*`, and each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
 
 ## Building and running
 
 From this directory, so that `global.json` pins SDK 8. The solution is
-`model/Dolunay.sln` (D8): `Dolunay.Model`, `Dolunay.Renode`, and
-`Dolunay.Model.Tests`.
+`model/Dolunay.sln` (D8).
 
 ```sh
 # Unit tests: the model only, no Renode needed.
-dotnet test model
+dotnet test model/Dolunay.Model.Tests
 
-# The Renode adapter needs the unpacked Renode tree to build against.
-RENODE_BIN=<unpacked renode tree> dotnet build model -c Release
+# The headless runner.
+dotnet run --project model/Dolunay.Runner
 
-# Renode registers types only from its own installation directory, at start-up.
-cp build/plugin/Dolunay.Model.dll build/plugin/Dolunay.Renode.dll "$RENODE_BIN/"
-timeout -k 5 60 renode --disable-xwt --console --plain run.resc
+# The Renode shell needs the unpacked Renode tree to build against.
+RENODE_BIN=<unpacked renode tree> dotnet build model/Dolunay.Renode -c Release
 ```
 
-Expected: the PC (`0x1000`), then Renode quits. `Dolunay.repl` names
-`CPU.Dolunay`, so this fails if the DLLs were not found. Always cap a Renode
-run: a hung handler or a script error leaves it waiting silently.
+There is nothing to run in Renode yet: the shell has no CPU class. Once it has,
+its DLLs go into the Renode installation directory before Renode starts, and
+every run is capped (`AGENTS.md` §7).
 
-A machine that ran the previous layout has a `Dolunay.Golden.dll` in its Renode
-tree; delete it, or it is loaded alongside the new DLLs.
-
-Each machine may keep a **gitignored** launcher that does those steps
-(`run-renode.sh` here). Shell conventions differ between machines, so it is not
-shared; nothing depends on it existing.
+A machine that ran an earlier layout may have `Dolunay.Golden.dll`,
+`Dolunay.Model.dll` or `Dolunay.Renode.dll` in its Renode tree; delete them, or
+they are loaded alongside the new ones.
 
 ### Editor setup
 
 A C# language server must see the same `RENODE_BIN` as the build, or the
-project will not load. Zed's C# extension needs more: it ships a `net10.0`
-Roslyn, which needs a .NET 10 **runtime** although the model targets 8, and it
-reads `DOTNET_ROOT` from its own environment, not the shell's:
+Renode project will not load.
 
-```json
-"lsp": {
-  "roslyn": {
-    "binary": {
-      "env": { "DOTNET_ROOT": "<dotnet root>", "RENODE_BIN": "<renode tree>" }
+- **Zed:** its C# extension ships a `net10.0` Roslyn, which needs a .NET 10
+  **runtime** although the model targets 8, and it reads `DOTNET_ROOT` from its
+  own environment, not the shell's:
+
+  ```json
+  "lsp": {
+    "roslyn": {
+      "binary": {
+        "env": { "DOTNET_ROOT": "<dotnet root>", "RENODE_BIN": "<renode tree>" }
+      }
     }
   }
-}
-```
+  ```
+
+- **VS Code:** the C# extension's `dotnet.server.environmentVariables` setting
+  reaches the language server, but C# Dev Kit loads projects in a separate
+  process that does not read it (observed 2026-11-16). `RENODE_BIN` probably
+  has to be in the environment VS Code itself starts with, such as the desktop
+  session's; this is not yet verified.
+
+Keep these values out of the repository (`CONTRACT.md` §5).
 
 ## Next steps
 
-In order; each is independently useful.
+In order; each is a small step to discuss before it is coded.
 
-1. **The model core — first slice done.** It has paths, the engine, the D13
-   `yield` rule, policies (first, seeded random, record and replay),
-   `all-wdone`, `deadlock`, `timeout` and `illegal`, and the conflict check. On
-   the stub ISA, the check catches the shapes of F4 and F5. The defaults are in
-   D16. Still to do:
-   - the observation writer (`CONTRACT.md` §4);
-   - PCT and systematic exploration (methods 2–3);
-   - the real `bsync` rule, once the memory redesign settles it.
-2. **Write the first specification documents** in [`spec/`](spec/). Needs the
-   maintainer. Real kernels need `yield`, the barrier pair, the warp-id and
-   thread-id CSRs, and the order within one lockstep instruction (D14); the
-   kernels' mutex also needs an answer on LR/SC.
-3. **The adapter (D11):** one machine per lane, each with one `CPU.Dolunay` and
-   a scratchpad device forwarding to the model; geometry as one parameter, with
-   a generated `.resc`; branches, jumps and shared-memory accesses overridden.
-4. **Later, in any order:** the output descriptor and replay log formats, and
-   the request to the RTL owner; exploration (partial-order reduction, PCT);
-   the [`PERFORMANCE.md`](PERFORMANCE.md) fixes.
+1. **The step of one path, in `Dolunay.Model`, on a stub instruction set**: one
+   instruction of the active path on each of its threads (D18), splitting by
+   next PC, with the PC rule checked at `bsync` (D21). Its open rules (the
+   lockstep order of D14, `bsync`'s release) stay knobs whose defaults the
+   maintainer approves.
+2. **The first ISA document in [`spec/`](spec/)**, with the maintainer: `yield`,
+   `wdone`, the warp-id and thread-id CSRs, and the restrictions of D17, D22 and
+   D25.
+3. **The shell's first CPU class** in `Dolunay.Renode`, once the model has a
+   step to call (D19, [`SUBSTRATE.md`](SUBSTRATE.md)).
+4. **Later, in any order:** the observation writer (`CONTRACT.md` §4);
+   exploration (PCT, partial-order reduction); the softfloat behind an
+   interface (D17); the output descriptor and replay log formats, and the
+   request to the RTL owner.
 
-Memory, barrier and DMA semantics are **not** on that list: they are being
-redesigned, and they arrive as knobs once the variant settles.
+Open questions that the steps above will run into are listed in
+`CONTRACT.md` §2; memory, barrier and DMA semantics arrive as the variant
+settles.
 
 ## The one thing to get right
 

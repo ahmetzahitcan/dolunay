@@ -21,29 +21,20 @@ it.
 | [`spec/`](spec/) | Dolunay's specification documents: the ISA and the execution model (D9). Only a draft of the execution model exists | **authoritative** once approved; a draft is not |
 | [`README.md`](README.md) | orientation, status, how to build and run, what to do next | informative |
 | [`SUBSTRATE.md`](SUBSTRATE.md) | verified Renode host behaviour and quirks | informative; facts, not decisions |
-| [`PERFORMANCE.md`](PERFORMANCE.md) | known performance problem and the deferred fixes, in order | informative |
 | [`FINDINGS.md`](FINDINGS.md) | disagreements and defects found outside `golden/`, to be reported | informative; append to it |
-| [`REDESIGN.md`](REDESIGN.md) | a draft proposal for the execution engine and the instruction layer | **proposal** — decides nothing |
-| [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) | what guarantee 1 is for, and what Renode's scheduler lets us control | analysis — decides nothing |
-| [`DECISION-AUDIT.md`](DECISION-AUDIT.md) | an assistant's assessment of D1 to D16 | assessment — changes no entry |
-| [`DESIGN.md`](DESIGN.md) | long design rationale | **legacy** — read its status header first |
-| [`ITS-SEMANTICS.md`](ITS-SEMANTICS.md) | the published variant's ITS semantics | **legacy** — baseline, not spec |
 
-The three proposal and analysis files record work in progress that the
-maintainer has not decided. **Do not cite them as decisions, and do not edit
-`CONTRACT.md`, `DECISIONS.md` or `spec/` to match them** without the maintainer
-(§5). One consequence for naming: `REDESIGN.md` proposes *thread* for what
-`CONTRACT.md` §6 and the code call *lane*. Until `CONTRACT.md` §6 changes, keep
-*lane* in authoritative files and in code, and do not rename piecemeal; the rename
-is its own change.
+The previous variant's design documents and the redesign's working papers are
+in git history only. They are not inputs: nothing in them holds unless
+`CONTRACT.md` or `DECISIONS.md` says so.
 
 Durable facts go in the file that owns them (table above); a choice goes in
-`DECISIONS.md`; machine-local facts stay out of the repository (`CONTRACT.md`
-§5). The one exception is **`HANDOFF.md`**, written only when the maintainer
-asks for one at the end of a session: it says where the work stands and what
-comes next, and points into the files above rather than restating them. If you
-find one, read it after `CONTRACT.md` and `DECISIONS.md`, and delete it once its
-content has been acted on or moved into its owning file.
+`DECISIONS.md`, once the maintainer has made it (§5); machine-local facts stay
+out of the repository (`CONTRACT.md` §5). The one exception is **`HANDOFF.md`**,
+written only when the maintainer asks for one at the end of a session: it says
+where the work stands and what comes next, and points into the files above
+rather than restating them. If you find one, read it after `CONTRACT.md` and
+`DECISIONS.md`, and delete it once its content has been acted on or moved into
+its owning file.
 
 ## 1. Authority, in order
 
@@ -64,15 +55,19 @@ instruction behaviour, start-up, or termination. Reading it is allowed where it
 is unavoidable (building the software, understanding a program image), but what
 you learn there is not a requirement until it is written into the contract.
 
-## 2. The four ways this work goes wrong
+## 2. The five ways this work goes wrong
 
-- **Anchoring on the previous variant.** `DESIGN.md` and `ITS-SEMANTICS.md`
-  describe a machine we are replacing, and the RTL implements it. Copying either
-  produces a gold-plated model of the wrong machine.
+- **Anchoring on the previous variant.** The RTL and the previous variant's
+  documents describe a machine we are replacing. Copying them produces a
+  gold-plated model of the wrong machine.
 - **Inventing the machine.** Guessing geometry, encodings, or the observation
   format produces something self-consistent and useless. Each has an
   authoritative source above, or is an open question (`CONTRACT.md` §2) you must
   not silently answer.
+- **Answering an open question yourself.** A default, a placeholder rule or "the
+  smallest choice" is still a choice. If code or text would settle something the
+  contract or `spec/` leaves open or TBD, stop and report it (§5), even when the
+  choice looks harmless.
 - **Helpfully fixing the neighbourhood.** Repairing the stale `../ss/`, the RTL,
   or the CSV is out of scope and hides the drift we are trying to *measure*.
 - **Reconciling with the RTL.** Editing the RTL so a disagreement goes away, or
@@ -94,83 +89,87 @@ you learn there is not a requirement until it is written into the contract.
 
 The next variant is in flux. Memory is being redesigned around scratchpad + DMA;
 barrier logic is expected to change and may move into warp-level registers;
-geometry and path visibility are undecided. Therefore:
+geometry is undecided. Therefore:
 
 - **Every variant-dependent behaviour goes behind a named interface or policy**,
-  with a declared default and a test showing the rest of the model does not
-  depend on it. No exceptions, no "temporarily inline".
-- **No constants for geometry.** Warps × lanes is a parameter with one place it
-  is read from.
+  with a test showing the rest of the model does not depend on it. Its default
+  is a choice like any other: propose it, and use it once the maintainer has
+  approved it (§5). No "temporarily inline".
+- **No constants for geometry.** Warps × threads is a parameter with one place
+  it is read from.
 - **No uncited encodings.** Every opcode, funct field and CSR number cites the
-  RISC-V specification or the `spec/` section it comes from. The one exception
-  today is the labelled placeholder in `model/Dolunay.Renode/DolunayCpu.cs`.
+  RISC-V specification or the `spec/` section it comes from. Until `spec/`
+  specifies a custom instruction, any in the code is a placeholder labelled as
+  such (D9).
 - Do not implement leader selection or TLS speculatively. They may not exist in
   the next variant. Paths *do* exist (D3), but their open rules — the precise
-  meaning of lockstep, reconvergence — go behind interfaces until `spec/`
-  defines them.
+  meaning of lockstep, `bsync` — go behind interfaces until `spec/` defines
+  them.
 
 ## 5. Decisions protocol
 
-When you must choose something the contract does not settle, or find a
-contradiction:
+Only the maintainer decides. When you find something the contract, the decision
+log or `spec/` does not settle, or a contradiction between them, or a
+disagreement between them and the model's code (`CONTRACT.md`, introduction):
 
-1. Prefer the smallest choice that leaves the rest of the model unchanged.
-2. Record it in `DECISIONS.md`, following the rules at the top of that file:
-   entries describe the current decision and are edited in place; substance
-   changes need the maintainer; IDs are permanent.
-3. If the choice is architectural (affects observable state, the ISA, or the
-   observation format), ask the maintainer before implementing it.
-4. Never commit without asking the maintainer.
+1. **Stop and report it** to the maintainer: what is unsettled, the options, what
+   each costs and forecloses, and your recommendation if you have one.
+2. **Do not implement an answer** in the meantime, not even as a default.
+   Unfinished work — code that does not yet implement a settled rule — is the
+   only thing that needs no report.
+3. **When the maintainer decides, record it** in `DECISIONS.md`, following the
+   rules at the top of that file: entries describe the current decision and are
+   edited in place; IDs are permanent. Show the maintainer the entry's wording.
+4. **Never commit without asking the maintainer.** Approval is per commit.
 
 ## 6. Current state of the code
 
-- `model/Dolunay.sln` holds three `net8.0` projects (D8). `Dolunay.Model` is
-  pure C# with no Renode reference. It holds `Geometry`, and the `Machine`
-  engine over warps and paths. Lanes reach it through the `IInstructionSet`
-  seam. It also holds the schedule policies, `SharedMemory`, and the
-  `ConflictChecker`. Every open rule is a knob with the default recorded in
-  D16.
-  `Dolunay.Renode` holds `CPU.Dolunay` (`DolunayCpu.cs`), a `RiscV32` subclass
-  that installs custom instructions in its constructor. `Dolunay.Model.Tests`
-  is NUnit, on the model only. It drives the engine through a scripted stub ISA
-  (`Stub/ScriptedIsa.cs`) that encodes no real instruction.
-- The only custom instruction is a **placeholder**: `0x0000700B` logs
-  `Hello World`. It is not an ISA decision and will be replaced from `spec/`.
-- `Dolunay.repl` instantiates `CPU.Dolunay` with no memory; `run.resc` is a
-  smoke test that prints the PC.
-- `dotnet test model` runs the unit tests. Say how many ran and passed; do not
-  claim a run you did not see.
+- `model/Dolunay.sln` holds the four `net8.0` projects of D8, as an empty
+  skeleton: `Dolunay.Model` (the pure model), `Dolunay.Runner` (the headless
+  runner, D19), `Dolunay.Renode` (the `BaseCPU` shell) and
+  `Dolunay.Model.Tests` (NUnit, on the model only). None holds architectural
+  code yet. The previous design's code is in git history; do not restore it.
+- There is no custom instruction, no Renode CPU class, and no `.repl` or
+  `.resc` yet.
+- How to build and test is in [`README.md`](README.md#building-and-running).
+  When you run the tests, say how many ran and passed; do not claim a run you
+  did not see.
 
 ## 7. Building and running — the traps
 
-How to build and run is in [`README.md`](README.md#building-and-running). Things
-that waste an hour if missed (details and evidence in
+Things that waste an hour if missed (details and evidence in
 [`SUBSTRATE.md`](SUBSTRATE.md)):
 
 - Run `dotnet` from `golden/` or below, so `global.json` pins SDK 8.
-- Both DLLs must be copied into Renode's installation directory **before**
-  Renode starts; they are not found anywhere else.
+- The DLLs, and any native library they load, must be copied into Renode's
+  installation directory **before** Renode starts; they are not found anywhere
+  else.
 - **Cap every Renode run** (`timeout -k 5 60 renode …`). A blocked handler or a
   failed script line leaves Renode waiting silently.
 - **Never block a CPU thread in a handler**: it stops every CPU in the
   emulation.
+- **A CPU of our own** runs on one host thread per CPU by default, and the order
+  of their calls differs from run to run; use `emulation
+  SetGlobalSerialExecution True`, or gate the CPUs through one policy, for
+  anything that needs a reproducible result. A gated CPU that is not on turn
+  must report its quantum as done: returning zero instructions stalls serial
+  mode.
+- Virtual time follows the host clock by default, and a CPU that reports few
+  instructions per call is called very often; both make a Renode-hosted run
+  slow.
 - A probe DLL copied into the Renode tree is loaded on every later start; remove
   it when the probe is done.
 - If a `--config` file is ever needed, never pass a tracked one: Renode rewrites
   it. Pass a copy under `build/`, by absolute path.
 - A stray Renode process holds `~/.config/renode/config.lock` and makes later
   runs hang silently. Check `pgrep -af renode` first.
-- `cpu Step` on an aborted CPU (PC outside mapped memory) blocks the monitor.
-- **If you probe a CPU of your own** (`REDESIGN.md` §5): Renode's default is one
-  host thread per CPU, and the order of their calls differs from run to run; use
-  `emulation SetGlobalSerialExecution True` for anything that needs a reproducible
-  order. In serial mode a CPU that returns zero instructions can stall the whole
-  machine, so cap every run. Remove the probe DLL from the Renode tree afterwards.
+- `cpu Step` on an aborted `RiscV32` (PC outside mapped memory) blocks the
+  monitor.
 
 ## 8. Style
 
 - **C#**: target `net8.0`, `LangVersion 12` — Renode's own settings. No
-  IronPython, ever.
+  IronPython, ever (D5).
 - **Python 3.12** for generators and tooling. Type hints, standard library
   preferred, no new dependency without a reason in the commit message.
 - Comments explain *why*, or cite the spec section they encode. No comment that
@@ -178,6 +177,8 @@ that waste an hour if missed (details and evidence in
 - Every generated file carries its generator and a "do not edit" line.
 - Markdown here: one topic per file, a status line at the top of anything that
   is not authoritative, relative links, and no machine-local paths.
+- Say *thread*, never *lane*, and *host thread* for an operating-system thread
+  (D20).
 
 ## 9. Verification, and honesty about it
 
@@ -189,8 +190,7 @@ that waste an hour if missed (details and evidence in
   tool exists.
 - The strongest checks the contract names are the determinacy check
   (`CONTRACT.md` §1, guarantee 3) and replay against the RTL (D15); neither
-  exists yet. If your change
-  has no test, say what a test would assert.
+  exists yet. If your change has no test, say what a test would assert.
 
 ## 10. Housekeeping
 
