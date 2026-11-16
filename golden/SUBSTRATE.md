@@ -133,9 +133,55 @@ are orders of magnitude.
   `rv32if`, with `zicsr`, `zicond` and `zba`, and rejected `zalrsc`, `zicntr`
   and `zihpm` with `Undefined instructions set extension`. Whether its F
   implementation matches D17 with `frm` left at zero was not tested.
-- **Not tested:** real shared state under serial execution, more than 32 such
-  CPUs, the register-name mapping, and loading a native library from Renode's
-  tree. These are the second probe's items (D19).
+- **Not tested here, answered by the second probe below:** real shared state,
+  more than 32 such CPUs, registers by name, and a native library.
+
+## `BaseCPU`, second probe (2026-11-16)
+
+The same kind of throwaway CPU, built in a scratch directory outside the
+repository against Renode 1.17.0; its DLL and a one-function C library were
+copied into the Renode tree for the runs only and removed afterwards. Each step
+did some arithmetic and then a read-modify-write of a counter shared by every
+CPU, appending (CPU, value read) to a hash; "gated" means a shared SplitMix64
+policy chose the CPU on turn, and the others reported their whole quantum as
+done without executing. Three runs per row unless noted; one machine.
+
+| Configuration | Trace hash over the runs |
+|---|---|
+| 2 CPUs, parallel, ungated | three different hashes |
+| 2 CPUs, serial, ungated | identical |
+| 2 CPUs, serial, gated, seed 1 / seed 2 | identical per seed, different between seeds |
+| 2 CPUs, **parallel**, gated | identical, and equal to the serial gated hash |
+| 8, 33, 64, 128 CPUs, serial, gated (64 and 128: two runs) | identical per size |
+| 128 CPUs, parallel, gated | equal to the serial hash |
+
+- **Shared state is reproducible in serial mode**, and under gating also in
+  parallel mode: when the policy decides who steps, under one lock, the order of
+  Renode's calls no longer matters to the result.
+- **More than 32 CPUs work.** 33, 64 and 128 `BaseCPU`s loaded and ran in one
+  machine with no error; the 32-core limit belongs to translated cores.
+- **Gating costs one call per CPU per quantum.** With the default quantum of
+  100 µs, Renode called every CPU 10 000 times per virtual second, and only the
+  CPU on turn stepped, so a gated machine makes at most about one step per
+  quantum. 128 CPUs took about 10 s of wall time per virtual second in serial
+  mode and 4 s in parallel; 2 CPUs about 1 s.
+- **Virtual time follows host time.** With the defaults (advance immediately
+  off), 10 s of virtual time took about 10 s of wall time (cumulative load 1.0),
+  so a Renode-hosted run is paced by the host clock unless that is changed.
+  Over 50 000 gated steps on 8 CPUs, Renode's time accounting stayed consistent
+  and logged no warning.
+- **Reported counts set the call rate.** Virtual time advances by the
+  instructions a CPU reports, so a CPU that reports 1 to 10 instructions per
+  call is called far more often: 2 ungated CPUs took 23 to 36 s of wall time for
+  1 s of virtual time, against about 1 s when they reported the whole quantum.
+- **Registers by name work through aliases.** `GetRegisters()` returning
+  `CPURegister`s with aliases `x0`…`x31` and `pc` was enough for
+  `GetRegisterUlong "x5"`, `SetRegisterUlong "x7" 0x1234` and
+  `GetRegisterUlong "pc"` from the monitor. Renode does not mask a value to the
+  register's declared width; the CPU must.
+- **A native library next to the DLL loads.** A `[DllImport("probenative")]`
+  call from the CPU's constructor resolved `libprobenative.so` placed in the
+  Renode installation directory, with no further setup.
 
 ## Building the plugin
 

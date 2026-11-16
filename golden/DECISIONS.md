@@ -519,10 +519,12 @@ except as the single-thread oracle; the model's interpreter is ours to verify.
 `BaseCPU` is a larger coupling than a `RiscV32` subclass, and Renode's debugging
 features for translated cores (address hooks, tracing, GDB, disassembly) do not
 come for free. The model is organised as a step of one warp over a world shared
-by the warps. Speed is unmeasured. Overturned in favour of C if a second probe
-fails: real shared state under serial execution, more than 32 CPUs, registers
-by name, quantum burning with a real model, and loading the native softfloat
-library from Renode's tree.
+by the warps. Speed is unmeasured. The conditions this entry was accepted on —
+real shared state under serial execution, more than 32 CPUs, registers by name,
+quantum burning with real work, and a native library loaded from Renode's tree —
+held in a second probe on 2026-11-16 (`SUBSTRATE.md`). A run hosted in Renode
+is paced by the host clock by default and gated at about one step per quantum,
+which is one more reason the headless runner carries exploration and replay.
 
 ## D20 — The unit of state is a thread; *lane* is retired
 
