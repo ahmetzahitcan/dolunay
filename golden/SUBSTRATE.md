@@ -69,78 +69,73 @@ OneDrive.
 - `cpu Step` on a CPU that has aborted (e.g. PC outside mapped memory) leaves the
   monitor blocked. Make sure the PC is where the image was loaded.
 
-## Extending `RiscV32`
-
-- Derive from `RiscV32` and call `InstallCustomInstruction` in the constructor;
-  a `.repl` naming the subclass gets the instructions with no install command.
-  The handler does not need to touch the PC: it advances by the instruction
-  length automatically. The element-scoped `this.Log` prefixes the CPU's name
-  (`cpu: Hello World`).
-- Patterns are 16, 32 or 64 characters covering the whole instruction, MSB
-  first; `0`/`1` are significant, any other character is a wildcard. A 32-bit
-  pattern needs bits `[1:0] = 11` and bits `[4:2] != 111`.
-- Constructor parameter types: `Endianess` is `ELFSharp.ELF.Endianess` (the
-  project references `ELFSharp.dll`); `IRiscVTimeProvider` is in
-  `Antmicro.Renode.Peripherals.Timers`; `PrivilegedArchitecture`,
-  `InterruptMode` and `PrivilegeLevels` are nested in `BaseRiscV`.
-
-## Execution control (probed 2026-11-06)
+## Renode execution facts (probed 2026-11-06)
 
 Throwaway probes; numbers are from one machine and are order-of-magnitude only.
+The probes of D11's design (opcode overrides, halting and releasing, stepping
+throughput) are in git history; that design is superseded (D18, D19).
 
-- **At most 32 cores per machine.** The 33rd fails with `atomic: Maximum number
-  of supported cores exceeded: 32` (a constant in Renode's native translation
-  library). The limit is per machine, not per process: 64 machines × 1 CPU
-  load and run (≈540 MB, ≈750 MIPS aggregate, same as 8 × 8).
-- **Standard opcodes can be overridden.** `InstallCustomInstruction` with a
-  pattern matching a standard instruction (e.g. all of `BRANCH`, or `LW`) takes
-  precedence over the built-in decoder. The handler then *is* the instruction:
-  - if it does not write `PC`, `PC` advances by 4 afterwards (a branch handler
-    must write the target itself);
-  - writing `PC` is honoured, including writing the instruction's own address;
-  - **halt-before works:** set `IsHalted = true` and `PC` = the instruction's
-    own address; the CPU stops before it, and re-executes it once on resume;
-    the handler runs again then, so it needs a per-lane "let it pass this
-    time" flag;
-  - another lane's handler can release a halted CPU (`other.IsHalted = false`);
-  - a load handler can perform the access with `sysbus.ReadDoubleWord(addr, cpu, null)`;
-  - an aborted attempt still counts in `ExecutedInstructions` — count
-    instructions in the model, not with Renode's counter.
-- **Opcode hooks** (`AddPreOpcodeExecutionHook`) run before the instruction but
-  cannot stop it: setting `IsHalted` there lets the instruction complete, and on
-  a not-taken branch the CPU can run on past it (translation-block chaining) —
-  observed executing one more instruction. `RequestTranslationBlockRestart`
-  returns `false` from a hook.
-- **Address hooks** (`AddHook(addr, …)`, the breakpoint mechanism) stop exactly
-  before the instruction, also mid-block; on resume the hook does not fire again
-  for that instruction. They need the addresses in advance.
-- A restart requested from inside a peripheral access
-  (`TryRestartTranslationBlockOnCurrentCpu`) reports success but does not
-  re-execute the load.
+- **At most 32 translated cores per machine.** The 33rd `RiscV32` fails with
+  `atomic: Maximum number of supported cores exceeded: 32`, a constant in
+  Renode's native translation library. The limit is per machine, not per
+  process: 64 machines × 1 CPU load and run. Whether it applies to a CPU that
+  is not translated (`BaseCPU`, below) is untested.
 - **Blocking a CPU thread inside a handler stops every CPU** of the emulation,
-  in parallel and in serial (`SetGlobalSerialExecution`) mode alike. Lanes must
-  wait by halting, never by blocking.
-- **Halting and releasing is slow:** a rendezvous of 8 lanes (each halts, the
-  last releases all) costs ≈0.85 ms of wall time, independent of
-  `SetGlobalQuantum` (default, 10 µs, 1 µs) and `SetGlobalAdvanceImmediately`.
-  See [`PERFORMANCE.md`](PERFORMANCE.md).
+  in parallel and in serial (`SetGlobalSerialExecution`) mode alike. Never wait
+  by blocking.
 - `sysbus.TryGetCurrentCPU` inside a peripheral access identifies the CPU that
   made it.
-- LR/SC and AMOs behave correctly within one machine, on RAM and on a peripheral
-  (with a `Atomically accessing MMIO` warning on the latter), including a
-  reservation broken by another CPU's store. Across machines: untested.
+- A stock `CPU.RiscV32` running a sum-of-1..10 loop gave the expected result
+  (`x5 = 0x37`, stored to memory) after 40 steps.
 
-## Stepping throughput
+## A CPU of our own: `BaseCPU` (probed 2026-11-14)
 
-On 2026-11-06, single-stepping a spin loop through the paused `Step` path took
-4.42 s for 10 000 instructions and 42.37 s for 100 000 — linear, **≈2.4 k
-instructions/s**. That is the path a per-instruction lane-switch model would
-use, so it bears directly on D5's unverified "is `Step(1)` fast enough"
-assumption and argues for running each lane until a sync point instead.
+A throwaway `BaseCPU` subclass, built outside the repository against Renode
+1.17.0 and removed from the Renode tree afterwards; its source was not kept.
+It executed no real instructions and had no shared state, so these facts are
+about Renode's scheduling, not about a model. Numbers are from one machine and
+are orders of magnitude.
 
-A stock `CPU.RiscV32` running a sum-of-1..10 loop gave the expected result
-(`x5 = 0x37`, stored to memory) after 40 steps — standard execution needs
-nothing from the model.
+- **It loads.** Implementing only the four abstract members
+  (`ExecuteInstructions`, `ExecutedInstructions`, `PC`, `Architecture`) was
+  enough for a `.repl` to instantiate it. `sysbus LoadELF` set the PC of every
+  CPU on the bus, `cpu Step N` made N calls of `ExecuteInstructions(1)`, and
+  `PC`, `ExecutedInstructions` and registers by number (through
+  `ICPUWithRegisters`) read back. Registers by *name*
+  (`GetRegisterUlong "x5"`) failed without a name mapping, which was not
+  investigated.
+- **Calls under `RunFor`.** Renode asked for `ExecuteInstructions(10000)` per
+  call, on one host thread per CPU. A trivial body ran tens of thousands of
+  calls per second.
+- **The order of calls:**
+
+  | Setting | What happened |
+  |---|---|
+  | Parallel (the default), two CPUs | The order of calls differed on every run: three runs, three different hashes. |
+  | Serial (`emulation SetGlobalSerialExecution True`) | Identical in three runs, also with partial returns (219 distinct counts over 20 000 calls) and zero-instruction returns. |
+  | Serial, a policy picks the warp on turn, the others **return zero** instructions | No result in five runs; each reached the 60 s cap. Not diagnosed; probably virtual time does not advance. |
+  | Serial, the others **report their whole quantum as done** and execute nothing | The policy's order was followed in 2000 of 2000 steps, for 2 and 8 CPUs and two seeds, with identical wasted-call counts on repeated runs (1024 and 6934); about 40 to 90 ms per 2000 steps. |
+  | Parallel, policy-gated, under a lock | The order was followed, but this is serial execution by another name, and the order of calls still differed between runs. |
+
+  So Renode's scheduler is not controlled, only gated: by doing nothing when
+  it is not its turn, a CPU lets a shared policy decide whose work happens.
+  This does not extend to what Renode schedules itself (timers, peripherals,
+  its time source), and what reporting instructions that did not execute does
+  to Renode's own accounting of time is untested.
+- **Early returns are accepted.** Returning fewer instructions than asked hung
+  nothing outside the gated case above.
+- **Bus cost.** Reading an instruction word through `Bus.ReadDoubleWord` cost
+  about 0.5 µs (10 million reads in 5.7 s).
+- **Reset.** 200 `machine Reset` commands on a two-CPU machine took 23 ms, with
+  a harmless warning.
+- **The stock oracle fits.** A `RiscV32` shared a machine with the probe CPU and
+  took the same ELF. It accepted the `cpuType` strings `rv32i`, `rv32ia` and
+  `rv32if`, with `zicsr`, `zicond` and `zba`, and rejected `zalrsc`, `zicntr`
+  and `zihpm` with `Undefined instructions set extension`. Whether its F
+  implementation matches D17 with `frm` left at zero was not tested.
+- **Not tested:** real shared state under serial execution, more than 32 such
+  CPUs, the register-name mapping, and loading a native library from Renode's
+  tree. These are the second probe's items (D19).
 
 ## Building the plugin
 
