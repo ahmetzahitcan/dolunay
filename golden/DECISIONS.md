@@ -65,45 +65,46 @@ Because: The next variant changes memory (scratchpad + DMA), barrier logic, and
 possibly the path model; deriving semantics from the previous RTL would encode
 the wrong machine in the thing meant to judge the right one.
 
-Consequences: `DESIGN.md` and `ITS-SEMANTICS.md` are downgraded to legacy
-rationale. Anything read from `../src` must be labelled as evidence.
+Consequences: The previous variant's design documents (`DESIGN.md`,
+`ITS-SEMANTICS.md`, in git history) are rationale for that variant only.
+Anything read from `../src` must be labelled as evidence.
 
-## D3 — Paths are the scheduling unit; lanes of a path are in lockstep
+## D3 — Paths are the scheduling unit; threads of a path are in lockstep
 
 Date: 2026-11-04
 Revised: 2026-11-06 — reversed by the maintainer: the original said "no implicit
-lockstep within a warp" and scheduled lanes. Paths are architecturally visible.
+lockstep within a warp" and scheduled threads. Paths are architecturally visible.
 Revised: 2026-11-07 — paths combine only through `bsync`; implicit merging is
 forbidden.
+Revised: 2026-11-16 — a path splits wherever its threads' next PCs differ
+(D21); the model sees every instruction (D18).
 Status: provisional — what "lockstep" means precisely is to be defined in `spec/`
 
-Decision: Each lane carries its own PC and architectural state, but the ISA
-treats the lanes of a warp as executing in lockstep until they diverge. A
-**path** is a set of lanes of one warp that are in lockstep; the scheduler
-chooses the next *path*, never an individual lane. Divergence is detected
-explicitly, at every branch and jump, and splits a path.
+Decision: Each thread carries its own PC and architectural state, but the ISA
+treats the threads of a warp as executing in lockstep until they diverge. A
+**path** is a set of threads of one warp that are in lockstep; the scheduler
+chooses the next *path*, never an individual thread. A path splits at the
+instruction after which its threads' next PCs differ (D21).
 
 Because: This is the ISA's execution model. Lockstep is a *semantic*
 statement — it does not require SIMD execution, in the model or in the RTL — so
 the model states it as rules about observable order, not as the RTL's masks and
 stacks, and can still catch bugs in that machinery.
 
-Considered: lane-based scheduling without lockstep (the original D3) — wrong
+Considered: thread-based scheduling without lockstep (the original D3) — wrong
 model of the ISA. Detecting divergence lazily by comparing PCs at sync events —
-rejected: it does not correspond to anything the RTL does (the RTL implements
-lockstep as SIMD), comparing the active path's PC with every other path is
-costly and not meaningful, and a lane may never reach a sync event (an infinite
-loop), so divergence must be caught at the branch itself.
+rejected: two paths can reach the same PC and still be separate, and a thread
+may never reach a sync event (an infinite loop), so divergence must be caught at
+the instruction itself.
 
 Consequences: The model keeps path bookkeeping: split at divergence, combine
 only through `bsync`. Two paths that reach the same PC stay separate; an
 implementation must not merge them implicitly, because a merge changes the
 order in which their accesses take effect (`spec/EXECUTION-MODEL.md` §4.2) —
-Dolunay keeps a hardware path list, not a reconvergence stack. Every branch and
-jump of the active path is an event the model sees (D11). Which path runs next
-is a choice point (D12), switched cooperatively (D13); the order of conflicting
-accesses within one lockstep instruction is fixed by the spec (D14). The rules
-themselves are being drafted in `spec/EXECUTION-MODEL.md`; open in
+Dolunay keeps a hardware path list, not a reconvergence stack. Which path runs
+next is a choice point (D12), switched cooperatively (D13); the order of
+conflicting accesses within one lockstep instruction is fixed by the spec (D14).
+The rules themselves are being drafted in `spec/EXECUTION-MODEL.md`; open in
 `CONTRACT.md` §2: the details of `bsync`.
 
 ## D4 — The model lives in this repository
@@ -125,37 +126,23 @@ Considered: a separate repository — rejected for the reason above.
 Consequences: One tree hosts Bender, Python and .NET build systems. Revisit if
 the ISA stabilises and independent release cadence becomes valuable.
 
-## D5 — C# on Renode's RISC-V core
+## D5 — C#, not IronPython
 
 Date: 2026-11-04
-Revised: 2026-11-06 — the integration route moved to D8; assumptions settled by
-the 2026-11-06 probes (D11).
-Revised: 2026-11-16 — the ISA layer is no longer Renode's RISC-V core; it is
-D19. The language choice stands. The rest of this entry is history, to be
-trimmed.
-Status: provisional
+Revised: 2026-11-06 — the integration route moved to D8.
+Revised: 2026-11-16 — reduced to the language choice; the entry also chose
+Renode's RISC-V core as the ISA layer, which D19 replaces.
+Status: accepted
 
-Decision: The model and its hooks are written in C#. The ISA layer is D19. How
-the C# reaches Renode is D8.
+Decision: The model, its tools and its Renode shell are written in C#.
 
-Because: RV32 + F + A semantics are commodity, and Renode's embedded scripting is
-IronPython 2.7, which is unacceptable in this repository.
+Because: Renode's embedded scripting is IronPython 2.7, which is unacceptable in
+this repository, and C# is Renode's own language, so the shell needs no bridge.
 
-Considered: IronPython hooks (Python 2); writing our own ISA layer; Spike; QEMU
-user-mode. See `DESIGN.md` §11.
+Considered: IronPython hooks (Python 2).
 
-Consequences: The model is tied to Renode's CPU API. Load-bearing assumptions,
-each to be settled by a probe rather than by argument:
-
-- the model can extend the core — **verified**: `CPU.Dolunay` subclasses
-  `RiscV32` and installs custom instructions;
-- lanes can be run and stopped fast enough — **answered by D11**: no state
-  swapping (one CPU per lane), and a measured cost of ≈0.85 ms per rendezvous,
-  accepted for now (`PERFORMANCE.md`);
-- loads and stores can be intercepted — **verified**: standard opcodes can be
-  overridden by custom-instruction handlers (`SUBSTRATE.md`).
-
-Overturned if the slow design of D11 proves unusable even for correctness work.
+Consequences: The code targets Renode's framework and language version
+(`net8.0`, C# 12; `AGENTS.md` §8). Python stays for generators and tooling.
 
 ## D6 — Agent working rules for `golden/`
 
@@ -201,37 +188,38 @@ Windows additionally needs a `hexdump` shim for the scripts' last step; the scri
 headers say so. On Windows the compiler shim must put the toolchain's `bin` on
 `PATH`, otherwise `-flto` cannot load the linker's LTO plugin.
 
-## D8 — The model is two pre-built assemblies: a pure model and a Renode adapter
+## D8 — The model is pre-built assemblies: pure projects and a Renode shell
 
 Date: 2026-11-05
 Revised: 2026-11-06 — split into `Dolunay.Model` and `Dolunay.Renode` with NUnit
 tests on the model; the `[Plugin]` class and `golden/renode.config` were
 removed.
-Revised: 2026-11-16 — D19 changes the adapter's job: a `BaseCPU` shell
-replaces `CPU.Dolunay`'s `RiscV32` subclass, the opcode overrides and the lane
-coordinator, and a headless runner is added. The rule in the second paragraph
-stands. The project list below is to be amended with the first code under D19.
+Revised: 2026-11-16 — the projects follow D19: a headless runner is added, and a
+`BaseCPU` shell replaces the `RiscV32` subclass, the opcode overrides and the
+lane coordinator.
 Status: accepted
 
-Decision: The code is a `net8.0` solution, `golden/model/Dolunay.sln`, of
-three projects:
+Decision: The code is a `net8.0` solution, `golden/model/Dolunay.sln`, of four
+projects:
 
-- `Dolunay.Model` — pure C# with no Renode reference: geometry, lanes, warps,
-  paths, the scheduler and its policies, the sync and scratchpad rules behind
-  interfaces, the observation writer. It receives events such as "the whole
-  path stopped at instruction X" and returns decisions.
-- `Dolunay.Renode` — the glue: `CPU.Dolunay`, the opcode overrides (each citing
-  `spec/`), the coordinator that maps lanes to machines and halts or releases
-  them, the scratchpad bus device, monitor commands.
+- `Dolunay.Model` — pure C# with no Renode reference: geometry, threads, warps,
+  paths, the step of one warp (D18), the world the warps share (D23), the
+  interpreter and the decoder, the policies, the conflict check, the observation
+  writer.
+- `Dolunay.Runner` — a headless program over `Dolunay.Model` that owns the loop
+  for exploration, sampling and replay (D19). No Renode reference.
+- `Dolunay.Renode` — the shell: the `BaseCPU` subclass, one per warp, which calls
+  the model's step of one warp and forwards bus accesses to devices; monitor
+  commands. Nothing architectural.
 - `Dolunay.Model.Tests` — NUnit tests of `Dolunay.Model` only.
 
-A signature that mentions a Renode type belongs in the adapter; a branch that
-encodes an architectural rule belongs in the model. Both DLLs are copied into
-Renode's installation directory.
+A signature that mentions a Renode type belongs in the shell; a branch that
+encodes an architectural rule belongs in the model. `Dolunay.Model.dll` and
+`Dolunay.Renode.dll` are copied into Renode's installation directory.
 
-Because: Only a model that does not reference Renode can be tested without
-Renode, and the architectural rules are what most needs testing. The SDK is
-installed on every machine this work runs on, and pre-built assemblies give
+Because: Only a model that does not reference Renode can be tested and run
+without Renode, and the architectural rules are what most needs testing. The SDK
+is installed on every machine this work runs on, and pre-built assemblies give
 several source files and ordinary project tooling.
 
 Considered: one assembly holding both — its tests would still need Renode's
@@ -248,7 +236,8 @@ and is machine-local, so it is never recorded here. Renode registers types by
 scanning its own installation directory, non-recursively, at start-up, so
 `build/plugin` is the source of truth and the copies in the Renode tree are not;
 `Dolunay.Model.dll` resolves from there at run time (`SUBSTRATE.md`). A future
-`[Plugin]` class would again need `[plugins] enabled-plugins`.
+`[Plugin]` class would again need `[plugins] enabled-plugins`. A native library
+(the softfloat, D17) would be a further build output to copy.
 
 ## D9 — The machine is the RISC-V standard plus Dolunay's own specification documents
 
@@ -277,9 +266,9 @@ the reason above.
 Consequences: Encodings in the model must trace to a section of the RISC-V
 specifications or of `golden/spec/`; a hand-written constant without that
 citation is forbidden. A disagreement between the CSV and `golden/spec/` is an
-RTL finding, not a model bug. `DESIGN.md` §5.4 (generate the model's patterns
-from the CSV) is void. Until `golden/spec/` exists, no custom instruction or CSR
-may be implemented except as a placeholder labelled as such.
+RTL finding, not a model bug. Until `golden/spec/` specifies a custom
+instruction or CSR, it may be implemented only as a placeholder labelled as
+such.
 
 ## D10 — This log records current decisions; git records history
 
@@ -301,44 +290,15 @@ Consequences: Review of a change to this file happens in the diff, so substance
 changes must not be bundled silently with unrelated work. Overturned if the log
 grows enough authors that in-place edits become contested.
 
-## D11 — Execution on Renode: one machine per lane, overridden opcodes, slow first
+## D11 — Execution on Renode: one machine per thread, overridden opcodes, slow first
 
 Date: 2026-11-06
-Revised: 2026-11-16 — the execution mechanism is superseded by D18 and D19.
-The entry is kept in full only because it is the one place that says the model
-owns every shared resource; it shrinks to a stub once that rule has its own
-entry.
-Status: superseded by D18 and D19
+Status: superseded by D18, D19 and D23
 
-Decision: Each lane is one RISC-V CPU in its own Renode machine. The model owns
-every shared resource (scratchpad, and later global memory and DMA) and each
-machine reaches it through a bus device. Branches, jumps, shared-memory
-accesses and the custom instructions are installed as custom-instruction
-handlers that override the standard decoder. Lanes wait by halting themselves
-with `PC` left on the instruction; the last lane of a path to arrive lets the
-model decide (split, release, switch path). Start with a rendezvous at every
-branch and accept the cost; speed-ups are deferred (`PERFORMANCE.md`).
-
-Because: Renode executes each lane at full speed between events, so the model
-never saves or restores lane state. Overriding opcodes gives the model every
-event without scanning the program, and halting before an instruction is
-precise (`SUBSTRATE.md`). A Renode machine holds at most 32 cores, and machines
-of one CPU cost no more than packed ones, so one per lane is the simplest layout
-with no geometry limit. Correctness comes first.
-
-Considered: one CPU swapped between lanes (state save/restore plus `Step`) —
-re-implements Renode's CPU state, ≈2.4 k instructions/s. One machine per warp —
-works, but adds a packing rule and a 32-lane limit for no gain. Waiting by
-blocking a CPU thread — stops every CPU of the emulation. Opcode pre-hooks —
-cannot stop before the instruction. Address hooks — precise, but need the
-addresses in advance.
-
-Consequences: Each rendezvous costs ≈0.85 ms, so a path advances at about 1 200
-branches/s until a `PERFORMANCE.md` fix lands. Renode's own instruction counter
-also counts aborted attempts; the model counts instructions itself. Atomics on
-shared memory are the model's job (whether LR/SC and AMOs survive at all is open,
-`CONTRACT.md` §2). Overturned if a probe of the coordinator-driven execution in
-`PERFORMANCE.md` shows a simpler design that is also correct.
+Each thread was a RISC-V CPU in its own Renode machine, with opcode overrides
+and halting to give the model its events; the literal engine (D18) and one CPU
+of Dolunay's own per warp (D19) replace it, and its rule that the model owns
+every shared resource is now D23.
 
 ## D12 — The spec leaves choices open; implementations refine it; valid kernels are determinate
 
@@ -381,19 +341,21 @@ tolerance metrics are open (`CONTRACT.md` §2).
 Date: 2026-11-06
 Revised: 2026-11-07 — after a divergent instruction, the next active path is one
 of the paths it created.
+Revised: 2026-11-16 — "a path finishing" is no longer a switch point: only the
+whole warp finishes (D24).
 Status: accepted
 
 Decision: A warp switches from one path to another only at points explicit in
-the code: a branch or jump that diverges, `yield`, waiting at a barrier, and a
-path finishing. After a divergent instruction, the next active path is one of
-the paths it created; the warp's other paths keep waiting. `yield` guarantees that before the yielding path executes its
-next instruction, every other lane of its warp that can execute — not finished,
-not waiting at a barrier — executes at least one instruction. Warps execute
-concurrently with each other.
+the code: an instruction after which the path diverges, `yield`, and waiting at
+a barrier. After a divergent instruction, the next active path is one of the
+paths it created; the warp's other paths keep waiting. `yield` guarantees that
+before the yielding path executes its next instruction, every other thread of
+its warp that can execute — not waiting at a barrier — executes at least one
+instruction. Warps execute concurrently with each other.
 
 Because: Switching paths to cover a memory stall would help the hardware, but
 another warp can cover it instead; explicit switching keeps the schedules within
-a warp few and visible in the code. The guarantee is stated over lanes, not
+a warp few and visible in the code. The guarantee is stated over threads, not
 paths: `yield` neither diverges nor reconverges, so the yielding path is
 unchanged until it runs again, while the other paths may split or merge in the
 meantime — "every other path" has no stable meaning.
@@ -413,11 +375,11 @@ progress guarantee towards each other is open (`CONTRACT.md` §2).
 Date: 2026-11-06
 Status: accepted
 
-Decision: When the lanes of one path execute an instruction whose accesses
+Decision: When the threads of one path execute an instruction whose accesses
 conflict, the spec defines the order in which they take effect; it is not a
 choice point.
 
-Because: A lockstep instruction is one SIMD instruction fed to every lane of the
+Because: A lockstep instruction is one SIMD instruction fed to every thread of the
 path; there is no hardware reason for the order to vary, and fixing it removes a
 source of nondeterminism.
 
@@ -446,60 +408,19 @@ and on failure it can only say that none matched.
 
 Consequences: `golden/` defines the log format (`CONTRACT.md` §4); producing it
 is RTL work. Every choice point must be identifiable in the spec's terms: within
-a warp, which path (warp, lane mask, PC) runs next; between warps, the order in
+a warp, which path (warp, thread mask, PC) runs next; between warps, the order in
 which conflicting accesses to each address took effect. The second is the
 requirement that reaches into the memory system's design.
 
 ## D16 — The model core's defaults for the open questions
 
 Date: 2026-11-07
-Status: provisional — each default stands until `spec/` settles its question
+Status: superseded by D18
 
-Decision: `Dolunay.Model` puts every open rule behind a knob, with these
-defaults:
-
-- **`bsync`** (`IBarrierRule`): `WholeWarpBarrier`, a placeholder. It combines
-  once every lane of the warp is in the active path or blocked on the same
-  barrier, and the combined path continues after the active path's `bsync`;
-  otherwise it blocks. Lanes of one path that name different barriers are
-  reported as `illegal`.
-- **Order within a lockstep instruction** (`ILockstepOrder`, D14): ascending
-  lane index.
-- **Memory:** accesses take effect in the order the model executes them, which
-  is sequentially consistent and so one valid execution under
-  `spec/EXECUTION-MODEL.md` §3. Weaker orders are not explored.
-- **Seeded policies** use their own SplitMix64, not `System.Random`.
-- **Termination:** an illegal act the model can detect, such as `wdone` from a
-  path that does not hold the whole warp, ends the run as `illegal`, with the
-  warp, lanes, PC and rule.
-
-The conflict check (`CONTRACT.md` §1, method 1) orders accesses only by each
-lane's program order, the warp program order within one path, the order within
-one lockstep instruction, splits, and `bsync` combines.
-
-Because: Every open question needs a declared default so the model can run
-(`CONTRACT.md` §2), and each of these is the smallest choice that leaves the
-rest unchanged. The barrier rule is a placeholder because the release model is
-being rethought with the memory redesign. The previous variant's rule relied
-on its memory design. The whole-warp rule matches the `bsync` before `wdone` in
-the previous variant's `crt0.s`. A sequentially consistent memory is enough for
-kernels the conflict check passes, since they have no unordered conflicting
-accesses. `System.Random`'s algorithm is not promised to stay the same across
-runtimes, which would break reproducibility (guarantee 1). An `illegal` class
-reports a detectable kernel bug as the kernel's fault, not the model's.
-
-Considered: for `bsync`, combining with every path blocked on the same barrier
-as soon as no path is paused. It is kept in the tests as the second rule that
-proves the engine does not depend on the default. For an illegal `wdone`,
-aborting the run without an observation, which would treat a kernel bug as a
-model failure.
-
-Consequences: Kernels that need a partial-warp barrier deadlock under the
-default. Weak-memory behaviour is invisible until the memory model is settled
-and explored. No synchronisation between warps is specified, so every
-conflicting access between warps is reported. Changing a default is a change
-to this entry, and a test must show that the rest of the model still does not
-depend on it.
+The code whose knobs and defaults this entry listed (`WholeWarpBarrier`, the
+ascending lockstep order, sequentially consistent memory, SplitMix64) was
+removed with the redesign; each new knob declares its default in the entry or
+document that needs it (`AGENTS.md` §4).
 
 ## D17 — Floating point: F with static rounding only
 
@@ -509,11 +430,11 @@ Status: accepted
 Decision: Dolunay implements RV32F as the RISC-V specification defines it,
 subnormals included, except for dynamic rounding. There is no `frm` CSR, and
 accessing it is illegal. `fcsr` exists: its `frm` field (bits 7:5) reads as
-zero and writes to it are ignored. `fflags` is kept, as per-lane state. All
+zero and writes to it are ignored. `fflags` is kept, as per-thread state. All
 five static rounding modes are supported, and `rm = 111` selects RNE instead
 of reading `frm`. There is no D extension.
 
-Because: A dynamic rounding mode is per-lane state that the lanes of a path
+Because: A dynamic rounding mode is per-thread state that the threads of a path
 could disagree on, for no use worth that. `rm = 111` is what GCC emits by
 default, so allowing it keeps the standard toolchain usable without a fork.
 Reading `frm` as zero in `fcsr` keeps start-up code that clears `fcsr`
@@ -523,13 +444,13 @@ Considered: making `rm = 111` illegal (needs a patched GCC or binutils, or
 rewriting binaries after the build, which changes the image's hash); making a
 write of nonzero `frm` bits to `fcsr` illegal; dropping `fcsr`.
 
-Consequences: A warp of one lane is no longer exactly a plain RISC-V hart, so
+Consequences: A warp of one thread is no longer exactly a plain RISC-V hart, so
 `spec/EXECUTION-MODEL.md` §4.1 needs this exemption, and the exemption is to be
 written into `spec/` when its first ISA document exists. A stock hart whose
-`frm` was never written behaves the same on valid programs, so a single-lane
+`frm` was never written behaves the same on valid programs, so a single-thread
 program can still be compared with one. The RTL's FPU follows the standard, so
 D15's bitwise comparison of floats under replay stands. The model needs a
-softfloat for the directed modes and `fflags`. Per-lane `fflags` belongs in
+softfloat for the directed modes and `fflags`. Per-thread `fflags` belongs in
 the observation (`CONTRACT.md` §4).
 
 ## D18 — The model executes the spec literally
@@ -538,28 +459,29 @@ Date: 2026-11-16
 Status: accepted
 
 Decision: Only the active path of a warp executes. One step executes one
-instruction of the active path on each of its lanes, one after another in the
+instruction of the active path on each of its threads, one after another in the
 order D14 fixes, and the path-level decision (split, barrier, switch) is made
-after the last lane has stepped. Nothing runs ahead of the warp program order,
+after the last thread has stepped. Nothing runs ahead of the warp program order,
 and the model's state is touched from one host thread at a time. Asynchronous
-execution (`REDESIGN.md` §6) is allowed later only as an optimisation that is
-checked against this engine.
+execution, with threads running ahead of their path, is allowed later only as an
+optimisation that is checked against this engine; the deferred design is in git
+history (`golden/REDESIGN.md` §6 at commit `4958b34`).
 
 Because: A reference model should be obviously the spec. A model that runs
-lanes ahead and reconstructs the warp program order afterwards is an optimised
+threads ahead and reconstructs the warp program order afterwards is an optimised
 implementation, and would need an equivalence argument and a reference of its
 own. The literal engine also makes guarantee 1 hold for free, makes the
 instruction budget and the histogram (G3) exact, lets the model prove some
 stuck runs, and gives the conflict check every lockstep instruction.
 
-Considered: lanes running freely in Renode and halting before the instructions
+Considered: threads running freely in Renode and halting before the instructions
 the model must see (D11) — the model is then the optimised implementation
 above.
 
 Consequences: It is slow, and determinacy checking multiplies runs; speed is to
 be measured, not argued. D11's rendezvous and opcode overrides go away. The
-seam to the instruction layer changes: a lane's step returns data, and the
-kind of instruction is decoded once per path (`REDESIGN.md` §2).
+step of a thread returns data, such as its next PC, and the kind of instruction
+is decoded once per path, because every thread of a path is at the same PC.
 
 ## D19 — The instruction layer: one Renode CPU of Dolunay's own per warp
 
@@ -581,23 +503,23 @@ Because: A warp is the spec's hart (`spec/EXECUTION-MODEL.md` §5.3), so a CPU
 per warp gives the warp id, warp-private devices and the geometry a natural
 home in Renode's machine description. Renode supplies the bus, peripherals,
 image loading, the monitor and logging, and a stock `RiscV32` in the same
-machine is the oracle for single-lane programs (D17). Renode's scheduler can
+machine is the oracle for single-thread programs (D17). Renode's scheduler can
 only be gated, by having a warp that is not on turn report its quantum as done,
 and it schedules timers and peripherals itself, so the guarantees are carried
-where the model owns the loop (`REPRODUCIBILITY.md` §4).
+where the model owns the loop (`SUBSTRATE.md`).
 
-Considered: A, Renode's `RiscV32` stepped, one CPU per lane — keeps D11's
+Considered: A, Renode's `RiscV32` stepped, one CPU per thread — keeps D11's
 override load, and Renode's F implements the dynamic rounding mode D17 removes.
 B, our own interpreter with no Renode — gives up the machine description, the
 peripherals and the oracle in one machine. C, B with Renode only as an oracle —
 the fallback.
 
 Consequences: Renode is no longer an independent implementation of the ISA,
-except as the single-lane oracle; the model's interpreter is ours to verify.
+except as the single-thread oracle; the model's interpreter is ours to verify.
 `BaseCPU` is a larger coupling than a `RiscV32` subclass, and Renode's debugging
 features for translated cores (address hooks, tracing, GDB, disassembly) do not
-come for free. `Machine` splits into a step of one warp and a world shared by
-the warps. Speed is unmeasured. Overturned in favour of C if a second probe
+come for free. The model is organised as a step of one warp over a world shared
+by the warps. Speed is unmeasured. Overturned in favour of C if a second probe
 fails: real shared state under serial execution, more than 32 CPUs, registers
 by name, quantum burning with a real model, and loading the native softfloat
 library from Renode's tree.
@@ -609,8 +531,7 @@ Status: accepted
 
 Decision: Dolunay's unit of architectural state, with its own PC and registers,
 is a **thread**, as in the SIMT architectures whose vocabulary Dolunay borrows.
-*Lane* is retired. Identifiers follow: `LaneRef` becomes `ThreadRef`,
-`LaneSet` becomes `ThreadSet`, and "lane mask" becomes "thread mask" in the
+*Lane* is retired. Identifiers follow: "thread mask", not "lane mask", in the
 observation and the replay log. An operating-system thread is always called a
 *host thread*.
 
@@ -620,39 +541,39 @@ literature say; two synonyms invite readers to look for a difference.
 Considered: keeping *lane* as the preferred synonym (`CONTRACT.md` §6 as it
 was) — the previous design's choice, which the redesign drops.
 
-Consequences: The rename is one mechanical change across `CONTRACT.md`,
-`DECISIONS.md`, `spec/`, the code and the tests, with no other change in it.
-Until it lands, *lane* in existing text means *thread*. In prose, *thread* in
-the general sense of an independent stream of execution is closer to a warp,
-so do not use it that way.
+Consequences: The documents under `golden/` were rewritten with *thread* for the
+redesign, and the code that said *lane* was removed, so there is no separate
+rename. Text outside `golden/` that says *lane* means *thread*. In prose,
+*thread* in the general sense of an independent stream of execution is closer to
+a warp, so do not use it that way.
 
-## D21 — The PC rule: a lane's next PC is its own
+## D21 — The PC rule: a thread's next PC is its own
 
 Date: 2026-11-16
 Status: accepted
 
-Decision: For every instruction, a lane's next PC is a function of that lane's
+Decision: For every instruction, a thread's next PC is a function of that thread's
 own PC and registers, and of memory and warp registers as the spec orders them
-at that instruction. It never depends on another lane's PC or registers, in its
+at that instruction. It never depends on another thread's PC or registers, in its
 own path or any other. The rule constrains only the PC: an instruction may
-move data between lanes (a shuffle, a vote into a register). Warp registers are
+move data between threads (a shuffle, a vote into a register). Warp registers are
 written only by instructions that take effect for the whole path at once. A
-`bsync` whose converging lanes are at different instructions is illegal.
+`bsync` whose converging threads are at different instructions is illegal.
 
-Because: Every lane can then compute where it goes on its own, so divergence is
-a fact about each lane, and an implementation may execute a path's lanes at
-different times (a datapath narrower than the warp, re-running lanes after a
-bank conflict, running lanes ahead in a faster emulator) without changing
+Because: Every thread can then compute where it goes on its own, so divergence is
+a fact about each thread, and an implementation may execute a path's threads at
+different times (a datapath narrower than the warp, re-running threads after a
+bank conflict, running threads ahead in a faster emulator) without changing
 control flow. It costs at most one instruction: a branch that would depend on
-other lanes becomes a data instruction followed by an ordinary branch.
+other threads becomes a data instruction followed by an ordinary branch.
 
 Considered: no rule — the literal engine (D18) does not need it, but every
-implementation that does not execute a path's lanes together would.
+implementation that does not execute a path's threads together would.
 
-Consequences: Instructions whose next PC reads other lanes, such as a fused
+Consequences: Instructions whose next PC reads other threads, such as a fused
 vote-and-branch, cannot be added; `spec/` states the rule when its first ISA
 document is written, and every custom instruction is checked against it.
-`WholeWarpBarrier` must check the blocked paths' PCs and report `illegal`
+The model's `bsync` must check the blocked paths' PCs and report `illegal`
 when they differ; this also answers the PC of a combined path
 (`spec/EXECUTION-MODEL.md` §5.2). The model cannot check the rule at run time;
 it is a rule for whoever defines an instruction.
@@ -664,7 +585,7 @@ Status: accepted
 
 Decision: Dolunay implements neither A nor Zalrsc, and no standard atomic
 encoding. Synchronisation is split in two. Within a warp, custom instructions
-pass data between the lanes of the active path. Between warps, warp-level
+pass data between the threads of the active path. Between warps, warp-level
 atomics with semantics modelled on A's execute once for the active path, under
 encodings of their own. The details are TBD: the instruction set of both kinds,
 where a warp-level atomic's operands come from and where its old value goes,
@@ -672,15 +593,15 @@ whether a compare-and-swap or a warp-level LR/SC is provided, and which memory
 the atomics apply to.
 
 Because: Within a warp no atomics are needed across paths, because paths switch
-only at explicit points (D13); the problem is lanes of one path updating the
+only at explicit points (D13); the problem is threads of one path updating the
 same word in one instruction, which a reduction across the path replaces.
 Between warps, one atomic per warp is a single memory access, so its order is a
 plain per-address choice point (D15) with no conflict inside the instruction,
 and its `aq`/`rl` ordering is the hart's, with the warp as the hart. New
-encodings keep a compiler from emitting them for per-lane C atomics.
+encodings keep a compiler from emitting them for per-thread C atomics.
 
-Considered: keeping per-lane A with Zalrsc, the previous variant's approach —
-an AMO or a reservation per lane linearises memory and was a problem for the
+Considered: keeping per-thread A with Zalrsc, the previous variant's approach —
+an AMO or a reservation per thread linearises memory and was a problem for the
 new RTL. A warp-level LR/SC — needs a forward-progress guarantee defined for
 SIMT; open, against a warp-level compare-and-swap.
 
@@ -691,3 +612,44 @@ Lock and flag handoffs between warps spin, so they terminate only if every warp
 that can run eventually runs, which makes that open question (`CONTRACT.md` §2)
 pressing. The conflict check gets its synchronisation between warps from these
 atomics once they are specified.
+
+## D23 — The model owns every shared resource
+
+Date: 2026-11-16 — the rule was part of D11 from 2026-11-06
+Status: accepted
+
+Decision: Every resource shared between threads or warps — the scratchpad, and
+later global memory and DMA — is state of the model, and threads reach it only
+through the model.
+
+Because: The conflict check, the choice points between warps (D12) and replay
+(D15) need every access to shared state, in order. An access the model does not
+see can be neither checked nor replayed.
+
+Considered: Renode's memory as the shared store — the model would then have to
+intercept every access to see it, which is what D11's opcode overrides did.
+
+Consequences: Shared memory lives in the world the warps share (D18) inside
+`Dolunay.Model`; in a run hosted in Renode it is not a Renode memory peripheral.
+Atomics between warps (D22) are the model's.
+
+## D24 — Only the whole warp finishes
+
+Date: 2026-11-16 — agreed as the direction on 2026-11-07
+Status: accepted
+
+Decision: A warp finishes by executing `wdone`, which is legal only when the
+active path holds every thread of the warp; executing it otherwise is illegal.
+Threads do not finish individually.
+
+Because: Nothing ever waits for a finished thread, so barriers need no rule for
+finished threads, and the end of a run (`all-wdone`) is defined per warp.
+
+Considered: threads finishing individually (`spec/EXECUTION-MODEL.md` §5.1) —
+finishing becomes one more case of a split, and a barrier must then stop
+waiting for finished threads, or wait forever.
+
+Consequences: A kernel cannot let some threads stop early, except by having them
+spin or block until the warp reconverges for `wdone`. Finishing is not a path
+switch point (D13). The model reports an illegal `wdone` as `illegal`
+termination (`CONTRACT.md` §1, guarantee 2).
