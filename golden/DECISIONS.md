@@ -130,10 +130,13 @@ the ISA stabilises and independent release cadence becomes valuable.
 Date: 2026-11-04
 Revised: 2026-11-06 — the integration route moved to D8; assumptions settled by
 the 2026-11-06 probes (D11).
+Revised: 2026-11-16 — the ISA layer is no longer Renode's RISC-V core; it is
+D19. The language choice stands. The rest of this entry is history, to be
+trimmed.
 Status: provisional
 
-Decision: The ISA layer is Renode's RISC-V core; the model and its hooks are
-written in C#. How the C# reaches Renode is D8.
+Decision: The model and its hooks are written in C#. The ISA layer is D19. How
+the C# reaches Renode is D8.
 
 Because: RV32 + F + A semantics are commodity, and Renode's embedded scripting is
 IronPython 2.7, which is unacceptable in this repository.
@@ -204,6 +207,10 @@ Date: 2026-11-05
 Revised: 2026-11-06 — split into `Dolunay.Model` and `Dolunay.Renode` with NUnit
 tests on the model; the `[Plugin]` class and `golden/renode.config` were
 removed.
+Revised: 2026-11-16 — D19 changes the adapter's job: a `BaseCPU` shell
+replaces `CPU.Dolunay`'s `RiscV32` subclass, the opcode overrides and the lane
+coordinator, and a headless runner is added. The rule in the second paragraph
+stands. The project list below is to be amended with the first code under D19.
 Status: accepted
 
 Decision: The code is a `net8.0` solution, `golden/model/Dolunay.sln`, of
@@ -297,7 +304,11 @@ grows enough authors that in-place edits become contested.
 ## D11 — Execution on Renode: one machine per lane, overridden opcodes, slow first
 
 Date: 2026-11-06
-Status: provisional
+Revised: 2026-11-16 — the execution mechanism is superseded by D18 and D19.
+The entry is kept in full only because it is the one place that says the model
+owns every shared resource; it shrinks to a stub once that rule has its own
+entry.
+Status: superseded by D18 and D19
 
 Decision: Each lane is one RISC-V CPU in its own Renode machine. The model owns
 every shared resource (scratchpad, and later global memory and DMA) and each
@@ -489,3 +500,194 @@ and explored. No synchronisation between warps is specified, so every
 conflicting access between warps is reported. Changing a default is a change
 to this entry, and a test must show that the rest of the model still does not
 depend on it.
+
+## D17 — Floating point: F with static rounding only
+
+Date: 2026-11-16
+Status: accepted
+
+Decision: Dolunay implements RV32F as the RISC-V specification defines it,
+subnormals included, except for dynamic rounding. There is no `frm` CSR, and
+accessing it is illegal. `fcsr` exists: its `frm` field (bits 7:5) reads as
+zero and writes to it are ignored. `fflags` is kept, as per-lane state. All
+five static rounding modes are supported, and `rm = 111` selects RNE instead
+of reading `frm`. There is no D extension.
+
+Because: A dynamic rounding mode is per-lane state that the lanes of a path
+could disagree on, for no use worth that. `rm = 111` is what GCC emits by
+default, so allowing it keeps the standard toolchain usable without a fork.
+Reading `frm` as zero in `fcsr` keeps start-up code that clears `fcsr`
+working.
+
+Considered: making `rm = 111` illegal (needs a patched GCC or binutils, or
+rewriting binaries after the build, which changes the image's hash); making a
+write of nonzero `frm` bits to `fcsr` illegal; dropping `fcsr`.
+
+Consequences: A warp of one lane is no longer exactly a plain RISC-V hart, so
+`spec/EXECUTION-MODEL.md` §4.1 needs this exemption, and the exemption is to be
+written into `spec/` when its first ISA document exists. A stock hart whose
+`frm` was never written behaves the same on valid programs, so a single-lane
+program can still be compared with one. The RTL's FPU follows the standard, so
+D15's bitwise comparison of floats under replay stands. The model needs a
+softfloat for the directed modes and `fflags`. Per-lane `fflags` belongs in
+the observation (`CONTRACT.md` §4).
+
+## D18 — The model executes the spec literally
+
+Date: 2026-11-16
+Status: accepted
+
+Decision: Only the active path of a warp executes. One step executes one
+instruction of the active path on each of its lanes, one after another in the
+order D14 fixes, and the path-level decision (split, barrier, switch) is made
+after the last lane has stepped. Nothing runs ahead of the warp program order,
+and the model's state is touched from one host thread at a time. Asynchronous
+execution (`REDESIGN.md` §6) is allowed later only as an optimisation that is
+checked against this engine.
+
+Because: A reference model should be obviously the spec. A model that runs
+lanes ahead and reconstructs the warp program order afterwards is an optimised
+implementation, and would need an equivalence argument and a reference of its
+own. The literal engine also makes guarantee 1 hold for free, makes the
+instruction budget and the histogram (G3) exact, lets the model prove some
+stuck runs, and gives the conflict check every lockstep instruction.
+
+Considered: lanes running freely in Renode and halting before the instructions
+the model must see (D11) — the model is then the optimised implementation
+above.
+
+Consequences: It is slow, and determinacy checking multiplies runs; speed is to
+be measured, not argued. D11's rendezvous and opcode overrides go away. The
+seam to the instruction layer changes: a lane's step returns data, and the
+kind of instruction is decoded once per path (`REDESIGN.md` §2).
+
+## D19 — The instruction layer: one Renode CPU of Dolunay's own per warp
+
+Date: 2026-11-16
+Status: accepted
+
+Decision: Each warp is one Renode CPU of Dolunay's own, a subclass of
+`BaseCPU` and not of `RiscV32`, as a `RiscV32` is one hart. The interpreter, the
+decoder and every architectural rule live in pure projects with no Renode
+reference (D8's rule). `Dolunay.Renode` is a thin shell: it calls the model's
+step of one warp and forwards bus accesses to devices; one unit of
+`ExecuteInstructions` is one path step. Renode runs it in serial execution
+mode. Systematic exploration, sampling and RTL replay run on a headless runner
+over the same pure model, where the model's policy chooses which warp steps; a
+run hosted in Renode is one valid execution, for bring-up and debugging. The
+model loads program images itself.
+
+Because: A warp is the spec's hart (`spec/EXECUTION-MODEL.md` §5.3), so a CPU
+per warp gives the warp id, warp-private devices and the geometry a natural
+home in Renode's machine description. Renode supplies the bus, peripherals,
+image loading, the monitor and logging, and a stock `RiscV32` in the same
+machine is the oracle for single-lane programs (D17). Renode's scheduler can
+only be gated, by having a warp that is not on turn report its quantum as done,
+and it schedules timers and peripherals itself, so the guarantees are carried
+where the model owns the loop (`REPRODUCIBILITY.md` §4).
+
+Considered: A, Renode's `RiscV32` stepped, one CPU per lane — keeps D11's
+override load, and Renode's F implements the dynamic rounding mode D17 removes.
+B, our own interpreter with no Renode — gives up the machine description, the
+peripherals and the oracle in one machine. C, B with Renode only as an oracle —
+the fallback.
+
+Consequences: Renode is no longer an independent implementation of the ISA,
+except as the single-lane oracle; the model's interpreter is ours to verify.
+`BaseCPU` is a larger coupling than a `RiscV32` subclass, and Renode's debugging
+features for translated cores (address hooks, tracing, GDB, disassembly) do not
+come for free. `Machine` splits into a step of one warp and a world shared by
+the warps. Speed is unmeasured. Overturned in favour of C if a second probe
+fails: real shared state under serial execution, more than 32 CPUs, registers
+by name, quantum burning with a real model, and loading the native softfloat
+library from Renode's tree.
+
+## D20 — The unit of state is a thread; *lane* is retired
+
+Date: 2026-11-16
+Status: accepted
+
+Decision: Dolunay's unit of architectural state, with its own PC and registers,
+is a **thread**, as in the SIMT architectures whose vocabulary Dolunay borrows.
+*Lane* is retired. Identifiers follow: `LaneRef` becomes `ThreadRef`,
+`LaneSet` becomes `ThreadSet`, and "lane mask" becomes "thread mask" in the
+observation and the replay log. An operating-system thread is always called a
+*host thread*.
+
+Because: One word for one thing. *Thread* is what the RTL and the SIMT
+literature say; two synonyms invite readers to look for a difference.
+
+Considered: keeping *lane* as the preferred synonym (`CONTRACT.md` §6 as it
+was) — the previous design's choice, which the redesign drops.
+
+Consequences: The rename is one mechanical change across `CONTRACT.md`,
+`DECISIONS.md`, `spec/`, the code and the tests, with no other change in it.
+Until it lands, *lane* in existing text means *thread*. In prose, *thread* in
+the general sense of an independent stream of execution is closer to a warp,
+so do not use it that way.
+
+## D21 — The PC rule: a lane's next PC is its own
+
+Date: 2026-11-16
+Status: accepted
+
+Decision: For every instruction, a lane's next PC is a function of that lane's
+own PC and registers, and of memory and warp registers as the spec orders them
+at that instruction. It never depends on another lane's PC or registers, in its
+own path or any other. The rule constrains only the PC: an instruction may
+move data between lanes (a shuffle, a vote into a register). Warp registers are
+written only by instructions that take effect for the whole path at once. A
+`bsync` whose converging lanes are at different instructions is illegal.
+
+Because: Every lane can then compute where it goes on its own, so divergence is
+a fact about each lane, and an implementation may execute a path's lanes at
+different times (a datapath narrower than the warp, re-running lanes after a
+bank conflict, running lanes ahead in a faster emulator) without changing
+control flow. It costs at most one instruction: a branch that would depend on
+other lanes becomes a data instruction followed by an ordinary branch.
+
+Considered: no rule — the literal engine (D18) does not need it, but every
+implementation that does not execute a path's lanes together would.
+
+Consequences: Instructions whose next PC reads other lanes, such as a fused
+vote-and-branch, cannot be added; `spec/` states the rule when its first ISA
+document is written, and every custom instruction is checked against it.
+`WholeWarpBarrier` must check the blocked paths' PCs and report `illegal`
+when they differ; this also answers the PC of a combined path
+(`spec/EXECUTION-MODEL.md` §5.2). The model cannot check the rule at run time;
+it is a rule for whoever defines an instruction.
+
+## D22 — Synchronisation: no A extension; within a warp by custom instructions, between warps by warp-level atomics
+
+Date: 2026-11-16
+Status: accepted
+
+Decision: Dolunay implements neither A nor Zalrsc, and no standard atomic
+encoding. Synchronisation is split in two. Within a warp, custom instructions
+pass data between the lanes of the active path. Between warps, warp-level
+atomics with semantics modelled on A's execute once for the active path, under
+encodings of their own. The details are TBD: the instruction set of both kinds,
+where a warp-level atomic's operands come from and where its old value goes,
+whether a compare-and-swap or a warp-level LR/SC is provided, and which memory
+the atomics apply to.
+
+Because: Within a warp no atomics are needed across paths, because paths switch
+only at explicit points (D13); the problem is lanes of one path updating the
+same word in one instruction, which a reduction across the path replaces.
+Between warps, one atomic per warp is a single memory access, so its order is a
+plain per-address choice point (D15) with no conflict inside the instruction,
+and its `aq`/`rl` ordering is the hart's, with the warp as the hart. New
+encodings keep a compiler from emitting them for per-lane C atomics.
+
+Considered: keeping per-lane A with Zalrsc, the previous variant's approach —
+an AMO or a reservation per lane linearises memory and was a problem for the
+new RTL. A warp-level LR/SC — needs a forward-progress guarantee defined for
+SIMT; open, against a warp-level compare-and-swap.
+
+Consequences: `-march` carries no `a`, so C atomics become library calls, and
+kernels reach the new instructions through intrinsics or `.insn`. Answers in
+part the open `CONTRACT.md` §2 row on LR/SC and AMOs, which is to be amended.
+Lock and flag handoffs between warps spin, so they terminate only if every warp
+that can run eventually runs, which makes that open question (`CONTRACT.md` §2)
+pressing. The conflict check gets its synchronisation between warps from these
+atomics once they are specified.

@@ -39,7 +39,7 @@ needs changing), **superseded**, **questionable**.
 | D12 | Choice points, determinate kernels | holds (the keystone), one limit |
 | D13 | Paths switch cooperatively | holds, amend |
 | D14 | Order within a lockstep instruction is specified | **questionable** |
-| D15 | RTL checked by replay | holds, amend (floats) |
+| D15 | RTL checked by replay | holds (floats settled 2026-11-16, D17) |
 | D16 | The model's defaults | holds as defaults, not a decision |
 
 ## The entries
@@ -184,9 +184,9 @@ writer. Open question for the maintainer: does one?
 A strong idea: a mismatch is a definite defect, and the model stays independent of
 the RTL. Two caveats. It is the least proven decision, because the RTL cannot emit
 the log yet (G2 is untested, as `CONTRACT.md` §4 says), and the per-address order
-of conflicting accesses reaches into the memory system's design. And its float
-clause (replay compares floats bitwise) is one the maintainer does not agree with;
-see [`REDESIGN.md`](REDESIGN.md) §9. Amend the clause when that is decided.
+of conflicting accesses reaches into the memory system's design. Its float
+clause (replay compares floats bitwise) was questioned, and the maintainer
+confirmed it on 2026-11-16 (D17, [`REDESIGN.md`](REDESIGN.md) §9).
 
 ### D16: the model's defaults
 
@@ -209,7 +209,7 @@ own documentation and leave the decisions in `DECISIONS.md`.
 - **Decisions that should exist and do not:** that the model owns shared memory
   (D11 holds it by accident); the terminology *thread*; the PC rule; whole-warp
   finishing (`spec/EXECUTION-MODEL.md` §5.1 calls it a direction); the literal
-  engine; the choice of instruction layer; the float comparison.
+  engine; the choice of instruction layer. (The float comparison is now D17.)
 
 ## Suggested order
 
@@ -217,6 +217,6 @@ own documentation and leave the decisions in `DECISIONS.md`.
 2. Write the decision "the model owns shared memory", so that D11 can shrink to a
    stub.
 3. When [`REDESIGN.md`](REDESIGN.md) §4 and §5 are decided: amend D3, D5, D8, D11,
-   D13 and the float clause of D15, through the decisions protocol
+   D13, through the decisions protocol
    ([`AGENTS.md`](AGENTS.md) §5), each as its own commit.
 4. Move D16's registry out of the log, and trim the overloaded entries.

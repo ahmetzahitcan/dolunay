@@ -37,8 +37,8 @@ forward below.
 Stated by the maintainer, so safe to build on once they confirm the wording:
 
 - **Terminology.** *Thread* is Dolunay's unit of state; *lane* is retired from the
-  golden model. `CONTRACT.md` §6 still prefers *lane*, so the documents and code
-  still say *lane*.
+  golden model. Decided as D20 (2026-11-16); the rename is the next
+  change, and until it lands the documents and code still say *lane*.
 - **The PC rule.** For every instruction in a thread's program order, the next PC
   does not depend on the immediate state of any other thread
   ([`REDESIGN.md`](REDESIGN.md) §3).
@@ -48,16 +48,17 @@ Stated by the maintainer, so safe to build on once they confirm the wording:
   variant, and **one CPU holds one warp**, as a `RiscV32` is one hart. The kernels
   in `ss/` and `asm-kernels/` belong to the previous variant and **will be
   rewritten**, so nothing in them is a requirement (UART, printf, MMIO, the
-  instruction set). **Floats under replay should be compared within a tolerance**,
-  not bitwise; to be settled later. Reproducibility is something the maintainer
+  instruction set). Floats under replay: since settled (2026-11-16), bitwise, with
+  the float extension recorded as D17. Reproducibility is something the maintainer
   wants to think about; they doubt that it alone delivers the guarantees, and are
   unsure it is necessary.
 
 Proposed by an assistant, not decided:
 
-- **Run the spec literally first** ([`REDESIGN.md`](REDESIGN.md) §4): one host
-  thread, only the active path runs, one step is one path step.
-- **The instruction layer** ([`REDESIGN.md`](REDESIGN.md) §5), option **C′**: a
+- **Run the spec literally first** ([`REDESIGN.md`](REDESIGN.md) §4): since
+  decided (2026-11-16), D18.
+- **The instruction layer** ([`REDESIGN.md`](REDESIGN.md) §5): since decided
+  (2026-11-16), C′, D19. As proposed, option **C′**: a
   `BaseCPU` subclass per warp, with the interpreter in a pure project, a thin Renode
   shell, and a headless runner that carries exploration and replay. The other
   options (A: stepped `RiscV32`; B: a plain interpreter; C: B plus Renode as an
@@ -95,16 +96,16 @@ source was not kept.
 1. **The maintainer reads [`DECISION-AUDIT.md`](DECISION-AUDIT.md),
    [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) and [`REDESIGN.md`](REDESIGN.md)** and
    decides: D14; the wording of guarantee 1 ([`REPRODUCIBILITY.md`](REPRODUCIBILITY.md)
-   §5); [`REDESIGN.md`](REDESIGN.md) §4 and §5; floats under replay (§9). **Do not
-   start code before the last two.**
+   §5); [`REDESIGN.md`](REDESIGN.md) §4 and §5 (floats, §9, settled 2026-11-16).
+   **Do not start code before §4 and §5.**
 2. **A second, short probe** if C′ stays the lean: real shared state under serial
    execution, more than 32 CPUs, register names, and whether the burned quantum
    survives a real model.
 3. **Write the decision "the model owns shared memory"**, so D11 can become a stub.
 4. **Amend the authoritative documents** through the decisions protocol
-   ([`AGENTS.md`](AGENTS.md) §5), each as its own commit: D3, D5, D8, D11, D13, the
-   float clause of D15, `CONTRACT.md` §6 and guarantees 1 and 2, and the PC rule and
-   illegal `bsync` in `spec/`.
+   ([`AGENTS.md`](AGENTS.md) §5), each as its own commit: D3, D5, D8, D11, D13,
+   `CONTRACT.md` §2 (LR/SC row, D22), §6 and guarantees 1 and 2, and the PC rule
+   (D21) and illegal `bsync` in `spec/`.
 5. **Rename *lane* to *thread*** in code and tests, as its own change.
 6. **First code on the new seam**, on the stub ISA: a per-warp step over a shared
    world, and the PC rule in `WholeWarpBarrier`.
@@ -131,8 +132,9 @@ it along with the memory redesign. `WholeWarpBarrier` is a placeholder.
   instruction as ordered (D14), so it never reports a conflict between them, and
   which order is open. A kernel whose result depends on it passes the check
   ([`DECISION-AUDIT.md`](DECISION-AUDIT.md), D14).
-- **Mutex-based kernels can't run yet.** `nearn` and `spmc` use a mutex, and whether
-  LR/SC survives is open (`CONTRACT.md` §2). The model has no atomics.
+- **Mutex-based kernels can't run yet.** `nearn` and `spmc` use a mutex. D22 drops A
+  and Zalrsc for warp-level atomics whose details are TBD, and the model has no
+  atomics.
 - **The conflict check has no synchronisation between warps**, and doesn't flag
   kernels that read the timing CSRs. So "no conflicts" isn't yet a full determinacy
   verdict for real kernels.

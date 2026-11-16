@@ -74,10 +74,12 @@ the threads are executed in. Proposed rule:
 > For every instruction in a thread's program order, the thread's next PC does
 > not depend on the immediate state of any other thread.
 
-My attempt at making "immediate state" precise, for the maintainer to confirm:
-the next PC is a function of the thread's own architectural state and of state
-the WPO orders (memory, warp registers), never of what the other threads of its
-path hold at that moment. The rule constrains *where* a thread goes, not
+Decided on 2026-11-16 as D21, with "immediate state" made precise: the next PC
+is a function of the thread's own PC and registers, and of memory and warp
+registers as the spec orders them at that instruction, never of another
+thread's PC or registers. Only the PC is constrained; data may move between
+threads. The rule is kept for implementation freedom, not because the literal
+engine needs it. The rule constrains *where* a thread goes, not
 *when*: a thread blocked in `bsync` resumes only when the warp releases it, but
 it resumes at its own next PC.
 
@@ -448,30 +450,24 @@ change what it reads, so no proof is available. Open: widen the definition of
 `deadlock` or add a class, how narrow the recognised cases are, and whether it is
 per warp or per machine.
 
-## 9. Floats under replay (open)
+## 9. Floats under replay (decided)
 
-[`CONTRACT.md`](CONTRACT.md) §4 and D15 say the replay comparison is bitwise,
-floats included. The maintainer's view (2026-11-14) is that floats should be
-compared within an acceptable error. Not decided, and the maintainer will return
-to it.
+Decided by the maintainer on 2026-11-16: replay compares floats **bitwise**, as
+D15 and [`CONTRACT.md`](CONTRACT.md) §4 already say, so neither changes. The
+float extension itself is D17: RV32F as the standard defines it, with static
+rounding only (no `frm`), `fflags` kept, all five static modes, subnormals, and
+`rm = 111` meaning RNE. The RTL's FPU follows the standard, so under replay any
+float difference is a defect. Across schedules (D12) floats still compare within
+the output descriptor's tolerance, because reductions depend on order.
 
-What the contract's rule rested on: two comparisons are involved. Across
-schedules (determinacy, D12) floats already compare within the output
-descriptor's tolerance, because reductions depend on order. Under replay the
-model and the RTL perform the same operations in the same order, so D15 argued
-that no tolerance is needed and any difference is a definite defect. That only
-holds if the RTL's floating-point unit is exact to the specification.
-
-What a tolerance has to deal with: under replay a slightly different float can
-flip a float compare and so a branch, after which the RTL's recorded choices no
-longer apply in the model. That would look like an RTL defect and be roundoff. A
-rule that avoids it would be: integer state and PCs exact, float values within a
-tolerance, and the model adopts the RTL's float value where they differ. That
-needs the RTL's values at each such instruction, not only its choices.
-
-Why it matters to the rest: bit-exact floats mean a softfloat in the interpreter
-(.NET has no rounding-mode or `fflags` control); a tolerance may not. Amending it
-touches D15, `CONTRACT.md` §4 and guarantee 4.
+What it means for the model (proposed, not decided): directed rounding and
+`fflags` need a softfloat, since .NET's `float` gives only RNE and no flags. The
+proposal is Berkeley SoftFloat 3e behind a P/Invoke wrapper and a small interface
+in the pure project, checked against TestFloat's vectors through the C# entry
+points, with `fmin`/`fmax`, `fsgnj*`, `fclass` and `fmv` in C#. It adds a native
+build on every host (a row in `CONTRACT.md` §5) and amends D8's "two assemblies";
+under C′ whether Renode finds the native library is a question for the second
+probe. A C# port behind the same interface stays the fallback.
 
 ## 10. Unification and small steps
 
