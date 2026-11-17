@@ -125,16 +125,15 @@ disagreement between them and the model's code (`CONTRACT.md`, introduction):
 
 ## 6. Current state of the code
 
-- `model/Dolunay.sln` holds three `net8.0` projects, as an empty skeleton:
-  `Dolunay.Model` (the pure model, no Renode reference), `Dolunay.Renode` (the
-  `BaseCPU` shell, nothing architectural) and `Dolunay.Model.Tests` (NUnit, on
-  the model only). None holds architectural
-  code yet. The previous design's code is in git history; do not restore it.
+- `model/Dolunay.sln` holds one `net8.0` project, `Dolunay`, as an empty
+  skeleton: the model is built against Renode and runs in it. It holds no
+  architectural code yet. The previous design's code is in git history; do not
+  restore it.
 - There is no custom instruction, no Renode CPU class, and no `.repl` or
   `.resc` yet.
-- How to build and test is in [`README.md`](README.md#building-and-running).
-  When you run the tests, say how many ran and passed; do not claim a run you
-  did not see.
+- How to build is in [`README.md`](README.md#building-and-running). There are
+  no tests yet; tests run inside Renode. When there are, say how many ran and
+  passed; do not claim a run you did not see.
 
 ## 7. Building and running — the traps
 

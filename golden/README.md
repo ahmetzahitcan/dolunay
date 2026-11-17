@@ -34,14 +34,11 @@ From this directory, so that `global.json` pins SDK 8. The solution is
 `model/Dolunay.sln`.
 
 ```sh
-# Unit tests: the model only, no Renode needed.
-dotnet test model/Dolunay.Model.Tests
-
-# The Renode shell needs the unpacked Renode tree to build against.
-RENODE_BIN=<unpacked renode tree> dotnet build model/Dolunay.Renode -c Release
+# The model is built against the unpacked Renode tree.
+RENODE_BIN=<unpacked renode tree> dotnet build model/Dolunay -c Release
 ```
 
-There is nothing to run in Renode yet: the shell has no CPU class. Once it has,
+There is nothing to run in Renode yet: the model has no CPU class. Once it has,
 its DLLs go into the Renode installation directory before Renode starts, and
 every run is capped (`AGENTS.md` §7).
 
@@ -80,7 +77,7 @@ Keep these values out of the repository (`CONTRACT.md` §5).
 
 In order; each is a small step to discuss before it is coded.
 
-1. **The step of one path, in `Dolunay.Model`, on a stub instruction set**: one
+1. **The step of one path, in `Dolunay`, on a stub instruction set**: one
    instruction of the active path on each of its threads, splitting by
    next PC, with the PC rule checked at `bsync`. Its open rules (the
    order within one lockstep instruction, `bsync`'s release) stay knobs whose defaults the
@@ -88,8 +85,8 @@ In order; each is a small step to discuss before it is coded.
 2. **The first ISA document in [`spec/`](spec/)**, with the maintainer: `yield`,
    `wdone`, the warp-id and thread-id CSRs, and the decided restrictions: F with static
    rounding, no A or Zalrsc, 32-bit instructions only.
-3. **The shell's first CPU class** in `Dolunay.Renode`, once the model has a
-   step to call ([`SUBSTRATE.md`](SUBSTRATE.md)).
+3. **The first CPU class** in `Dolunay`, calling that step
+   ([`SUBSTRATE.md`](SUBSTRATE.md)).
 4. **Later, in any order:** the observation writer (`CONTRACT.md` §4);
    exploration (PCT, partial-order reduction); the softfloat behind an
    interface; the output descriptor and replay log formats, and the

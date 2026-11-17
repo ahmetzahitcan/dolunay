@@ -22,10 +22,9 @@ Two different things happen, and confusing them costs time:
   constructed when `[plugins] enabled-plugins` names it; the types work without
   it. `enabled-plugins` accepts both `Name` and `Name:Version:Vendor`. The
   model has no `[Plugin]` class, so it needs no config file.
-- **Dependencies resolve from the same directory.** `Dolunay.Renode.dll`
-  references `Dolunay.Model.dll`; with both in the installation directory, a
-  CPU constructor calling into `Dolunay.Model` works (probed 2026-11-06 with a
-  throwaway CPU type that logged a `Geometry`).
+- **Dependencies resolve from the same directory.** A plugin DLL that references
+  a second assembly of ours works when both are in the installation directory
+  (probed 2026-11-06 with a throwaway CPU type calling into a second assembly).
 - *Inferred from IL, not tested:* extension methods (monitor commands) are also
   registered by the scan and work without enabling the plugin.
 
@@ -189,13 +188,12 @@ done without executing. Three runs per row unless noted; one machine.
   newer SDK gets its own nested `global.json`.
 - `dotnet build` emits ~60 `MSB3277` warnings: Renode's assemblies reference
   newer `System.*` versions than the `net8.0` reference pack. They are benign;
-  `Dolunay.Renode.csproj` silences exactly those.
-- `dotnet test model` builds only the test project and what it references, so
-  it works without `RENODE_BIN`.
+  `Dolunay.csproj` silences exactly those.
 - **Name clash:** `CPU.Dolunay` is the class
   `Antmicro.Renode.Peripherals.CPU.Dolunay`. Inside that namespace, `Dolunay`
-  means the class, so `Dolunay.Model.Geometry` does not compile; put
-  `using Dolunay.Model;` at the top of the file, or write `global::Dolunay.Model`.
+  means the class, so a namespace `Dolunay.X` cannot be written as `Dolunay.X`
+  there; put `using Dolunay.X;` at the top of the file, or write
+  `global::Dolunay.X`.
 
 ## The plugin targets Renode's own framework (`net8.0`)
 

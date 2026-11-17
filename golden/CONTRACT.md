@@ -310,7 +310,7 @@ table only states what the model's work depends on.
 | Need | For | Check |
 |---|---|---|
 | Python 3 | generators, small helpers | `python3 --version` |
-| .NET SDK 8 | the model, the Renode shell, unit tests | `dotnet --version` |
+| .NET SDK 8 | the model | `dotnet --version` |
 | Renode | hosting the model as one CPU per warp; the single-thread oracle | `renode --version` |
 | RISC-V bare-metal GCC | building kernels | `riscv32-unknown-elf-gcc --version` |
 | Icarus Verilog **or** Verilator | the RTL side of G2, once an RTL exists to test | `iverilog -V` / `verilator --version` |

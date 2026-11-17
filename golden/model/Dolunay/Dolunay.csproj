@@ -1,14 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The Renode shell: a BaseCPU subclass, one per
-    warp, that calls the model's step of one warp and forwards bus accesses to
-    devices. Nothing architectural belongs here.
+    The golden model: a BaseCPU subclass, one per warp, and everything it
+    executes.
 
     Renode's assemblies are not published on NuGet, so the build needs the
     unpacked Renode tree:
 
-        RENODE_BIN=/path/to/renode_<version>-portable dotnet build model/Dolunay.Renode
+        RENODE_BIN=/path/to/renode_<version>-portable dotnet build model/Dolunay
 
     That path is machine-local: it is passed in, never recorded here
     (golden/CONTRACT.md §5). The output, build/plugin/, holds the DLLs to copy
@@ -40,10 +39,6 @@
       <HintPath>$(RENODE_BIN)/ELFSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="../Dolunay.Model/Dolunay.Model.csproj" />
   </ItemGroup>
 
 </Project>
