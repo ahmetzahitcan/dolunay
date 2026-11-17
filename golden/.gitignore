@@ -2,15 +2,13 @@
 # Add entries here rather than editing the root .gitignore, which describes what
 # the rest of the repository ignores.
 
-# Renode working directories, logs, snapshots and per-run config locks.
+# Working directories and logs.
 build/
 *.log
-*.lock
 
-# .NET output; every project writes to build/ (see model/Directory.Build.props).
-bin/
-obj/
+# Zig's local cache and install prefix, next to model/build.zig.
+.zig-cache/
+zig-out/
 
-# Machine-local launcher (see README.md "Building and running"). Shell
-# conventions differ per machine, so this file is not shared.
-/run-renode.sh
+# Packages fetched by `zig build` from model/build.zig.zon, by hash.
+zig-pkg/

@@ -21,7 +21,6 @@ choices an agent made on the way. When something is not settled, ask (§5).
 | [`CONTRACT.md`](CONTRACT.md) | what the model is, guarantees, decided vs. open, inputs, observation format | **authoritative** |
 | [`spec/`](spec/) | Dolunay's specification documents: the ISA and the execution model. Only a draft of the execution model exists | **authoritative** once approved; a draft is not |
 | [`README.md`](README.md) | orientation, status, how to build and run, what to do next | informative |
-| [`SUBSTRATE.md`](SUBSTRATE.md) | verified Renode host behaviour and quirks | informative; facts, not decisions |
 | [`FINDINGS.md`](FINDINGS.md) | disagreements and defects found outside `golden/`, to be reported | informative; append to it |
 
 The previous variant's design documents and the redesign's working papers are
@@ -125,51 +124,32 @@ disagreement between them and the model's code (`CONTRACT.md`, introduction):
 
 ## 6. Current state of the code
 
-- `model/Dolunay.sln` holds one `net8.0` project, `Dolunay`, as an empty
-  skeleton: the model is built against Renode and runs in it. It holds no
-  architectural code yet. The previous design's code is in git history; do not
-  restore it.
-- There is no custom instruction, no Renode CPU class, and no `.repl` or
-  `.resc` yet.
-- How to build is in [`README.md`](README.md#building-and-running). There are
-  no tests yet; tests run inside Renode. When there are, say how many ran and
-  passed; do not claim a run you did not see.
+- `model/` is a Zig package, `dolunay`, as an empty skeleton: one module,
+  `src/root.zig`, linked against Berkeley SoftFloat. It holds no architectural
+  code yet. The previous designs' code is in git history (the Renode-hosted one
+  under the tag `archive/renode`); do not restore it.
+- There is no custom instruction yet.
+- How to build is in [`README.md`](README.md#building-and-running). The only
+  tests check that SoftFloat is linked with its RISC-V specialization. Say how
+  many tests ran and passed; do not claim a run you did not see.
 
 ## 7. Building and running — the traps
 
-Things that waste an hour if missed (details and evidence in
-[`SUBSTRATE.md`](SUBSTRATE.md)):
-
-- Run `dotnet` from `golden/` or below, so `global.json` pins SDK 8.
-- The DLLs, and any native library they load, must be copied into Renode's
-  installation directory **before** Renode starts; they are not found anywhere
-  else.
-- **Cap every Renode run** (`timeout -k 5 60 renode …`). A blocked handler or a
-  failed script line leaves Renode waiting silently.
-- **Never block a CPU thread in a handler**: it stops every CPU in the
-  emulation.
-- **A CPU of our own** runs on one host thread per CPU by default, and the order
-  of their calls differs from run to run; use `emulation
-  SetGlobalSerialExecution True`, or gate the CPUs through one policy, for
-  anything that needs a reproducible result. A gated CPU that is not on turn
-  must report its quantum as done: returning zero instructions stalls serial
-  mode.
-- Virtual time follows the host clock by default, and a CPU that reports few
-  instructions per call is called very often; both make a Renode-hosted run
-  slow.
-- A probe DLL copied into the Renode tree is loaded on every later start; remove
-  it when the probe is done.
-- If a `--config` file is ever needed, never pass a tracked one: Renode rewrites
-  it. Pass a copy under `build/`, by absolute path.
-- A stray Renode process holds `~/.config/renode/config.lock` and makes later
-  runs hang silently. Check `pgrep -af renode` first.
-- `cpu Step` on an aborted `RiscV32` (PC outside mapped memory) blocks the
-  monitor.
+- Run `zig build` from `model/`, with the Zig version that
+  `minimum_zig_version` pins. Zig changes its build API between releases (0.17
+  no longer gives a dependency a `build_root`), so the pin moves only on
+  purpose, with the build updated in the same commit.
+- SoftFloat's file list and flags come from its own
+  `build/Linux-x86_64-GCC/Makefile`, read by `model/build.zig`; the
+  specialization is `RISCV`, not that Makefile's `8086-SSE`. Do not copy the
+  list into the repository.
+- The first build fetches SoftFloat into `model/zig-pkg/` (network needed) and
+  translates `softfloat.h`, which takes about half a minute; later builds reuse
+  `model/.zig-cache/`.
 
 ## 8. Style
 
-- **C#**: target `net8.0`, `LangVersion 12` — Renode's own settings. No
-  IronPython, ever.
+- **Zig**: the version `model/build.zig.zon` pins.
 - **Python 3.12** for generators and tooling. Type hints, standard library
   preferred, no new dependency without a reason in the commit message.
 - Comments explain *why*, or cite the spec section they encode. No comment that
@@ -193,9 +173,10 @@ Things that waste an hour if missed (details and evidence in
 
 ## 10. Housekeeping
 
-- Build outputs, caches and Renode working directories go in the gitignored
-  `build/`, never on a OneDrive or space-containing path (`CONTRACT.md` §5).
-- Never commit generated binaries, logs, rewritten Renode configs, or
+- Build outputs, caches and working directories go in gitignored directories
+  (`golden/.gitignore` is the list), never on a OneDrive or space-containing
+  path (`CONTRACT.md` §5).
+- Never commit generated binaries, logs, fetched packages, or
   `results.xml`-style artefacts.
 - Do not create a second copy of the ISA or of the kernels. If a self-contained
   snapshot is ever needed, generate it and add a drift check.

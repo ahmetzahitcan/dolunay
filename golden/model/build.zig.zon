@@ -1,0 +1,13 @@
+.{
+    .name = .dolunay,
+    .version = "0.0.0",
+    .minimum_zig_version = "0.17.1",
+    .fingerprint = 0xc62b5b1b1a7fa90,
+    .dependencies = .{
+        .softfloat = .{
+            .url = "https://github.com/ucb-bar/berkeley-softfloat-3/archive/07ebd29db0cfb55723a79fbbffe99103ef38e305.tar.gz",
+            .hash = "N-V-__8AAO35HQAH5x2zuM4087zpuf1p5aIa1UTVBbF7Bmw_",
+        },
+    },
+    .paths = .{ "build.zig", "build.zig.zon", "src" },
+}

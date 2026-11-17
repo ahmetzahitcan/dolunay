@@ -1,7 +1,7 @@
 # Golden Model Contract
 
 **Status: authoritative for everything under `golden/`.** Written 2026-11-04;
-amended 2026-11-06, 2026-11-07, and 2026-11-16 for the redesign. History is in
+amended 2026-11-06, 2026-11-07, 2026-11-16 and 2026-11-17 for the redesign. History is in
 git.
 
 This file says what the golden model *is*, what it must guarantee, and what it is
@@ -37,8 +37,8 @@ order:
 | G3 | Profile the kernels | A dynamic instruction histogram and a memory-access trace good enough to answer "is extension X worth implementing?". |
 
 How it is built: the model executes the spec literally, one step of the active
-path at a time; each warp is a Renode CPU of Dolunay's own; the
-projects are listed in [`AGENTS.md`](AGENTS.md) §6.
+path at a time. It is a program of its own, written in Zig; the code is
+described in [`AGENTS.md`](AGENTS.md) §6.
 
 ### Executions, choice points and correctness
 
@@ -310,8 +310,7 @@ table only states what the model's work depends on.
 | Need | For | Check |
 |---|---|---|
 | Python 3 | generators, small helpers | `python3 --version` |
-| .NET SDK 8 | the model | `dotnet --version` |
-| Renode | hosting the model as one CPU per warp; the single-thread oracle | `renode --version` |
+| Zig, at the version `model/build.zig.zon` pins | the model, and the Berkeley SoftFloat it links | `zig version` |
 | RISC-V bare-metal GCC | building kernels | `riscv32-unknown-elf-gcc --version` |
 | Icarus Verilog **or** Verilator | the RTL side of G2, once an RTL exists to test | `iverilog -V` / `verilator --version` |
 
@@ -335,15 +334,19 @@ neither `a` nor `zalrsc`.
 Rules that follow:
 
 - **Do not invent commands.** If a tool is absent, say it is absent and stop.
-  A fabricated `dotnet build` transcript is worse than no build.
+  A fabricated `zig build` transcript is worse than no build.
 - **§5 lists what the work needs, not what is installed.** Run the check and
   quote its output before claiming a tool is present.
 - Keep build outputs **off** any OneDrive or space-containing path (spaces and
-  sync daemons break GNU Make and Renode's relative-path resolution), and never
-  commit them. Today the build writes to the gitignored `build/` here, which is
-  only safe while the checkout itself is not on such a path.
-- Building the model needs the .NET SDK; the ad-hoc `i @file.cs` route is
-  not used.
+  sync daemons break GNU Make), and never commit them. Today the build writes
+  to gitignored directories under `model/`, which is only safe while the
+  checkout itself is not on such a path.
+- The model is built with `zig build`, at the Zig version
+  `model/build.zig.zon` pins (`minimum_zig_version`).
+- **Floating point is Berkeley SoftFloat**, pinned by hash in
+  `model/build.zig.zon` and built with its RISC-V specialization, which gives
+  the canonical NaN the RISC-V specification requires. It is fetched, never
+  copied into the repository.
 - **One kernel builder.** The program image's sha256 is part of the observation,
   so two RISC-V toolchains would produce two "same" programs. Do not add a
   second one (for example in WSL) without the maintainer's approval.
@@ -357,10 +360,10 @@ Use these words with these meanings, and do not resurrect retired ones:
 | Term | Meaning |
 |---|---|
 | **thread** | One unit of architectural state: its own PC and registers. |
-| **warp** | A set of threads. One Renode CPU in the model, and the unit of scheduling contention. |
+| **warp** | A set of threads, and the unit of scheduling contention. |
 | **path** | The threads of one warp that are in lockstep. Split where its threads' next PCs differ; combined only by `bsync`. |
 | **step** | One instruction of the active path, executed on each of its threads. |
-| **host thread** | An operating-system thread of the process running the model or Renode. Never just "thread". |
+| **host thread** | An operating-system thread of the process running the model. Never just "thread". |
 | **agent** | Anything the scheduler can advance: a path, and — if DMA is asynchronous — a transfer. The scheduler never schedules an individual thread. |
 | **choice point** | A point where the spec leaves the next step open to the implementation (§1). |
 | **TBD**, **unspecified**, **illegal** | The spec's three words for a gap, a free choice among listed outcomes, and something software must not do ([`spec/README.md`](spec/README.md#terminology)). |

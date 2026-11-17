@@ -5,8 +5,8 @@ machine must follow. Machine-local paths and versions do not belong here (or
 anywhere in the checkout).
 
 Each area documents its own tool quirks: the golden model in
-[`golden/SUBSTRATE.md`](golden/SUBSTRATE.md) (Renode, .NET) and
-[`golden/README.md`](golden/README.md) (building, editor setup); the kernel build
+[`golden/README.md`](golden/README.md) (building) and
+[`golden/AGENTS.md`](golden/AGENTS.md) §7 (traps); the kernel build
 in the headers of `ss/generate.sh` and `asm-kernels/generate.sh`.
 
 ## What each area needs
@@ -17,15 +17,14 @@ in the headers of `ss/generate.sh` and `asm-kernels/generate.sh`.
 | make, hexdump, Python 3 | kernels (the scripts' last steps) | `make --version`, `hexdump --version`, `python3 --version` |
 | bender | RTL: dependency fetch | `bender --version` |
 | Verilator **or** Icarus Verilog | RTL simulation | `verilator --version` / `iverilog -V` |
-| .NET SDK 8 | golden model: building the plugin | `dotnet --list-sdks` |
-| Renode | golden model: the host | `renode --version` |
+| Zig, at the version `golden/model/build.zig.zon` pins | golden model | `zig version` |
 
 Report a missing tool as missing; do not substitute another silently.
 
 ## RISC-V compiler names are shims
 
 The kernel scripts call `riscv32-unknown-elf-gcc` and
-`riscv32-unknown-elf-objcopy` (`golden/DECISIONS.md` D7). Distributions use other
+`riscv32-unknown-elf-objcopy`. Distributions use other
 names:
 
 | Distribution | Real name |
@@ -59,8 +58,6 @@ exec <real-toolchain>-objcopy "$@"
 ## Paths
 
 - Keep the checkout, or at least every build output, off OneDrive and off any
-  path containing spaces: spaces break GNU Make and Renode's relative paths, and
-  sync daemons race the build.
+  path containing spaces: spaces break GNU Make, and sync daemons race the
+  build.
 - Build outputs are gitignored (`.gitignore` is the list) and never committed.
-- Renode needs a writable user directory (`$HOME/.config/renode`, or
-  `%APPDATA%\renode` on Windows) even for headless runs.
