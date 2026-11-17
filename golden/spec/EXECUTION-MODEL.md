@@ -1,12 +1,10 @@
 # Execution model: warp program order, paths, lockstep
 
 **Status: draft — not authoritative.** Started from the maintainer's proposal of
-2026-11-07; revised 2026-11-16 for the redesign (the PC rule, D21; finishing,
-D24; no standard atomics, D22; *thread* for *lane*, D20). §1–§3 are the rules as
+2026-11-07; revised 2026-11-16 for the redesign. §1–§3 are the rules as
 agreed so far; §4 is analysis behind them and §5 the open questions. Nothing
-here binds the model or the RTL until the maintainer approves the document and
-a decision records it (`../AGENTS.md` §5). Points already recorded as decisions
-cite them. *TBD*, *unspecified* and *illegal* have the meanings in
+here binds the model or the RTL until the maintainer approves the document
+(`../AGENTS.md` §5). *TBD*, *unspecified* and *illegal* have the meanings in
 [`README.md`](README.md#terminology).
 
 ---
@@ -36,7 +34,7 @@ The path state is architectural state, carried through the WPO like any other.
 
 **Every instruction generates a set of next PCs.** It maps each thread of the
 active path to one next PC — an N → 1 mapping from threads to PCs. For most
-instructions the set has one element, `pc + 4` (D25), so nothing changes; a branch or jump whose threads all agree is
+instructions the set has one element, `pc + 4`, so nothing changes; a branch or jump whose threads all agree is
 the same case. When the set has more than one element:
 
 - the active path is split by the mapping, one new path per PC;
@@ -45,7 +43,7 @@ the same case. When the set has more than one element:
 - the other new paths are paused;
 - every other path keeps its state.
 
-**The PC rule (D21).** A thread's next PC is a function of its own PC and
+**The PC rule.** A thread's next PC is a function of its own PC and
 registers, and of memory and warp registers as the spec orders them at that
 instruction. It never depends on another thread's PC or registers, in its own
 path or any other. The rule constrains only the PC: an instruction may move
@@ -56,7 +54,8 @@ thread alone.
 Further rules:
 
 - **`yield`** makes the active path paused and one paused path active — which
-  one is *unspecified*, subject to the progress guarantee of D13. The
+  one is *unspecified*, subject to `yield`'s progress guarantee
+  (`../CONTRACT.md` §2, Scheduling). The
   set of paths does not change. With no paused path, `yield` does nothing.
 - **`bsync`** is the only way paths combine. Its details are to be decided
   (§5); it does one of two things:
@@ -72,12 +71,12 @@ Further rules:
 
   The paths a `bsync` combines must be blocked at the same `bsync` instruction
   as the active path. Combining threads at different instructions is
-  **illegal** (D21). The combined path continues after that instruction.
+  **illegal**. The combined path continues after that instruction.
 - **No implicit merging.** Two paths are never combined except by `bsync`, even
   when they reach the same PC. An implementation must not merge them, for
   example at a post-dominator (§4.2). Dolunay keeps a hardware path list, not a
   reconvergence stack.
-- **Finishing (D24).** Only the whole warp finishes. `wdone` is legal only when
+- **Finishing.** Only the whole warp finishes. `wdone` is legal only when
   the active path holds every thread of the warp; executed by any other path it
   is **illegal**.
 
@@ -95,11 +94,11 @@ Exceptions to the substitution:
 - **Dependencies are per thread.** Address, data and control dependencies flow
   through registers, which are per thread, so they relate only instructions of
   the same thread.
-- **No standard atomics.** Dolunay implements neither A nor Zalrsc (D22).
+- **No standard atomics.** Dolunay implements neither A nor Zalrsc.
   Atomics between warps are warp-level and execute once for the active path;
   how they enter the axioms is to be written with them (§5).
 - **One WPO element holds the accesses of several threads.** Their order is the
-  one the spec fixes for a lockstep instruction (D14), which RVWMO does not
+  one the spec fixes for a lockstep instruction, which RVWMO does not
   have.
 
 ---
@@ -109,10 +108,10 @@ Exceptions to the substitution:
 ### 4.1 Two sanity properties
 
 - **A warp of one thread is a RISC-V hart**, with Dolunay's exemptions from the
-  standard: no `frm` (D17), no A or Zalrsc (D22), and no C (D25). It has one path, the WPO
+  standard: no `frm`, no A or Zalrsc, and no C. It has one path, the WPO
   is its program order, and every rule above must reduce to the standard. This
   is a cheap test for every later rule, and what lets a stock RISC-V hart serve
-  as an oracle for single-thread programs (D19).
+  as an oracle for single-thread programs.
 - **Each thread's program order is the WPO restricted to the instructions its
   path executed.** Per-thread RISC-V semantics (registers, dependencies) are
   untouched; the WPO only adds an order between threads.
@@ -123,14 +122,14 @@ Take path A = threads {0, 2} and path B = threads {1, 3} at the same store
 instruction; threads 1 and 2 store to `x`, threads 0 and 3 store to `y`. As two
 paths, the stores take effect A then B (threads 0, 2, 1, 3: `x` from thread 1,
 `y` from thread 3) or B then A (1, 3, 0, 2: `x` from thread 2, `y` from thread
-0). Merged into one path, they take effect in the thread order of D14 — if that
+0). Merged into one path, they take effect in the order the spec fixes within one lockstep instruction — if that
 is ascending, 0, 1, 2, 3: `x` from thread 2, `y` from thread 3, which neither
 order produces. So a merge is not a hidden optimisation; it changes the result,
 hence §2 forbids it.
 
 ### 4.3 Finishing, and misused barriers
 
-Finishing is per warp (D24): `wdone` stops a warp. Apart from that, the only
+Finishing is per warp: `wdone` stops a warp. Apart from that, the only
 way a warp could be left without an active path is the illegal `bsync` of §2 —
 a split always activates one of its new paths, and `yield` with no paused path
 does nothing. The spec does not define "deadlock"; it only makes the misuse
@@ -159,7 +158,7 @@ observe, is open.
 - **Kernels:** communication between the paths of one warp needs no fences; two
   paths that hand off through `yield` see each other's stores. Mutual exclusion
   between the paths of one warp needs no atomics either, because paths switch
-  only at explicit points (D13).
+  only at explicit points.
 - **Hardware:** a warp's later loads must see its earlier stores from any
   thread, which means a per-warp store queue with forwarding across threads
   rather than a per-thread one.
@@ -170,14 +169,14 @@ observe, is open.
 
 1. **`bsync`:** what identifies a barrier; the expected set of threads and who
    sets it (does `binit` survive?); the release condition, and which blocked
-   paths a combination takes in. (The PC of a combined path is settled by D21:
+   paths a combination takes in. (The PC of a combined path is settled by the PC rule of §1:
    all its threads are at the same `bsync`.)
 2. **RVWMO with "warp" for "hart":** confirm by analysis that it holds, in
-   particular fences across threads and the interaction with D14.
-3. **The lockstep order of D14:** which order (ascending thread index is the
+   particular fences across threads and the interaction with the order within one lockstep instruction.
+3. **The order within one lockstep instruction:** which order (ascending thread index is the
    obvious default), or whether conflicting accesses within one lockstep
    instruction become illegal instead (`../CONTRACT.md` §2).
-4. **Synchronisation (D22):** the data instructions within a warp, and whether
+4. **Synchronisation:** the data instructions within a warp, and whether
    they may read threads outside the active path; the warp-level atomics, and
    how both enter the WPO and the axioms of §3.
 5. **Traps:** whether there are any, and the semantics of §4.4.

@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    Unit tests for Dolunay.Model only, so they never need Renode
-    (golden/DECISIONS.md D8).
+    Unit tests for Dolunay.Model only, so they never need Renode.
   -->
 
   <PropertyGroup>

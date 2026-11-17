@@ -1,6 +1,6 @@
 <Project>
   <!--
-    Settings shared by every project under model/ (golden/DECISIONS.md D8).
+    Settings shared by every project under model/.
     net8.0 and C# 12 are Renode 1.17's own settings (golden/SUBSTRATE.md).
   -->
   <PropertyGroup>

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!--
-    The Renode shell (golden/DECISIONS.md D8, D19): a BaseCPU subclass, one per
+    The Renode shell: a BaseCPU subclass, one per
     warp, that calls the model's step of one warp and forwards bus accesses to
     devices. Nothing architectural belongs here.
 

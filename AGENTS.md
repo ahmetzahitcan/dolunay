@@ -3,9 +3,8 @@
 Rules that apply to the whole repository. Everything more specific lives next to
 the code it governs.
 
-- **Working under `golden/`:** read [`golden/AGENTS.md`](golden/AGENTS.md),
-  [`golden/CONTRACT.md`](golden/CONTRACT.md) and
-  [`golden/DECISIONS.md`](golden/DECISIONS.md) before your first edit. The golden
+- **Working under `golden/`:** read [`golden/AGENTS.md`](golden/AGENTS.md) and
+  [`golden/CONTRACT.md`](golden/CONTRACT.md) before your first edit. The golden
   model is the reference for the machine; this repository's RTL is evidence about
   a previous variant, not a specification.
 - **Working anywhere else:** `golden/` is read-only from there. Do not change the

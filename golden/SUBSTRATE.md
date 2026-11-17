@@ -1,8 +1,7 @@
 # Renode substrate notes
 
 **Status: informative.** Observed behaviour of the **host** (Renode 1.17.0),
-not of the machine. Nothing here overrides [`CONTRACT.md`](CONTRACT.md) or
-[`DECISIONS.md`](DECISIONS.md). Everything was verified by running it unless
+not of the machine. Nothing here overrides [`CONTRACT.md`](CONTRACT.md). Everything was verified by running it unless
 marked *inferred*. Re-verify after a Renode upgrade.
 
 Machine setup (which tools, toolchain shims) lives in `../ENVIRONMENT.md`; editor
@@ -22,7 +21,7 @@ Two different things happen, and confusing them costs time:
 - **`[Plugin]` instantiation — opt-in.** A class marked `[Plugin]` is only
   constructed when `[plugins] enabled-plugins` names it; the types work without
   it. `enabled-plugins` accepts both `Name` and `Name:Version:Vendor`. The
-  model has no `[Plugin]` class (D8), so it needs no config file.
+  model has no `[Plugin]` class, so it needs no config file.
 - **Dependencies resolve from the same directory.** `Dolunay.Renode.dll`
   references `Dolunay.Model.dll`; with both in the installation directory, a
   CPU constructor calling into `Dolunay.Model` works (probed 2026-11-06 with a
@@ -34,7 +33,7 @@ To test the "no plugin" case, remove the DLL from the installation directory.
 
 ## The `--config` file
 
-The model does not use one (D8). These facts matter if a `[Plugin]` class or
+The model does not use one. These facts matter if a `[Plugin]` class or
 another setting ever needs it.
 
 - Renode **rewrites the file given to `--config`**: it merges in its defaults,
@@ -72,8 +71,8 @@ OneDrive.
 ## Renode execution facts (probed 2026-11-06)
 
 Throwaway probes; numbers are from one machine and are order-of-magnitude only.
-The probes of D11's design (opcode overrides, halting and releasing, stepping
-throughput) are in git history; that design is superseded (D18, D19).
+The probes of the previous design (one `RiscV32` per thread, opcode overrides, halting and releasing, stepping
+throughput) are in git history; that design is superseded.
 
 - **At most 32 translated cores per machine.** The 33rd `RiscV32` fails with
   `atomic: Maximum number of supported cores exceeded: 32`, a constant in
@@ -132,7 +131,7 @@ are orders of magnitude.
   took the same ELF. It accepted the `cpuType` strings `rv32i`, `rv32ia` and
   `rv32if`, with `zicsr`, `zicond` and `zba`, and rejected `zalrsc`, `zicntr`
   and `zihpm` with `Undefined instructions set extension`. Whether its F
-  implementation matches D17 with `frm` left at zero was not tested.
+  implementation matches Dolunay's static-rounding F (`CONTRACT.md` §2) with `frm` left at zero was not tested.
 - **Not tested here, answered by the second probe below:** real shared state,
   more than 32 such CPUs, registers by name, and a native library.
 
@@ -202,7 +201,7 @@ done without executing. Three runs per row unless noted; one machine.
 
 Renode 1.17 ships .NET 8: its `Renode.runtimeconfig.json` declares `net8.0` and
 the portable package bundles runtime 8.0.12. A plugin shares the host's
-assemblies, so it is built against the same API surface (D8).
+assemblies, so it is built against the same API surface.
 
 ### Tested: a newer target framework is not rejected at load time
 
@@ -247,6 +246,6 @@ Do it in `build/` (gitignored), never on the real project:
   runtime, not the other way round.
 - A library that does not support `net8.0` is a **finding to report**, not a
   reason to raise the target silently. `AGENTS.md` §3 applies, and any change
-  needs a decision.
+  needs the maintainer's approval.
 - Do not treat "it loads anyway" as evidence of compatibility: it only shows
   that the APIs used so far exist in both frameworks.

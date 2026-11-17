@@ -1,12 +1,8 @@
 # Golden Model Contract
 
 **Status: authoritative for everything under `golden/`.** Written 2026-11-04;
-amended 2026-11-06 (spec authority, D9; paths and lockstep, D3; choice points,
-refinement and kernel determinacy, D12; cooperative paths, D13; order within an
-instruction, D14; replay, D15); amended 2026-11-07 (the `illegal` termination
-class); amended 2026-11-16 for the redesign (floating point, D17; the literal
-engine, D18; the instruction layer, D19; *thread* for *lane*, D20; the PC rule,
-D21; synchronisation, D22; shared resources, D23; finishing, D24).
+amended 2026-11-06, 2026-11-07, and 2026-11-16 for the redesign. History is in
+git.
 
 This file says what the golden model *is*, what it must guarantee, and what it is
 allowed to assume. The previous variant's design documents, now only in git
@@ -37,22 +33,21 @@ order:
 | # | Job | What "correct" means |
 |---|-----|----------------------|
 | G1 | Verify the kernels | A kernel is valid: it is determinate (below) and produces its intended output. |
-| G2 | Verify the machine | Every RTL execution is a valid execution of the spec. Checked by replaying the RTL's choices in the model and comparing architectural state (D15, §4). |
+| G2 | Verify the machine | Every RTL execution is a valid execution of the spec. Checked by replaying the RTL's choices in the model and comparing architectural state (§4). |
 | G3 | Profile the kernels | A dynamic instruction histogram and a memory-access trace good enough to answer "is extension X worth implementing?". |
 
 How it is built: the model executes the spec literally, one step of the active
-path at a time (D18); each warp is a Renode CPU of Dolunay's own, and a headless
-runner over the same pure model carries exploration and replay (D19); the
-projects are D8.
+path at a time; each warp is a Renode CPU of Dolunay's own; the
+projects are listed in [`AGENTS.md`](AGENTS.md) §6.
 
-### Executions, choice points and correctness (D12)
+### Executions, choice points and correctness
 
 The spec is **not deterministic**. Where software does not care, it leaves a
 **choice point** open to the implementation:
 
 - **within a warp**, which path executes next — after a divergent instruction
   (one of the paths it created), a `yield`, or a path starting to wait at a
-  barrier. Paths switch at no other point (D13);
+  barrier. Paths switch at no other point;
 - **between warps**, how their instructions interleave; warps execute
   concurrently, so every access to shared memory is a choice point;
 - the values of the readable timing CSRs (`cycle`, `time`, `instret`, the HPM
@@ -60,7 +55,7 @@ The spec is **not deterministic**. Where software does not care, it leaves a
 - later, as they are specified: DMA progress.
 
 The order of conflicting accesses within one lockstep instruction is **not** a
-choice point; the spec defines it (D14).
+choice point; the spec defines it.
 
 A **valid execution** is one that makes some choice at every choice point and
 otherwise follows the spec. An implementation is **correct** when each of its
@@ -101,7 +96,7 @@ it (**fast mode**).
    observable may depend on wall-clock time, host-thread scheduling, hash-set
    ordering, or file enumeration order.
 2. **Termination is classified, never rescued.** A run ends as `all-wdone`, when
-   every warp has executed `wdone` (D24); `deadlock`, when no thread can execute,
+   every warp has executed `wdone`; `deadlock`, when no thread can execute,
    which is exact; `timeout`, when an instruction budget runs out; or `illegal`,
    when the model detects an act the spec makes *illegal* (`spec/README.md`),
    such as `wdone` from a path that does not hold the whole warp.
@@ -135,24 +130,23 @@ detail, stop and ask for that detail to be written into this file *first*.
 
 - **Execution.** Each thread has its own PC and architectural state. The threads
   of a warp execute in **lockstep until they diverge**; a set of threads in
-  lockstep is a **path**, and the scheduler chooses paths, not threads (D3). A
+  lockstep is a **path**, and the scheduler chooses paths, not threads. A
   path splits after an instruction whose threads' next PCs differ, and a
-  thread's next PC never depends on another thread's PC or registers (D21).
+  thread's next PC never depends on another thread's PC or registers.
   Lockstep is a semantic rule, not a requirement for SIMD execution.
 - **Scheduling.** Paths of a warp switch **cooperatively**, only at points
-  explicit in the code (D13). `yield` guarantees that before the yielding path
+  explicit in the code. `yield` guarantees that before the yielding path
   executes its next instruction, every other thread of its warp that can
   execute — not waiting at a barrier — executes at least one instruction. Warps
-  execute concurrently. Which path or warp goes first is a choice point (§1,
-  D12).
+  execute concurrently. Which path or warp goes first is a choice point (§1).
 - **Finishing.** Only the whole warp finishes: `wdone` is legal only when the
-  active path holds every thread of the warp (D24).
+  active path holds every thread of the warp.
 - **Order within an instruction.** Conflicting accesses by the threads of one
-  lockstep instruction take effect in an order the spec defines (D14).
+  lockstep instruction take effect in an order the spec defines.
 - **Memory.** A redesigned memory hierarchy around a **scratchpad + DMA**. The
   previous variant's region decode, per-thread TLS port, leader selection and
   replay are **not** assumed to survive. **The model owns every shared
-  resource** (D23): every thread reaches shared memory through the model.
+  resource**: every thread reaches shared memory through the model.
 - **Scratchpad accesses are synchronisation.** How threads are matched to banks
   is an implementation detail the model does not reproduce, but accesses to the
   scratchpad are expected to be visible synchronisation in their own right.
@@ -162,14 +156,14 @@ detail, stop and ask for that detail to be written into this file *first*.
 - **Synchronisation.** No A extension and no Zalrsc. Within a warp, custom
   instructions pass data between the threads of the active path; between warps,
   warp-level atomics with A's semantics execute once for the active path, under
-  encodings of their own (D22).
+  encodings of their own.
 - **Floating point.** RV32F as the RISC-V specification defines it, subnormals
   included, with static rounding only: there is no `frm` CSR, `fcsr`'s `frm`
   field reads as zero and ignores writes, `fflags` is per-thread state, and
-  `rm = 111` selects RNE. No D extension (D17).
+  `rm = 111` selects RNE. No D extension.
 - **Specification.** The ratified RISC-V specifications plus Dolunay's
   specification documents in [`spec/`](spec/) — custom instructions, custom
-  CSRs, exemptions from the standard, and the execution model (D9). Only a
+  CSRs, exemptions from the standard, and the execution model. Only a
   draft of the execution model exists, and a draft is not authoritative; until
   a document is approved, no custom instruction or CSR is specified, and any in
   the code is a labelled placeholder.
@@ -181,12 +175,12 @@ detail, stop and ask for that detail to be written into this file *first*.
 | Question | Why it matters | Where it lands |
 |---|---|---|
 | Geometry (warps × threads) | How many threads exist; every kernel's indices | a parameter, never a constant |
-| What "lockstep" means precisely (D3) — drafted as the warp program order | Which orders between threads of a path are observable | `spec/EXECUTION-MODEL.md` |
-| Reconvergence: paths combine only through `bsync`, never implicitly (D3), at the PC their threads share (D21) — but `bsync`'s identity, expected set and release condition are open | Path bookkeeping; barrier semantics | `spec/EXECUTION-MODEL.md` |
-| *Which* order conflicting accesses within one lockstep instruction take effect in (that there is one is decided, D14) — or whether D14 is reopened to make such conflicts illegal, so the conflict check reports them | What such kernels compute; what the conflict check sees | `spec/`; scratchpad (may reorder internally if the result is as if in that order) |
-| Progress between warps: must every warp that can execute eventually execute? Pressing: handoffs between warps spin on atomics (D22) | Whether a kernel that waits on another warp terminates; whether `timeout` can mean a spec violation | `spec/`; policy (default: yes) |
-| Synchronisation details (D22): the instructions within a warp, and whether they may read threads outside the active path; the warp-level atomics' operands and where the old value goes; a compare-and-swap or a warp-level LR/SC; which memory they apply to | What kernels can express; the conflict check's synchronisation between warps | `spec/` |
-| Output descriptor: format, tolerance metric for floats (ULP, absolute, relative), NaN and signed zero | What "same output" means (D12) | the kernel corpus; determinacy check |
+| What "lockstep" means precisely — drafted as the warp program order | Which orders between threads of a path are observable | `spec/EXECUTION-MODEL.md` |
+| Reconvergence: paths combine only through `bsync`, never implicitly, at the PC their threads share — but `bsync`'s identity, expected set and release condition are open | Path bookkeeping; barrier semantics | `spec/EXECUTION-MODEL.md` |
+| *Which* order conflicting accesses within one lockstep instruction take effect in (that there is one is decided) — or whether that is reopened to make such conflicts illegal, so the conflict check reports them | What such kernels compute; what the conflict check sees | `spec/`; scratchpad (may reorder internally if the result is as if in that order) |
+| Progress between warps: must every warp that can execute eventually execute? Pressing: handoffs between warps spin on atomics | Whether a kernel that waits on another warp terminates; whether `timeout` can mean a spec violation | `spec/`; policy (default: yes) |
+| Synchronisation details: the instructions within a warp, and whether they may read threads outside the active path; the warp-level atomics' operands and where the old value goes; a compare-and-swap or a warp-level LR/SC; which memory they apply to | What kernels can express; the conflict check's synchronisation between warps | `spec/` |
+| Output descriptor: format, tolerance metric for floats (ULP, absolute, relative), NaN and signed zero | What "same output" means | the kernel corpus; determinacy check |
 | Barrier context: memory, warp registers, or model-internal? | What is observable | sync interface |
 | Barrier release rule | Semantics | sync interface |
 | Memory ordering of `yield` and of the barrier; whether RVWMO holds with "warp" read as "hart" | Whether the interesting kernels can be judged at all | memory model, `spec/EXECUTION-MODEL.md` |
@@ -208,8 +202,8 @@ The model may read anything in the repository. Only these are authoritative:
 
 | Rank | Source | Gives | Status |
 |---|---|---|---|
-| 1 | `CONTRACT.md`, `DECISIONS.md` | what we are building, and the choices made | **authoritative** |
-| 2 | RISC-V ratified specifications + [`spec/`](spec/) | the ISA: encodings and per-instruction behaviour (D9) | **authoritative** |
+| 1 | `CONTRACT.md` | what we are building, and what is decided | **authoritative** |
+| 2 | RISC-V ratified specifications + [`spec/`](spec/) | the ISA: encodings and per-instruction behaviour | **authoritative** |
 | 3 | `../ss/`, `../asm-kernels/` | the previous variant's software contract and workloads, to be rewritten | **corpus, not truth** |
 | 4 | anything generated from rank 2 (none yet) | the model's decode data | **derived — regenerate, never edit** |
 | 5 | `../control_unit/control_unit.csv` | the RTL's decoder input; a cheatsheet | **evidence, read-only** |
@@ -267,23 +261,23 @@ spad          0x<addr> : <hex bytes ...>
 ```
 
 The `illegal` line appears only with `termination illegal`. `fflags` is
-per-thread state (D17). Barrier state has no line yet: what it is depends on
+per-thread state. Barrier state has no line yet: what it is depends on
 `bsync`, which is open (§2).
 
 How an observation is compared depends on how the run was scheduled:
 
-- **Replay (D15):** the model ran the RTL's own choices, so the whole
+- **Replay:** the model ran the RTL's own choices, so the whole
   architectural state must match **bitwise** — every line above except
-  `schedule`, floats included (D17).
-- **Fast mode, or one execution against another while checking determinacy
-  (D12):** only the kernel's **output** is compared — `termination`, and the
+  `schedule`, floats included.
+- **Fast mode, or one execution against another while checking determinacy:**
+  only the kernel's **output** is compared — `termination`, and the
   regions its output descriptor names, under the descriptor's rules. Lines the
   descriptor does not cover are diagnostics.
 
 Memory dumps are ranges, not whole spaces. Per-thread regions, if the new
 variant keeps any, are dumped per thread in thread order.
 
-### Replay log (D15)
+### Replay log
 
 The RTL simulation writes one line to standard output per choice point it
 resolves, from code guarded by `` `ifndef SYNTHESIS ``, with a fixed prefix
@@ -316,8 +310,8 @@ table only states what the model's work depends on.
 | Need | For | Check |
 |---|---|---|
 | Python 3 | generators, small helpers | `python3 --version` |
-| .NET SDK 8 | the model, the runner, the Renode shell, unit tests (D8) | `dotnet --version` |
-| Renode | hosting the model as one CPU per warp (D19); the single-thread oracle | `renode --version` |
+| .NET SDK 8 | the model, the Renode shell, unit tests | `dotnet --version` |
+| Renode | hosting the model as one CPU per warp; the single-thread oracle | `renode --version` |
 | RISC-V bare-metal GCC | building kernels | `riscv32-unknown-elf-gcc --version` |
 | Icarus Verilog **or** Verilator | the RTL side of G2, once an RTL exists to test | `iverilog -V` / `verilator --version` |
 
@@ -336,7 +330,7 @@ Bash on Windows has none) needs a stand-in for the scripts' last step as well.
 The previous variant's `-march` strings use `zicond` and `zalrsc`, so an old GCC
 rejects them — GCC 14.2 already rejects `zalrsc` (`FINDINGS.md` F6); check the
 compiler before concluding that a shim is wrong. The next variant's carry
-neither `a` nor `zalrsc` (D22).
+neither `a` nor `zalrsc`.
 
 Rules that follow:
 
@@ -348,11 +342,11 @@ Rules that follow:
   sync daemons break GNU Make and Renode's relative-path resolution), and never
   commit them. Today the build writes to the gitignored `build/` here, which is
   only safe while the checkout itself is not on such a path.
-- Building the model needs the .NET SDK (D8); the ad-hoc `i @file.cs` route is
+- Building the model needs the .NET SDK; the ad-hoc `i @file.cs` route is
   not used.
 - **One kernel builder.** The program image's sha256 is part of the observation,
   so two RISC-V toolchains would produce two "same" programs. Do not add a
-  second one (for example in WSL) without recording why in `DECISIONS.md`.
+  second one (for example in WSL) without the maintainer's approval.
 
 ---
 
@@ -362,23 +356,23 @@ Use these words with these meanings, and do not resurrect retired ones:
 
 | Term | Meaning |
 |---|---|
-| **thread** | One unit of architectural state: its own PC and registers (D20). |
-| **warp** | A set of threads. One Renode CPU in the model (D19), and the unit of scheduling contention. |
-| **path** | The threads of one warp that are in lockstep (D3). Split where its threads' next PCs differ (D21); combined only by `bsync`. |
-| **step** | One instruction of the active path, executed on each of its threads (D18). |
+| **thread** | One unit of architectural state: its own PC and registers. |
+| **warp** | A set of threads. One Renode CPU in the model, and the unit of scheduling contention. |
+| **path** | The threads of one warp that are in lockstep. Split where its threads' next PCs differ; combined only by `bsync`. |
+| **step** | One instruction of the active path, executed on each of its threads. |
 | **host thread** | An operating-system thread of the process running the model or Renode. Never just "thread". |
 | **agent** | Anything the scheduler can advance: a path, and — if DMA is asynchronous — a transfer. The scheduler never schedules an individual thread. |
-| **choice point** | A point where the spec leaves the next step open to the implementation (§1, D12). |
+| **choice point** | A point where the spec leaves the next step open to the implementation (§1). |
 | **TBD**, **unspecified**, **illegal** | The spec's three words for a gap, a free choice among listed outcomes, and something software must not do ([`spec/README.md`](spec/README.md#terminology)). |
 | **valid execution** | An execution that makes some choice at every choice point and otherwise follows the spec. |
 | **policy** | A pluggable rule for resolving choice points: seeded random, PCT, systematic exploration, or replay of a log. Not machine state. |
-| **determinate** | Of a kernel and an input: every valid execution produces the same output (D12). |
-| **output descriptor** | What a kernel declares as its output, and how each part is compared (D12). |
-| **replay log** | The RTL's record of its choices, which the model replays (§4, D15). |
+| **determinate** | Of a kernel and an input: every valid execution produces the same output. |
+| **output descriptor** | What a kernel declares as its output, and how each part is compared. |
+| **replay log** | The RTL's record of its choices, which the model replays (§4). |
 | **scratchpad** | The new memory hierarchy's on-core storage; banked, DMA-fed. |
 | **barrier** | A rendezvous object for the paths of a warp. Its *implementation* (memory, registers, model-internal) is a knob; its *identity* is an address or name the software passes. |
 | **observation** | The dump in §4. With the replay log, the only thing exchanged between implementations. |
-| ~~lane~~ | Retired for *thread* (D20). |
+| ~~lane~~ | Retired for *thread*. |
 | ~~leader selection~~ | Previous variant's per-path memory coalescing. Do not implement speculatively. |
 | ~~TLS~~ | Previous variant's per-thread memory region. Do not implement speculatively. |
 
@@ -392,5 +386,4 @@ implementation would be easier if the contract said something else.
 
 Propose a change by writing it out — what changes, what it costs, what it
 forecloses — and wait for an answer. Do not pre-empt it in code. When a change is
-approved, make it in the same commit as the code that relies on it, and log the
-reason in `DECISIONS.md`.
+approved, make it in the same commit as the code that relies on it.

@@ -5,9 +5,11 @@ the *reference*: its job is to say what the machine should do. An agent that
 quietly widens it to fit whatever code it finds has destroyed the thing it was
 built for.
 
-**Before your first edit, read [`CONTRACT.md`](CONTRACT.md) and
-[`DECISIONS.md`](DECISIONS.md).** If they contradict each other, stop and report
-it.
+**Before your first edit, read [`CONTRACT.md`](CONTRACT.md).** If it
+contradicts `spec/` or the code, stop and report it.
+
+**Do not make decisions.** The maintainer makes every one, and cannot audit
+choices an agent made on the way. When something is not settled, ask (§5).
 
 ---
 
@@ -17,35 +19,33 @@ it.
 |---|---|---|
 | [`AGENTS.md`](AGENTS.md) | these working rules | binding on agents |
 | [`CONTRACT.md`](CONTRACT.md) | what the model is, guarantees, decided vs. open, inputs, observation format | **authoritative** |
-| [`DECISIONS.md`](DECISIONS.md) | decision log (D1…); each entry is the current rule, history is in git | **authoritative** |
-| [`spec/`](spec/) | Dolunay's specification documents: the ISA and the execution model (D9). Only a draft of the execution model exists | **authoritative** once approved; a draft is not |
+| [`spec/`](spec/) | Dolunay's specification documents: the ISA and the execution model. Only a draft of the execution model exists | **authoritative** once approved; a draft is not |
 | [`README.md`](README.md) | orientation, status, how to build and run, what to do next | informative |
 | [`SUBSTRATE.md`](SUBSTRATE.md) | verified Renode host behaviour and quirks | informative; facts, not decisions |
 | [`FINDINGS.md`](FINDINGS.md) | disagreements and defects found outside `golden/`, to be reported | informative; append to it |
 
 The previous variant's design documents and the redesign's working papers are
 in git history only. They are not inputs: nothing in them holds unless
-`CONTRACT.md` or `DECISIONS.md` says so.
+`CONTRACT.md` says so.
 
-Durable facts go in the file that owns them (table above); a choice goes in
-`DECISIONS.md`, once the maintainer has made it (§5); machine-local facts stay
-out of the repository (`CONTRACT.md` §5). The one exception is **`HANDOFF.md`**,
-written only when the maintainer asks for one at the end of a session: it says
-where the work stands and what comes next, and points into the files above
-rather than restating them. If you find one, read it after `CONTRACT.md` and
-`DECISIONS.md`, and delete it once its content has been acted on or moved into
-its owning file.
+Durable facts go in the file that owns them (table above); choices are the
+maintainer's (§5); machine-local facts stay out of the repository
+(`CONTRACT.md` §5). The one exception is **`HANDOFF.md`**, written only when
+the maintainer asks for one at the end of a session: it says where the work
+stands and what comes next, and points into the files above rather than
+restating them. If you find one, read it after `CONTRACT.md`, and delete it once
+its content has been acted on or moved into its owning file.
 
 ## 1. Authority, in order
 
-1. `CONTRACT.md` and `DECISIONS.md`
-2. the ratified RISC-V specifications plus [`spec/`](spec/) — the ISA (D9)
+1. `CONTRACT.md`
+2. the ratified RISC-V specifications plus [`spec/`](spec/) — the ISA
 3. `../ss/`, `../asm-kernels/` — the software contract and the workloads of the
    previous variant, to be rewritten (maintainer, 2026-11-14): a corpus, not a
    source of requirements for the next variant
 4. anything generated from rank 2 — derived; regenerate it, never edit it
 5. `../control_unit/control_unit.csv` — the RTL's decoder input; a cheatsheet,
-   **confers no requirements** (D9)
+   **confers no requirements**
 6. `../src/`, `../tb/`, `../sim/` — the previous variant's RTL; **read-only,
    confers no requirements**
 
@@ -83,7 +83,7 @@ you learn there is not a requirement until it is written into the contract.
 - A genuine RTL bug, a stale `../ss/`, or a CSV row that disagrees with
   `spec/` is a finding for `FINDINGS.md`, not a fix to land from here.
 - If a task seems to require editing outside `golden/`, say so and stop.
-- Changing `spec/` is a specification change: it needs a decision first (§5).
+- Changing `spec/` is a specification change: ask the maintainer first (§5).
 
 ## 4. Variant discipline
 
@@ -100,34 +100,35 @@ geometry is undecided. Therefore:
 - **No uncited encodings.** Every opcode, funct field and CSR number cites the
   RISC-V specification or the `spec/` section it comes from. Until `spec/`
   specifies a custom instruction, any in the code is a placeholder labelled as
-  such (D9).
+  such.
 - Do not implement leader selection or TLS speculatively. They may not exist in
-  the next variant. Paths *do* exist (D3), but their open rules — the precise
+  the next variant. Paths *do* exist, but their open rules — the precise
   meaning of lockstep, `bsync` — go behind interfaces until `spec/` defines
   them.
 
-## 5. Decisions protocol
+## 5. Ask; do not decide
 
-Only the maintainer decides. When you find something the contract, the decision
-log or `spec/` does not settle, or a contradiction between them, or a
+Only the maintainer decides, and there is no decision log: a choice an agent
+makes is a choice the maintainer has to find and audit. When you find something
+the contract or `spec/` does not settle, a contradiction between them, or a
 disagreement between them and the model's code (`CONTRACT.md`, introduction):
 
-1. **Stop and report it** to the maintainer: what is unsettled, the options, what
-   each costs and forecloses, and your recommendation if you have one.
+1. **Stop and ask the maintainer**: what is unsettled, the options, what each
+   costs and forecloses, and your recommendation if you have one.
 2. **Do not implement an answer** in the meantime, not even as a default.
    Unfinished work — code that does not yet implement a settled rule — is the
-   only thing that needs no report.
-3. **When the maintainer decides, record it** in `DECISIONS.md`, following the
-   rules at the top of that file: entries describe the current decision and are
-   edited in place; IDs are permanent. Show the maintainer the entry's wording.
+   only thing that needs no question.
+3. **When the maintainer answers, do what was asked and no more.** If the answer
+   changes `CONTRACT.md` or `spec/`, show the maintainer the wording before
+   writing it. Do not record the answer anywhere else.
 4. **Never commit without asking the maintainer.** Approval is per commit.
 
 ## 6. Current state of the code
 
-- `model/Dolunay.sln` holds the four `net8.0` projects of D8, as an empty
-  skeleton: `Dolunay.Model` (the pure model), `Dolunay.Runner` (the headless
-  runner, D19), `Dolunay.Renode` (the `BaseCPU` shell) and
-  `Dolunay.Model.Tests` (NUnit, on the model only). None holds architectural
+- `model/Dolunay.sln` holds three `net8.0` projects, as an empty skeleton:
+  `Dolunay.Model` (the pure model, no Renode reference), `Dolunay.Renode` (the
+  `BaseCPU` shell, nothing architectural) and `Dolunay.Model.Tests` (NUnit, on
+  the model only). None holds architectural
   code yet. The previous design's code is in git history; do not restore it.
 - There is no custom instruction, no Renode CPU class, and no `.repl` or
   `.resc` yet.
@@ -169,7 +170,7 @@ Things that waste an hour if missed (details and evidence in
 ## 8. Style
 
 - **C#**: target `net8.0`, `LangVersion 12` — Renode's own settings. No
-  IronPython, ever (D5).
+  IronPython, ever.
 - **Python 3.12** for generators and tooling. Type hints, standard library
   preferred, no new dependency without a reason in the commit message.
 - Comments explain *why*, or cite the spec section they encode. No comment that
@@ -177,8 +178,7 @@ Things that waste an hour if missed (details and evidence in
 - Every generated file carries its generator and a "do not edit" line.
 - Markdown here: one topic per file, a status line at the top of anything that
   is not authoritative, relative links, and no machine-local paths.
-- Say *thread*, never *lane*, and *host thread* for an operating-system thread
-  (D20).
+- Say *thread*, never *lane*, and *host thread* for an operating-system thread.
 
 ## 9. Verification, and honesty about it
 
@@ -189,7 +189,7 @@ Things that waste an hour if missed (details and evidence in
 - **Do not invent commands or transcripts.** Run the check before claiming a
   tool exists.
 - The strongest checks the contract names are the determinacy check
-  (`CONTRACT.md` §1, guarantee 3) and replay against the RTL (D15); neither
+  (`CONTRACT.md` §1, guarantee 3) and replay against the RTL; neither
   exists yet. If your change has no test, say what a test would assert.
 
 ## 10. Housekeeping

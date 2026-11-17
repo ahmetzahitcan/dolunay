@@ -1,7 +1,7 @@
 # Dolunay specification documents
 
 **Status: drafts only.** A document here is authoritative once it is approved
-and its status line says so (`../DECISIONS.md` D9).
+and its status line says so.
 
 | Document | Status |
 |---|---|
@@ -14,14 +14,14 @@ encodings or rules:
 - **ISA:** the custom instructions, the custom CSRs, and every exemption from,
   or restriction of, the standard (which extensions the core implements, what
   is unsupported, what traps).
-- **Execution model:** paths and what lockstep means (D3), the choice points
+- **Execution model:** paths and what lockstep means, the choice points
   and their rules — cooperative switching within a warp and the `yield`
-  guarantee (D13) — reconvergence, and the order of conflicting accesses within
-  one lockstep instruction (D14).
+  guarantee — reconvergence, and the order of conflicting accesses within
+  one lockstep instruction.
 - **Memory and synchronisation:** the scratchpad, DMA, barriers and their
   memory ordering, as the variant settles.
 - **Valid kernels:** the determinacy rule and the output descriptor a kernel
-  supplies (D12).
+  supplies.
 
 The spec states what software may rely on. Where software does not care, it
 leaves a **choice point** open for the implementation; `../CONTRACT.md` §1
@@ -45,10 +45,10 @@ compatibility).
 Until a document here is approved, no custom instruction or CSR is specified,
 and any in the model's code is a labelled placeholder. Exemptions already
 decided, to be written into the first ISA document: floating point with static
-rounding only (`../DECISIONS.md` D17), no A or Zalrsc (D22), and every
-instruction 32 bits wide, with no C extension (D25).
+rounding only, no A or Zalrsc, and every
+instruction 32 bits wide, with no C extension.
 
 `../../control_unit/control_unit.csv` is the RTL's decoder input and may be used
 as a cheatsheet of what the previous variant decoded; it is not a source for
 these documents. Writing or changing anything here is a specification change and
-needs a decision first (`../AGENTS.md` §5).
+needs the maintainer's approval first (`../AGENTS.md` §5).
