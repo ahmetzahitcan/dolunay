@@ -22,7 +22,7 @@ New here? Read in this order:
 | Machine modelled | the **next** variant: threads in lockstep per path, the PC rule, whole-warp finishing, scratchpad + DMA, barrier logic under revision |
 | Specification | RISC-V standard + [`spec/`](spec/); only a draft of the execution model. ISA restrictions decided: F with static rounding, no A or Zalrsc, 32-bit instructions only |
 | Design | the model executes the spec literally; a program of its own, in Zig |
-| Code | **an empty skeleton** — the Zig package in `model/`, linked against Berkeley SoftFloat, no architectural code |
+| Code | **a skeleton** — the Zig package in `model/`, linked against Berkeley SoftFloat; decode by pattern from `control_unit.csv`, nothing else |
 | Kernel build | the previous variant's kernels, to be rewritten; the build scripts call `riscv32-unknown-elf-*`, and each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
 
@@ -35,8 +35,8 @@ zig build test
 ```
 
 The first build fetches Berkeley SoftFloat (network needed). There is nothing
-to run yet: the model has no architectural code, and the only tests check that
-SoftFloat is linked with its RISC-V specialization.
+to run yet. The tests check that SoftFloat is linked with its RISC-V
+specialization, and that `control_unit.csv` decodes a few hand-encoded words.
 
 ## Next steps
 

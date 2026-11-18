@@ -18,6 +18,10 @@ pub fn build(b: *std.Build) !void {
     });
     dolunay.addImport("softfloat", softfloat.headers);
     dolunay.linkLibrary(softfloat.lib);
+    // Decode patterns (CONTRACT.md §3), read by src/decode.zig with @embedFile.
+    dolunay.addAnonymousImport("control_unit.csv", .{
+        .root_source_file = b.path("../../control_unit/control_unit.csv"),
+    });
 
     const tests = b.addTest(.{ .root_module = dolunay });
     const test_step = b.step("test", "Run the model's tests");

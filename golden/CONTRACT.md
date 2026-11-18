@@ -206,16 +206,28 @@ The model may read anything in the repository. Only these are authoritative:
 | 2 | RISC-V ratified specifications + [`spec/`](spec/) | the ISA: encodings and per-instruction behaviour | **authoritative** |
 | 3 | `../ss/`, `../asm-kernels/` | the previous variant's software contract and workloads, to be rewritten | **corpus, not truth** |
 | 4 | anything generated from rank 2 (none yet) | the model's decode data | **derived — regenerate, never edit** |
-| 5 | `../control_unit/control_unit.csv` | the RTL's decoder input; a cheatsheet | **evidence, read-only** |
+| 5 | `../control_unit/control_unit.csv` | the RTL's decoder input; **the model's decode patterns**: its `instruction` and `match_string` columns only | **read-only; every other column is evidence only** |
 | 6 | `../src/`, `../tb/`, `../sim/` | how the previous variant was built and driven | **read-only; confers no requirements** |
 
 Notes that save time:
 
 - Every encoding in the model cites the RISC-V specification or the
   [`spec/`](spec/) section it comes from. Never hand-write an opcode, funct3, or
-  CSR number without that citation.
-- The CSV is useful for finding out what the previous RTL decoded, and nothing
-  more. Its generator is `../control_unit/generate.py` (single file);
+  CSR number without that citation. A decode pattern read from the CSV cites
+  the CSV.
+- The model takes its decode patterns from the CSV's `instruction` and
+  `match_string` columns and nothing else. It never uses another column, a
+  comment row (`'`), or an enum-only row (`~`). Being in the CSV does not make a
+  pattern correct. The model and the RTL share it, so G2 cannot catch a wrong
+  one. A pattern that disagrees with the RISC-V specification or `spec/` is a
+  finding ([`FINDINGS.md`](FINDINGS.md)).
+- When a word matches more than one pattern, the pattern with the most fixed
+  bits wins; two overlapping patterns with equally many fixed bits are an error
+  in the CSV.
+- The CSV's rows for custom instructions are the previous variant's encodings.
+  Until `spec/` specifies an instruction, its row is a placeholder, and the
+  model labels it as one.
+- The CSV's generator is `../control_unit/generate.py` (single file);
   `../control_unit/cugen/` is empty, and the `csv_parser.py` / `model.py` /
   `sv_emitter.py` names quoted in the previous design documents do not exist. A
   row whose name starts with `'` is commented out; a row starting with `~`

@@ -43,7 +43,8 @@ its content has been acted on or moved into its owning file.
    previous variant, to be rewritten (maintainer, 2026-11-14): a corpus, not a
    source of requirements for the next variant
 4. anything generated from rank 2 — derived; regenerate it, never edit it
-5. `../control_unit/control_unit.csv` — the RTL's decoder input; a cheatsheet,
+5. `../control_unit/control_unit.csv` — the RTL's decoder input; the model's
+   decode patterns come from it (`CONTRACT.md` §3), and every other column
    **confers no requirements**
 6. `../src/`, `../tb/`, `../sim/` — the previous variant's RTL; **read-only,
    confers no requirements**
@@ -124,14 +125,16 @@ disagreement between them and the model's code (`CONTRACT.md`, introduction):
 
 ## 6. Current state of the code
 
-- `model/` is a Zig package, `dolunay`, as an empty skeleton: one module,
-  `src/root.zig`, linked against Berkeley SoftFloat. It holds no architectural
-  code yet. The previous designs' code is in git history (the Renode-hosted one
+- `model/` is a Zig package, `dolunay`: one module, `src/root.zig`, linked
+  against Berkeley SoftFloat. Its only architectural code is `src/decode.zig`,
+  which names the `control_unit.csv` row that matches an instruction word; the
+  CSV is read at compile time (`CONTRACT.md` §3). The previous designs' code is in git history (the Renode-hosted one
   under the tag `archive/renode`); do not restore it.
 - There is no custom instruction yet.
-- How to build is in [`README.md`](README.md#building-and-running). The only
-  tests check that SoftFloat is linked with its RISC-V specialization. Say how
-  many tests ran and passed; do not claim a run you did not see.
+- How to build is in [`README.md`](README.md#building-and-running). The tests
+  check that SoftFloat is linked with its RISC-V specialization, and decode a
+  few hand-encoded words. Say how many tests ran and passed; do not claim a run
+  you did not see.
 
 ## 7. Building and running — the traps
 

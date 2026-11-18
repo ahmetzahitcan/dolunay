@@ -4,6 +4,12 @@
 const std = @import("std");
 const softfloat = @import("softfloat");
 
+pub const decode = @import("decode.zig");
+
+test {
+    std.testing.refAllDecls(@This());
+}
+
 // The tests below check that SoftFloat is linked and built with the RISC-V
 // specialization; they say nothing about the model.
 
