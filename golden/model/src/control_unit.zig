@@ -7,14 +7,8 @@
 //! are the previous variant's encodings: placeholders until `golden/spec/`
 //! specifies them (golden/CONTRACT.md §3).
 
-/// An integer register index, x0..x31.
-pub const XReg = enum(u5) { _ };
-
-/// A floating-point register index, f0..f31.
-pub const FReg = enum(u5) { _ };
-
-fn reg(comptime R: type, word: u32, comptime lsb: u5) R {
-    return @fromBackingInt(@as(u5, @truncate(word >> lsb)));
+fn reg(word: u32, comptime lsb: u5) u5 {
+    return @truncate(word >> lsb);
 }
 
 fn sext(value: u32, comptime bits: u6) u32 {
@@ -43,89 +37,89 @@ fn immJ(w: u32) u32 {
 }
 
 pub const Instruction = union(enum) {
-    ADD: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SH1ADD: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SH2ADD: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SH3ADD: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SUB: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SLL: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SLT: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SLTU: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    XOR: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SRL: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    SRA: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    OR: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    AND: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    ADDI: struct { rd: XReg, rs1: XReg, imm: u32 },
-    SLLI: struct { rd: XReg, rs1: XReg, imm: u32 },
-    SLTI: struct { rd: XReg, rs1: XReg, imm: u32 },
-    SLTIU: struct { rd: XReg, rs1: XReg, imm: u32 },
-    XORI: struct { rd: XReg, rs1: XReg, imm: u32 },
-    SRLI: struct { rd: XReg, rs1: XReg, imm: u32 },
-    SRAI: struct { rd: XReg, rs1: XReg, imm: u32 },
-    ORI: struct { rd: XReg, rs1: XReg, imm: u32 },
-    ANDI: struct { rd: XReg, rs1: XReg, imm: u32 },
-    BEQ: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    BNE: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    BLT: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    BGE: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    BLTU: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    BGEU: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    JAL: struct { rd: XReg, imm: u32 },
-    JALR: struct { rd: XReg, rs1: XReg, imm: u32 },
-    LUI: struct { rd: XReg, imm: u32 },
-    AUIPC: struct { rd: XReg, imm: u32 },
-    LB: struct { rd: XReg, rs1: XReg, imm: u32 },
-    LH: struct { rd: XReg, rs1: XReg, imm: u32 },
-    LW: struct { rd: XReg, rs1: XReg, imm: u32 },
-    FLW: struct { rd: FReg, rs1: XReg, imm: u32 },
-    LBU: struct { rd: XReg, rs1: XReg, imm: u32 },
-    LHU: struct { rd: XReg, rs1: XReg, imm: u32 },
-    SB: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    SH: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    SW: struct { rs1: XReg, rs2: XReg, imm: u32 },
-    FSW: struct { rs1: XReg, rs2: FReg, imm: u32 },
-    LR: struct { rd: XReg, rs1: XReg },
-    SC: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    BINIT: struct { rs1: XReg, imm: u32 },
-    BSYNC_0: struct { rs1: XReg, imm: u32 },
+    ADD: struct { rd: u5, rs1: u5, rs2: u5 },
+    SH1ADD: struct { rd: u5, rs1: u5, rs2: u5 },
+    SH2ADD: struct { rd: u5, rs1: u5, rs2: u5 },
+    SH3ADD: struct { rd: u5, rs1: u5, rs2: u5 },
+    SUB: struct { rd: u5, rs1: u5, rs2: u5 },
+    SLL: struct { rd: u5, rs1: u5, rs2: u5 },
+    SLT: struct { rd: u5, rs1: u5, rs2: u5 },
+    SLTU: struct { rd: u5, rs1: u5, rs2: u5 },
+    XOR: struct { rd: u5, rs1: u5, rs2: u5 },
+    SRL: struct { rd: u5, rs1: u5, rs2: u5 },
+    SRA: struct { rd: u5, rs1: u5, rs2: u5 },
+    OR: struct { rd: u5, rs1: u5, rs2: u5 },
+    AND: struct { rd: u5, rs1: u5, rs2: u5 },
+    ADDI: struct { rd: u5, rs1: u5, imm: u32 },
+    SLLI: struct { rd: u5, rs1: u5, imm: u32 },
+    SLTI: struct { rd: u5, rs1: u5, imm: u32 },
+    SLTIU: struct { rd: u5, rs1: u5, imm: u32 },
+    XORI: struct { rd: u5, rs1: u5, imm: u32 },
+    SRLI: struct { rd: u5, rs1: u5, imm: u32 },
+    SRAI: struct { rd: u5, rs1: u5, imm: u32 },
+    ORI: struct { rd: u5, rs1: u5, imm: u32 },
+    ANDI: struct { rd: u5, rs1: u5, imm: u32 },
+    BEQ: struct { rs1: u5, rs2: u5, imm: u32 },
+    BNE: struct { rs1: u5, rs2: u5, imm: u32 },
+    BLT: struct { rs1: u5, rs2: u5, imm: u32 },
+    BGE: struct { rs1: u5, rs2: u5, imm: u32 },
+    BLTU: struct { rs1: u5, rs2: u5, imm: u32 },
+    BGEU: struct { rs1: u5, rs2: u5, imm: u32 },
+    JAL: struct { rd: u5, imm: u32 },
+    JALR: struct { rd: u5, rs1: u5, imm: u32 },
+    LUI: struct { rd: u5, imm: u32 },
+    AUIPC: struct { rd: u5, imm: u32 },
+    LB: struct { rd: u5, rs1: u5, imm: u32 },
+    LH: struct { rd: u5, rs1: u5, imm: u32 },
+    LW: struct { rd: u5, rs1: u5, imm: u32 },
+    FLW: struct { rd: u5, rs1: u5, imm: u32 },
+    LBU: struct { rd: u5, rs1: u5, imm: u32 },
+    LHU: struct { rd: u5, rs1: u5, imm: u32 },
+    SB: struct { rs1: u5, rs2: u5, imm: u32 },
+    SH: struct { rs1: u5, rs2: u5, imm: u32 },
+    SW: struct { rs1: u5, rs2: u5, imm: u32 },
+    FSW: struct { rs1: u5, rs2: u5, imm: u32 },
+    LR: struct { rd: u5, rs1: u5 },
+    SC: struct { rd: u5, rs1: u5, rs2: u5 },
+    BINIT: struct { rs1: u5, imm: u32 },
+    BSYNC_0: struct { rs1: u5, imm: u32 },
     YIELD: void,
-    CSR_MHARTID: struct { rd: XReg },
-    CSR_XWARPID: struct { rd: XReg },
-    CSR_XTHRID: struct { rd: XReg },
-    CSR_XROLE: struct { rd: XReg },
-    CSR_CYCLETIME: struct { rd: XReg },
-    CSR_CYCLETIMEH: struct { rd: XReg },
-    CSR_INSTRET: struct { rd: XReg },
-    CSR_INSTRETH: struct { rd: XReg },
-    CSR_WUINSTRET: struct { rd: XReg },
-    CSR_WUINSTRETH: struct { rd: XReg },
-    CSR_WTINSTRET: struct { rd: XReg },
-    CSR_WTINSTRETH: struct { rd: XReg },
-    CSR_OTHER: struct { rd: XReg },
+    CSR_MHARTID: struct { rd: u5 },
+    CSR_XWARPID: struct { rd: u5 },
+    CSR_XTHRID: struct { rd: u5 },
+    CSR_XROLE: struct { rd: u5 },
+    CSR_CYCLETIME: struct { rd: u5 },
+    CSR_CYCLETIMEH: struct { rd: u5 },
+    CSR_INSTRET: struct { rd: u5 },
+    CSR_INSTRETH: struct { rd: u5 },
+    CSR_WUINSTRET: struct { rd: u5 },
+    CSR_WUINSTRETH: struct { rd: u5 },
+    CSR_WTINSTRET: struct { rd: u5 },
+    CSR_WTINSTRETH: struct { rd: u5 },
+    CSR_OTHER: struct { rd: u5 },
     FENCE: void,
-    CZERO_EQZ: struct { rd: XReg, rs1: XReg, rs2: XReg },
-    CZERO_NEZ: struct { rd: XReg, rs1: XReg, rs2: XReg },
+    CZERO_EQZ: struct { rd: u5, rs1: u5, rs2: u5 },
+    CZERO_NEZ: struct { rd: u5, rs1: u5, rs2: u5 },
     WDONE: struct { imm: u32 },
-    FADD_S: struct { rd: FReg, rs1: FReg, rs2: FReg },
-    FSUB_S: struct { rd: FReg, rs1: FReg, rs2: FReg },
-    FMUL_S: struct { rd: FReg, rs1: FReg, rs2: FReg },
-    FMADD_S: struct { rd: FReg, rs1: FReg, rs2: FReg, rs3: FReg },
-    FMSUB_S: struct { rd: FReg, rs1: FReg, rs2: FReg, rs3: FReg },
-    FNMSUB_S: struct { rd: FReg, rs1: FReg, rs2: FReg, rs3: FReg },
-    FNMADD_S: struct { rd: FReg, rs1: FReg, rs2: FReg, rs3: FReg },
-    FDIV_S: struct { rd: FReg, rs1: FReg, rs2: FReg },
-    FSQRT_S: struct { rd: FReg, rs1: FReg, rs2: FReg },
-    FMINMAX_S: struct { rd: FReg, rs1: FReg, rs2: FReg },
-    FSGNJ_S: struct { rd: FReg, rs1: FReg, rs2: FReg },
-    FCMP_S: struct { rd: XReg, rs1: FReg, rs2: FReg },
-    FCLASS_S: struct { rd: XReg, rs1: FReg },
-    FCVT_W_S: struct { rd: XReg, rs1: FReg },
-    FCVT_WU_S: struct { rd: XReg, rs1: FReg },
-    FCVT_S_W: struct { rd: FReg, rs1: XReg },
-    FCVT_S_WU: struct { rd: FReg, rs1: XReg },
-    FMV_W_X: struct { rd: FReg, rs1: XReg },
-    FMV_X_W: struct { rd: XReg, rs1: FReg },
+    FADD_S: struct { rd: u5, rs1: u5, rs2: u5 },
+    FSUB_S: struct { rd: u5, rs1: u5, rs2: u5 },
+    FMUL_S: struct { rd: u5, rs1: u5, rs2: u5 },
+    FMADD_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5 },
+    FMSUB_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5 },
+    FNMSUB_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5 },
+    FNMADD_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5 },
+    FDIV_S: struct { rd: u5, rs1: u5, rs2: u5 },
+    FSQRT_S: struct { rd: u5, rs1: u5, rs2: u5 },
+    FMINMAX_S: struct { rd: u5, rs1: u5, rs2: u5 },
+    FSGNJ_S: struct { rd: u5, rs1: u5, rs2: u5 },
+    FCMP_S: struct { rd: u5, rs1: u5, rs2: u5 },
+    FCLASS_S: struct { rd: u5, rs1: u5 },
+    FCVT_W_S: struct { rd: u5, rs1: u5 },
+    FCVT_WU_S: struct { rd: u5, rs1: u5 },
+    FCVT_S_W: struct { rd: u5, rs1: u5 },
+    FCVT_S_WU: struct { rd: u5, rs1: u5 },
+    FMV_W_X: struct { rd: u5, rs1: u5 },
+    FMV_X_W: struct { rd: u5, rs1: u5 },
 };
 
 /// Decodes `w`, or returns null when no row matches. Rows are tried most
@@ -133,86 +127,86 @@ pub const Instruction = union(enum) {
 pub fn decode(w: u32) ?Instruction {
     if (w & 0xffffffff == 0x0000400b) return .{ .YIELD = {} };
     if (w & 0xffffffff == 0x00002013) return .{ .WDONE = .{ .imm = immI(w) } };
-    if (w & 0xfff0707f == 0xe0001053) return .{ .FCLASS_S = .{ .rd = reg(XReg, w, 7), .rs1 = reg(FReg, w, 15) } };
-    if (w & 0xfff0707f == 0xf0000053) return .{ .FMV_W_X = .{ .rd = reg(FReg, w, 7), .rs1 = reg(XReg, w, 15) } };
-    if (w & 0xfff0707f == 0xe0000053) return .{ .FMV_X_W = .{ .rd = reg(XReg, w, 7), .rs1 = reg(FReg, w, 15) } };
-    if (w & 0xf9f0707f == 0x1000202f) return .{ .LR = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15) } };
-    if (w & 0xfff0007f == 0xf1400073) return .{ .CSR_MHARTID = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xcc000073) return .{ .CSR_XWARPID = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xcc100073) return .{ .CSR_XTHRID = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xcc200073) return .{ .CSR_XROLE = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xc0200073) return .{ .CSR_INSTRET = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xc8200073) return .{ .CSR_INSTRETH = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xc0300073) return .{ .CSR_WUINSTRET = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xc8300073) return .{ .CSR_WUINSTRETH = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xc0400073) return .{ .CSR_WTINSTRET = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0xc8400073) return .{ .CSR_WTINSTRETH = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfff0007f == 0x58000053) return .{ .FSQRT_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20) } };
-    if (w & 0xfff0007f == 0xc0000053) return .{ .FCVT_W_S = .{ .rd = reg(XReg, w, 7), .rs1 = reg(FReg, w, 15) } };
-    if (w & 0xfff0007f == 0xc0100053) return .{ .FCVT_WU_S = .{ .rd = reg(XReg, w, 7), .rs1 = reg(FReg, w, 15) } };
-    if (w & 0xfff0007f == 0xd0000053) return .{ .FCVT_S_W = .{ .rd = reg(FReg, w, 7), .rs1 = reg(XReg, w, 15) } };
-    if (w & 0xfff0007f == 0xd0100053) return .{ .FCVT_S_WU = .{ .rd = reg(FReg, w, 7), .rs1 = reg(XReg, w, 15) } };
-    if (w & 0xffe0007f == 0xc0000073) return .{ .CSR_CYCLETIME = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xffe0007f == 0xc8000073) return .{ .CSR_CYCLETIMEH = .{ .rd = reg(XReg, w, 7) } };
-    if (w & 0xfe00707f == 0x00000033) return .{ .ADD = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x20002033) return .{ .SH1ADD = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x20004033) return .{ .SH2ADD = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x20006033) return .{ .SH3ADD = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x40000033) return .{ .SUB = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x00001033) return .{ .SLL = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x00002033) return .{ .SLT = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x00003033) return .{ .SLTU = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x00004033) return .{ .XOR = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x00005033) return .{ .SRL = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x40005033) return .{ .SRA = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x00006033) return .{ .OR = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x00007033) return .{ .AND = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x00001013) return .{ .SLLI = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0xfe00707f == 0x00005013) return .{ .SRLI = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0xfe00707f == 0x40005013) return .{ .SRAI = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0xfe00707f == 0x0e005033) return .{ .CZERO_EQZ = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00707f == 0x0e007033) return .{ .CZERO_NEZ = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0xfe00607f == 0x28000053) return .{ .FMINMAX_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20) } };
-    if (w & 0xf800707f == 0x1800202f) return .{ .SC = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20) } };
-    if (w & 0x00007fff == 0x0000100b) return .{ .BINIT = .{ .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x00007fff == 0x0000200b) return .{ .BSYNC_0 = .{ .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0xfe00407f == 0x20000053) return .{ .FSGNJ_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20) } };
-    if (w & 0xfe00407f == 0xa0000053) return .{ .FCMP_S = .{ .rd = reg(XReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20) } };
-    if (w & 0xfe00007f == 0x00000053) return .{ .FADD_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20) } };
-    if (w & 0xfe00007f == 0x08000053) return .{ .FSUB_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20) } };
-    if (w & 0xfe00007f == 0x10000053) return .{ .FMUL_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20) } };
-    if (w & 0xfe00007f == 0x18000053) return .{ .FDIV_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20) } };
-    if (w & 0x0000707f == 0x00000013) return .{ .ADDI = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00002013) return .{ .SLTI = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00003013) return .{ .SLTIU = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00004013) return .{ .XORI = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00006013) return .{ .ORI = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00007013) return .{ .ANDI = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00000063) return .{ .BEQ = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00001063) return .{ .BNE = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00004063) return .{ .BLT = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00005063) return .{ .BGE = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00006063) return .{ .BLTU = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00007063) return .{ .BGEU = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00000067) return .{ .JALR = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00000003) return .{ .LB = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00001003) return .{ .LH = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00002003) return .{ .LW = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00002007) return .{ .FLW = .{ .rd = reg(FReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00004003) return .{ .LBU = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00005003) return .{ .LHU = .{ .rd = reg(XReg, w, 7), .rs1 = reg(XReg, w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00000023) return .{ .SB = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immS(w) } };
-    if (w & 0x0000707f == 0x00001023) return .{ .SH = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immS(w) } };
-    if (w & 0x0000707f == 0x00002023) return .{ .SW = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(XReg, w, 20), .imm = immS(w) } };
-    if (w & 0x0000707f == 0x00002027) return .{ .FSW = .{ .rs1 = reg(XReg, w, 15), .rs2 = reg(FReg, w, 20), .imm = immS(w) } };
+    if (w & 0xfff0707f == 0xe0001053) return .{ .FCLASS_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15) } };
+    if (w & 0xfff0707f == 0xf0000053) return .{ .FMV_W_X = .{ .rd = reg(w, 7), .rs1 = reg(w, 15) } };
+    if (w & 0xfff0707f == 0xe0000053) return .{ .FMV_X_W = .{ .rd = reg(w, 7), .rs1 = reg(w, 15) } };
+    if (w & 0xf9f0707f == 0x1000202f) return .{ .LR = .{ .rd = reg(w, 7), .rs1 = reg(w, 15) } };
+    if (w & 0xfff0007f == 0xf1400073) return .{ .CSR_MHARTID = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xcc000073) return .{ .CSR_XWARPID = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xcc100073) return .{ .CSR_XTHRID = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xcc200073) return .{ .CSR_XROLE = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xc0200073) return .{ .CSR_INSTRET = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xc8200073) return .{ .CSR_INSTRETH = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xc0300073) return .{ .CSR_WUINSTRET = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xc8300073) return .{ .CSR_WUINSTRETH = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xc0400073) return .{ .CSR_WTINSTRET = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0xc8400073) return .{ .CSR_WTINSTRETH = .{ .rd = reg(w, 7) } };
+    if (w & 0xfff0007f == 0x58000053) return .{ .FSQRT_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfff0007f == 0xc0000053) return .{ .FCVT_W_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15) } };
+    if (w & 0xfff0007f == 0xc0100053) return .{ .FCVT_WU_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15) } };
+    if (w & 0xfff0007f == 0xd0000053) return .{ .FCVT_S_W = .{ .rd = reg(w, 7), .rs1 = reg(w, 15) } };
+    if (w & 0xfff0007f == 0xd0100053) return .{ .FCVT_S_WU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15) } };
+    if (w & 0xffe0007f == 0xc0000073) return .{ .CSR_CYCLETIME = .{ .rd = reg(w, 7) } };
+    if (w & 0xffe0007f == 0xc8000073) return .{ .CSR_CYCLETIMEH = .{ .rd = reg(w, 7) } };
+    if (w & 0xfe00707f == 0x00000033) return .{ .ADD = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x20002033) return .{ .SH1ADD = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x20004033) return .{ .SH2ADD = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x20006033) return .{ .SH3ADD = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x40000033) return .{ .SUB = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00001033) return .{ .SLL = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00002033) return .{ .SLT = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00003033) return .{ .SLTU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00004033) return .{ .XOR = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00005033) return .{ .SRL = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x40005033) return .{ .SRA = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00006033) return .{ .OR = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00007033) return .{ .AND = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00001013) return .{ .SLLI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0xfe00707f == 0x00005013) return .{ .SRLI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0xfe00707f == 0x40005013) return .{ .SRAI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0xfe00707f == 0x0e005033) return .{ .CZERO_EQZ = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x0e007033) return .{ .CZERO_NEZ = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00607f == 0x28000053) return .{ .FMINMAX_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xf800707f == 0x1800202f) return .{ .SC = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0x00007fff == 0x0000100b) return .{ .BINIT = .{ .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x00007fff == 0x0000200b) return .{ .BSYNC_0 = .{ .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0xfe00407f == 0x20000053) return .{ .FSGNJ_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00407f == 0xa0000053) return .{ .FCMP_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00007f == 0x00000053) return .{ .FADD_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00007f == 0x08000053) return .{ .FSUB_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00007f == 0x10000053) return .{ .FMUL_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00007f == 0x18000053) return .{ .FDIV_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0x0000707f == 0x00000013) return .{ .ADDI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00002013) return .{ .SLTI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00003013) return .{ .SLTIU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00004013) return .{ .XORI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00006013) return .{ .ORI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00007013) return .{ .ANDI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00000063) return .{ .BEQ = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00001063) return .{ .BNE = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00004063) return .{ .BLT = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00005063) return .{ .BGE = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00006063) return .{ .BLTU = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00007063) return .{ .BGEU = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00000067) return .{ .JALR = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00000003) return .{ .LB = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00001003) return .{ .LH = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00002003) return .{ .LW = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00002007) return .{ .FLW = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00004003) return .{ .LBU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00005003) return .{ .LHU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00000023) return .{ .SB = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
+    if (w & 0x0000707f == 0x00001023) return .{ .SH = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
+    if (w & 0x0000707f == 0x00002023) return .{ .SW = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
+    if (w & 0x0000707f == 0x00002027) return .{ .FSW = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
     if (w & 0x0000707f == 0x0000000f) return .{ .FENCE = {} };
-    if (w & 0x0600007f == 0x00000043) return .{ .FMADD_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20), .rs3 = reg(FReg, w, 27) } };
-    if (w & 0x0600007f == 0x00000047) return .{ .FMSUB_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20), .rs3 = reg(FReg, w, 27) } };
-    if (w & 0x0600007f == 0x0000004b) return .{ .FNMSUB_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20), .rs3 = reg(FReg, w, 27) } };
-    if (w & 0x0600007f == 0x0000004f) return .{ .FNMADD_S = .{ .rd = reg(FReg, w, 7), .rs1 = reg(FReg, w, 15), .rs2 = reg(FReg, w, 20), .rs3 = reg(FReg, w, 27) } };
-    if (w & 0x0000007f == 0x0000006f) return .{ .JAL = .{ .rd = reg(XReg, w, 7), .imm = immJ(w) } };
-    if (w & 0x0000007f == 0x00000037) return .{ .LUI = .{ .rd = reg(XReg, w, 7), .imm = immU(w) } };
-    if (w & 0x0000007f == 0x00000017) return .{ .AUIPC = .{ .rd = reg(XReg, w, 7), .imm = immU(w) } };
-    if (w & 0x0000007f == 0x00000073) return .{ .CSR_OTHER = .{ .rd = reg(XReg, w, 7) } };
+    if (w & 0x0600007f == 0x00000043) return .{ .FMADD_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27) } };
+    if (w & 0x0600007f == 0x00000047) return .{ .FMSUB_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27) } };
+    if (w & 0x0600007f == 0x0000004b) return .{ .FNMSUB_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27) } };
+    if (w & 0x0600007f == 0x0000004f) return .{ .FNMADD_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27) } };
+    if (w & 0x0000007f == 0x0000006f) return .{ .JAL = .{ .rd = reg(w, 7), .imm = immJ(w) } };
+    if (w & 0x0000007f == 0x00000037) return .{ .LUI = .{ .rd = reg(w, 7), .imm = immU(w) } };
+    if (w & 0x0000007f == 0x00000017) return .{ .AUIPC = .{ .rd = reg(w, 7), .imm = immU(w) } };
+    if (w & 0x0000007f == 0x00000073) return .{ .CSR_OTHER = .{ .rd = reg(w, 7) } };
     return null;
 }

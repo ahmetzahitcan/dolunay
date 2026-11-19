@@ -490,8 +490,9 @@ def emit_sv_package(data, output_file, package_name):
 # index field starts at (RISC-V unprivileged ISA, "Base Instruction Formats";
 # rs3 from the R4-type format of the "F" extension). Each index is 5 bits.
 _ZIG_REG_FIELDS = [('rd', 7), ('rs1', 15), ('rs2', 20), ('rs3', 27)]
-# Register-file values -> Zig operand type.
-_ZIG_REGFILES = {'I': 'XReg', 'F': 'FReg'}
+# Register-file values that name an operand. Which file it is stays in the CSV;
+# the Zig operand is the bare 5-bit index.
+_ZIG_REGFILES = ('I', 'F')
 _ZIG_IMM_TYPES = ('I', 'S', 'B', 'U', 'J')
 
 _ZIG_PRELUDE = '''\
@@ -504,14 +505,8 @@ _ZIG_PRELUDE = '''\
 //! are the previous variant's encodings: placeholders until `golden/spec/`
 //! specifies them (golden/CONTRACT.md §3).
 
-/// An integer register index, x0..x31.
-pub const XReg = enum(u5) { _ };
-
-/// A floating-point register index, f0..f31.
-pub const FReg = enum(u5) { _ };
-
-fn reg(comptime R: type, word: u32, comptime lsb: u5) R {
-    return @fromBackingInt(@as(u5, @truncate(word >> lsb)));
+fn reg(word: u32, comptime lsb: u5) u5 {
+    return @truncate(word >> lsb);
 }
 
 fn sext(value: u32, comptime bits: u6) u32 {
@@ -552,11 +547,10 @@ def _zig_operands(row, fields):
         if not val or val.lower() in _DONT_CARE:
             continue
         if val not in _ZIG_REGFILES:
-            print(f"Error: instruction '{inst}': {name}_regfile value '{val}' "
-                  f"has no Zig register type (expected one of {sorted(_ZIG_REGFILES)}).")
+            print(f"Error: instruction '{inst}': unknown {name}_regfile value "
+                  f"'{val}' (expected one of {list(_ZIG_REGFILES)}).")
             sys.exit(1)
-        rtype = _ZIG_REGFILES[val]
-        operands.append((name, rtype, f"reg({rtype}, w, {lsb})"))
+        operands.append((name, 'u5', f"reg(w, {lsb})"))
     val = (row.get(fields['imm_type']) or '').strip()
     if val and val.lower() not in _DONT_CARE:
         if val not in _ZIG_IMM_TYPES:
