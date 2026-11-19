@@ -7,7 +7,7 @@ const softfloat = @import("softfloat");
 pub const control_unit = @import("control_unit.zig");
 pub const float = @import("float.zig");
 pub const int_utils = @import("int_utils.zig");
-pub const thread = @import("thread.zig");
+pub const Thread = @import("Thread.zig");
 
 test {
     std.testing.refAllDecls(@This());
