@@ -8,6 +8,8 @@ const Thread = @This();
 
 /// Acts the spec makes illegal, detected while executing one instruction. The
 /// caller reports them as the `illegal` termination (CONTRACT.md §1, §4).
+///
+/// TODO: Move these somewhere else.
 pub const Illegal = float.Error || error{
     /// A field value RISC-V assigns no instruction to, such as funct3 = 011
     /// in FSGNJ_S or FCMP_S (FINDINGS.md F7).
@@ -78,7 +80,7 @@ fn retireFloatX(self: *Thread, rd: u5, r: float.Result) void {
     self.fflags |= r.flags;
 }
 
-pub fn execute(self: *Thread, pc: u32, instruction: control_unit.Instruction) Illegal!void {
+pub fn step(self: *Thread, pc: u32, instruction: control_unit.Instruction) Illegal!void {
     // Semantics from the RISC-V unprivileged ISA: RV32I "Integer
     // Computational Instructions", and Zba for SHnADD. Arithmetic wraps
     // modulo 2^32; shifts use the low 5 bits of the amount.
@@ -175,15 +177,15 @@ const expectError = std.testing.expectError;
 
 test "thread: x0 reads as zero and ignores writes" {
     var t = testThread();
-    try t.execute(0, .{ .addi = .{ .rd = 0, .rs1 = 0, .imm = 5 } });
+    try t.step(0, .{ .addi = .{ .rd = 0, .rs1 = 0, .imm = 5 } });
     try expectEqual(@as(u32, 0), t.xregs.read(0));
-    try t.execute(0, .{ .addi = .{ .rd = 1, .rs1 = 0, .imm = 7 } });
+    try t.step(0, .{ .addi = .{ .rd = 1, .rs1 = 0, .imm = 7 } });
     try expectEqual(@as(u32, 7), t.xregs.read(1));
 }
 
 test "thread: AUIPC adds the immediate to pc, wrapping" {
     var t = testThread();
-    try t.execute(0xFFFF_F000, .{ .auipc = .{ .rd = 1, .imm = 0x0000_2000 } });
+    try t.step(0xFFFF_F000, .{ .auipc = .{ .rd = 1, .imm = 0x0000_2000 } });
     try expectEqual(@as(u32, 0x0000_1000), t.xregs.read(1));
 }
 
@@ -191,26 +193,26 @@ test "thread: fflags accrue across instructions" {
     var t = testThread();
     t.fregs.write(1, 0x3F80_0000); // 1.0
     t.fregs.write(2, 0x4040_0000); // 3.0
-    try t.execute(0, .{ .fdiv_s = .{ .rd = 3, .rs1 = 1, .rs2 = 2, .rm = 0b000 } }); // inexact
-    try t.execute(0, .{ .fadd_s = .{ .rd = 4, .rs1 = 1, .rs2 = 2, .rm = 0b000 } }); // exact
+    try t.step(0, .{ .fdiv_s = .{ .rd = 3, .rs1 = 1, .rs2 = 2, .rm = 0b000 } }); // inexact
+    try t.step(0, .{ .fadd_s = .{ .rd = 4, .rs1 = 1, .rs2 = 2, .rm = 0b000 } }); // exact
     try expectEqual(@as(u32, 0x4080_0000), t.fregs.read(4));
     try expectEqual(@as(u8, softfloat.softfloat_flag_inexact), t.fflags);
 }
 
 test "thread: illegal acts return an error" {
     var t = testThread();
-    try expectError(error.ReservedRoundingMode, t.execute(0, .{ .fadd_s = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b101 } }));
-    try expectError(error.IllegalInstruction, t.execute(0, .{ .fsgnj_s = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b011 } }));
-    try expectError(error.IllegalInstruction, t.execute(0, .{ .fcmp_s = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b011 } }));
-    try expectError(error.IllegalInstruction, t.execute(0, .{ .fminmax_s = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b010 } }));
+    try expectError(error.ReservedRoundingMode, t.step(0, .{ .fadd_s = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b101 } }));
+    try expectError(error.IllegalInstruction, t.step(0, .{ .fsgnj_s = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b011 } }));
+    try expectError(error.IllegalInstruction, t.step(0, .{ .fcmp_s = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b011 } }));
+    try expectError(error.IllegalInstruction, t.step(0, .{ .fminmax_s = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b010 } }));
 }
 
 test "thread: FMV moves bits between register files without conversion" {
     var t = testThread();
     const signaling_nan: u32 = 0x7F80_0001;
     t.xregs.write(1, signaling_nan);
-    try t.execute(0, .{ .fmv_w_x = .{ .rd = 1, .rs1 = 1, .rm = 0b000 } });
-    try t.execute(0, .{ .fmv_x_w = .{ .rd = 2, .rs1 = 1, .rm = 0b000 } });
+    try t.step(0, .{ .fmv_w_x = .{ .rd = 1, .rs1 = 1, .rm = 0b000 } });
+    try t.step(0, .{ .fmv_x_w = .{ .rd = 2, .rs1 = 1, .rm = 0b000 } });
     try expectEqual(signaling_nan, t.xregs.read(2));
     try expectEqual(@as(u8, 0), t.fflags);
 }
