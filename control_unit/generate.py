@@ -523,6 +523,10 @@ fn reg(word: u32, comptime lsb: u5) u5 {
     return @truncate(word >> lsb);
 }
 
+fn funct3(word: u32) u3 {
+    return @truncate(word >> 12);
+}
+
 fn sext(value: u32, comptime bits: u6) u32 {
     const shift: u5 = @intCast(32 - bits);
     return @bitCast(@as(i32, @bitCast(value << shift)) >> shift);
@@ -555,6 +559,7 @@ def _zig_operands(row, fields):
     """Return the (name, zig_type, zig_expr) operands of one CSV row."""
     inst = row['instruction'].strip()
     operands = []
+    uses_fregs = False
     for name, lsb in _ZIG_REG_FIELDS:
         col = fields.get(f'{name}_regfile')
         val = (row.get(col) or '').strip() if col else ''
@@ -565,6 +570,11 @@ def _zig_operands(row, fields):
                   f"'{val}' (expected one of {list(_ZIG_REGFILES)}).")
             sys.exit(1)
         operands.append((name, 'u5', f"reg(w, {lsb})"))
+        uses_fregs = uses_fregs or val == 'F'
+    # Instructions on F registers carry bits 14:12: the rounding mode, or the
+    # funct3 that selects among rows the CSV merges (FSGNJ, FMIN/FMAX, FEQ/FLT/FLE).
+    if uses_fregs:
+        operands.append(('rm', 'u3', "funct3(w)"))
     val = (row.get(fields['imm_type']) or '').strip()
     if val and val.lower() not in _DONT_CARE:
         if val not in _ZIG_IMM_TYPES:
@@ -656,10 +666,11 @@ if __name__ == "__main__":
     parser.add_argument('output_package', nargs='?', default=None,
                         help='Output SystemVerilog package filename '
                              '(default: <output_module_no_ext>_pkg.sv)')
-    parser.add_argument('--output-zig',
-                        default=f"{sys.path[0]}/../golden/model/src/control_unit.zig",
-                        help='Output Zig file: the instructions as a tagged union, '
-                             'with their decoder (default: %(default)s)')
+    # Off by default: golden/model/src/control_unit.zig started from this
+    # output and is now maintained by hand. Pass a path to emit a fresh copy.
+    parser.add_argument('--output-zig', default=None,
+                        help='Also write a Zig file: the instructions as a tagged '
+                             'union, with their decoder (default: not written)')
     args = parser.parse_args()
 
     if args.output_package is None:
@@ -672,4 +683,5 @@ if __name__ == "__main__":
     data = parse_csv(args.input_csv)
     emit_sv_module(data, args.output_module, module_name, package_name)
     emit_sv_package(data, args.output_package, package_name)
-    emit_zig(data, args.output_zig)
+    if args.output_zig is not None:
+        emit_zig(data, args.output_zig)
