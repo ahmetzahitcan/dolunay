@@ -7,11 +7,13 @@ pub const thread_count = 32;
 
 threads: [thread_count]Thread,
 warp_id: u16,
+pc: u32,
 
-pub fn new(warp_id: u16) Warp {
+pub fn new(warp_id: u16, initial_pc: u32) Warp {
     var result = .{
         .threads = undefined,
         .warp_id = warp_id,
+        .pc = initial_pc,
     };
     for (0..thread_count) |i| {
         result.threads[i] = Thread.new(warp_id, i);
@@ -19,8 +21,9 @@ pub fn new(warp_id: u16) Warp {
     return result;
 }
 
-pub fn step(self: *Warp, pc: u32, instruction: control_unit.Instruction) Thread.Illegal!void {
+pub fn step(self: *Warp, instruction: control_unit.Instruction) Thread.Illegal!void {
     for (self.threads) |*thread| {
-        try thread.step(pc, instruction);
+        try thread.step(self.pc, instruction);
     }
+    self.pc += 4;
 }
