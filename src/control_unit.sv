@@ -646,7 +646,7 @@ module control_unit
                 sim__disasm_format_w = "fcvt.w.s $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
-                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
@@ -681,7 +681,7 @@ module control_unit
                 sim__disasm_format_w = "fcvt.wu.s $d, $1, $r";
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
-                instr_o.rd_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs1_regfile = params_pkg::REGFILE_SEL_F;
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
@@ -717,7 +717,7 @@ module control_unit
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
-                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
@@ -752,7 +752,7 @@ module control_unit
                 `endif
                 imm_type_w = IMM_TYPE_UNDEFINED;
                 instr_o.rd_regfile = params_pkg::REGFILE_SEL_F;
-                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
+                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
                 instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
                 instr_o.alu_funct = ALU_FUNCT_UNDEFINED;
