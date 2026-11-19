@@ -49,18 +49,18 @@ pub const Thread = struct {
     fflags: u8,
 
     /// Warp ID
-    warp_id: u16,
+    warpId: u16,
 
     /// Thread ID
-    thread_id: u16,
+    threadId: u16,
 
-    pub fn new(warp_id: u16, thread_id: u16) Thread {
+    pub fn new(warpId: u16, threadId: u16) Thread {
         return Thread{
             .xregs = undefined,
             .fregs = undefined,
             .fflags = undefined,
-            .warp_id = warp_id,
-            .thread_id = thread_id,
+            .warpId = warpId,
+            .threadId = threadId,
         };
     }
 
@@ -207,10 +207,10 @@ test "thread: illegal acts return an error" {
 
 test "thread: FMV moves bits between register files without conversion" {
     var t = testThread();
-    const signaling_nan: u32 = 0x7F80_0001;
-    t.xregs.write(1, signaling_nan);
+    const signalingNan: u32 = 0x7F80_0001;
+    t.xregs.write(1, signalingNan);
     try t.execute(0, .{ .FMV_W_X = .{ .rd = 1, .rs1 = 1, .rm = 0b000 } });
     try t.execute(0, .{ .FMV_X_W = .{ .rd = 2, .rs1 = 1, .rm = 0b000 } });
-    try expectEqual(signaling_nan, t.xregs.read(2));
+    try expectEqual(signalingNan, t.xregs.read(2));
     try expectEqual(@as(u8, 0), t.fflags);
 }
