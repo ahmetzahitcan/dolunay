@@ -75,195 +75,195 @@ fn immJ(w: u32) u32 {
 
 pub const Instruction = union(enum) {
     // OP-type instructions
-    ADD: struct { rd: u5, rs1: u5, rs2: u5 },
-    SH1ADD: struct { rd: u5, rs1: u5, rs2: u5 },
-    SH2ADD: struct { rd: u5, rs1: u5, rs2: u5 },
-    SH3ADD: struct { rd: u5, rs1: u5, rs2: u5 },
-    SUB: struct { rd: u5, rs1: u5, rs2: u5 },
-    SLL: struct { rd: u5, rs1: u5, rs2: u5 },
-    SLT: struct { rd: u5, rs1: u5, rs2: u5 },
-    SLTU: struct { rd: u5, rs1: u5, rs2: u5 },
-    XOR: struct { rd: u5, rs1: u5, rs2: u5 },
-    SRL: struct { rd: u5, rs1: u5, rs2: u5 },
-    SRA: struct { rd: u5, rs1: u5, rs2: u5 },
-    OR: struct { rd: u5, rs1: u5, rs2: u5 },
-    AND: struct { rd: u5, rs1: u5, rs2: u5 },
+    add: struct { rd: u5, rs1: u5, rs2: u5 },
+    sh1add: struct { rd: u5, rs1: u5, rs2: u5 },
+    sh2add: struct { rd: u5, rs1: u5, rs2: u5 },
+    sh3add: struct { rd: u5, rs1: u5, rs2: u5 },
+    sub: struct { rd: u5, rs1: u5, rs2: u5 },
+    sll: struct { rd: u5, rs1: u5, rs2: u5 },
+    slt: struct { rd: u5, rs1: u5, rs2: u5 },
+    sltu: struct { rd: u5, rs1: u5, rs2: u5 },
+    xor: struct { rd: u5, rs1: u5, rs2: u5 },
+    srl: struct { rd: u5, rs1: u5, rs2: u5 },
+    sra: struct { rd: u5, rs1: u5, rs2: u5 },
+    @"or": struct { rd: u5, rs1: u5, rs2: u5 },
+    @"and": struct { rd: u5, rs1: u5, rs2: u5 },
 
     // OP-IMM-type instructions
-    ADDI: struct { rd: u5, rs1: u5, imm: u32 },
-    SLLI: struct { rd: u5, rs1: u5, imm: u32 },
-    SLTI: struct { rd: u5, rs1: u5, imm: u32 },
-    SLTIU: struct { rd: u5, rs1: u5, imm: u32 },
-    XORI: struct { rd: u5, rs1: u5, imm: u32 },
-    SRLI: struct { rd: u5, rs1: u5, imm: u32 },
-    SRAI: struct { rd: u5, rs1: u5, imm: u32 },
-    ORI: struct { rd: u5, rs1: u5, imm: u32 },
-    ANDI: struct { rd: u5, rs1: u5, imm: u32 },
+    addi: struct { rd: u5, rs1: u5, imm: u32 },
+    slli: struct { rd: u5, rs1: u5, imm: u32 },
+    slti: struct { rd: u5, rs1: u5, imm: u32 },
+    sltiu: struct { rd: u5, rs1: u5, imm: u32 },
+    xori: struct { rd: u5, rs1: u5, imm: u32 },
+    srli: struct { rd: u5, rs1: u5, imm: u32 },
+    srai: struct { rd: u5, rs1: u5, imm: u32 },
+    ori: struct { rd: u5, rs1: u5, imm: u32 },
+    andi: struct { rd: u5, rs1: u5, imm: u32 },
 
     // Branch operations
-    BEQ: struct { rs1: u5, rs2: u5, imm: u32 },
-    BNE: struct { rs1: u5, rs2: u5, imm: u32 },
-    BLT: struct { rs1: u5, rs2: u5, imm: u32 },
-    BGE: struct { rs1: u5, rs2: u5, imm: u32 },
-    BLTU: struct { rs1: u5, rs2: u5, imm: u32 },
-    BGEU: struct { rs1: u5, rs2: u5, imm: u32 },
+    beq: struct { rs1: u5, rs2: u5, imm: u32 },
+    bne: struct { rs1: u5, rs2: u5, imm: u32 },
+    blt: struct { rs1: u5, rs2: u5, imm: u32 },
+    bge: struct { rs1: u5, rs2: u5, imm: u32 },
+    bltu: struct { rs1: u5, rs2: u5, imm: u32 },
+    bgeu: struct { rs1: u5, rs2: u5, imm: u32 },
 
     // Jump operations
-    JAL: struct { rd: u5, imm: u32 },
-    JALR: struct { rd: u5, rs1: u5, imm: u32 },
+    jal: struct { rd: u5, imm: u32 },
+    jalr: struct { rd: u5, rs1: u5, imm: u32 },
 
     // LUI and AUIPC`
-    LUI: struct { rd: u5, imm: u32 },
-    AUIPC: struct { rd: u5, imm: u32 },
+    lui: struct { rd: u5, imm: u32 },
+    auipc: struct { rd: u5, imm: u32 },
 
     // Memory operations
-    LB: struct { rd: u5, rs1: u5, imm: u32 },
-    LH: struct { rd: u5, rs1: u5, imm: u32 },
-    LW: struct { rd: u5, rs1: u5, imm: u32 },
-    FLW: struct { rd: u5, rs1: u5, rm: u3, imm: u32 },
-    LBU: struct { rd: u5, rs1: u5, imm: u32 },
-    LHU: struct { rd: u5, rs1: u5, imm: u32 },
-    SB: struct { rs1: u5, rs2: u5, imm: u32 },
-    SH: struct { rs1: u5, rs2: u5, imm: u32 },
-    SW: struct { rs1: u5, rs2: u5, imm: u32 },
-    FSW: struct { rs1: u5, rs2: u5, rm: u3, imm: u32 },
+    lb: struct { rd: u5, rs1: u5, imm: u32 },
+    lh: struct { rd: u5, rs1: u5, imm: u32 },
+    lw: struct { rd: u5, rs1: u5, imm: u32 },
+    flw: struct { rd: u5, rs1: u5, rm: u3, imm: u32 },
+    lbu: struct { rd: u5, rs1: u5, imm: u32 },
+    lhu: struct { rd: u5, rs1: u5, imm: u32 },
+    sb: struct { rs1: u5, rs2: u5, imm: u32 },
+    sh: struct { rs1: u5, rs2: u5, imm: u32 },
+    sw: struct { rs1: u5, rs2: u5, imm: u32 },
+    fsw: struct { rs1: u5, rs2: u5, rm: u3, imm: u32 },
 
     // Barrier operations
-    BINIT: struct { rs1: u5, imm: u32 },
-    BSYNC_0: struct { rs1: u5, imm: u32 },
-    YIELD: void,
+    binit: struct { rs1: u5, imm: u32 },
+    bsync_0: struct { rs1: u5, imm: u32 },
+    yield: void,
 
     // CSR operations (RISC-V unprivileged ISA, "Zicsr")
-    CSRRW: struct { rd: u5, rs1: u5, csr: Csr },
-    CSRRS: struct { rd: u5, rs1: u5, csr: Csr },
-    CSRRC: struct { rd: u5, rs1: u5, csr: Csr },
-    CSRRWI: struct { rd: u5, uimm: u5, csr: Csr },
-    CSRRSI: struct { rd: u5, uimm: u5, csr: Csr },
-    CSRRCI: struct { rd: u5, uimm: u5, csr: Csr },
+    csrrw: struct { rd: u5, rs1: u5, csr: Csr },
+    csrrs: struct { rd: u5, rs1: u5, csr: Csr },
+    csrrc: struct { rd: u5, rs1: u5, csr: Csr },
+    csrrwi: struct { rd: u5, uimm: u5, csr: Csr },
+    csrrsi: struct { rd: u5, uimm: u5, csr: Csr },
+    csrrci: struct { rd: u5, uimm: u5, csr: Csr },
 
     // FENCE operations (NOP)
-    FENCE: void,
+    fence: void,
 
     // Zicond operations
-    CZERO_EQZ: struct { rd: u5, rs1: u5, rs2: u5 },
-    CZERO_NEZ: struct { rd: u5, rs1: u5, rs2: u5 },
+    czero_eqz: struct { rd: u5, rs1: u5, rs2: u5 },
+    czero_nez: struct { rd: u5, rs1: u5, rs2: u5 },
 
     // Done signal (slti x0, x0, 0)
-    WDONE: struct { imm: u32 },
+    wdone: struct { imm: u32 },
 
     // Floating non-FMA ADDMUL
-    FADD_S: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
-    FSUB_S: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
-    FMUL_S: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
+    fadd_s: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
+    fsub_s: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
+    fmul_s: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
 
     // Floating FMA
-    FMADD_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5, rm: u3 },
-    FMSUB_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5, rm: u3 },
-    FNMSUB_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5, rm: u3 },
-    FNMADD_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5, rm: u3 },
+    fmadd_s: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5, rm: u3 },
+    fmsub_s: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5, rm: u3 },
+    fnmsub_s: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5, rm: u3 },
+    fnmadd_s: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5, rm: u3 },
 
     // Floating DIVSQRT
-    FDIV_S: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
-    FSQRT_S: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
+    fdiv_s: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
+    fsqrt_s: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
 
     // Floating NONCOMP
-    FMINMAX_S: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
-    FSGNJ_S: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
-    FCMP_S: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
-    FCLASS_S: struct { rd: u5, rs1: u5, rm: u3 },
+    fminmax_s: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
+    fsgnj_s: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
+    fcmp_s: struct { rd: u5, rs1: u5, rs2: u5, rm: u3 },
+    fclass_s: struct { rd: u5, rs1: u5, rm: u3 },
 
     // Floating CONV
-    FCVT_W_S: struct { rd: u5, rs1: u5, rm: u3 },
-    FCVT_WU_S: struct { rd: u5, rs1: u5, rm: u3 },
-    FCVT_S_W: struct { rd: u5, rs1: u5, rm: u3 },
-    FCVT_S_WU: struct { rd: u5, rs1: u5, rm: u3 },
+    fcvt_w_s: struct { rd: u5, rs1: u5, rm: u3 },
+    fcvt_wu_s: struct { rd: u5, rs1: u5, rm: u3 },
+    fcvt_s_w: struct { rd: u5, rs1: u5, rm: u3 },
+    fcvt_s_wu: struct { rd: u5, rs1: u5, rm: u3 },
 
     // Floating-integer move
-    FMV_W_X: struct { rd: u5, rs1: u5, rm: u3 },
-    FMV_X_W: struct { rd: u5, rs1: u5, rm: u3 },
+    fmv_w_x: struct { rd: u5, rs1: u5, rm: u3 },
+    fmv_x_w: struct { rd: u5, rs1: u5, rm: u3 },
 };
 
 /// Decodes `w`, or returns null when no row matches. Rows are tried most
 /// fixed bits first, so the most specific match wins (golden/CONTRACT.md §3).
 pub fn decode(w: u32) ?Instruction {
-    if (w & 0xffffffff == 0x0000400b) return .{ .YIELD = {} };
-    if (w & 0xffffffff == 0x00002013) return .{ .WDONE = .{ .imm = immI(w) } };
-    if (w & 0xfff0707f == 0xe0001053) return .{ .FCLASS_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
-    if (w & 0xfff0707f == 0xf0000053) return .{ .FMV_W_X = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
-    if (w & 0xfff0707f == 0xe0000053) return .{ .FMV_X_W = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
-    if (w & 0xfff0007f == 0x58000053) return .{ .FSQRT_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
-    if (w & 0xfff0007f == 0xc0000053) return .{ .FCVT_W_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
-    if (w & 0xfff0007f == 0xc0100053) return .{ .FCVT_WU_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
-    if (w & 0xfff0007f == 0xd0000053) return .{ .FCVT_S_W = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
-    if (w & 0xfff0007f == 0xd0100053) return .{ .FCVT_S_WU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
-    if (w & 0xfe00707f == 0x00000033) return .{ .ADD = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x20002033) return .{ .SH1ADD = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x20004033) return .{ .SH2ADD = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x20006033) return .{ .SH3ADD = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x40000033) return .{ .SUB = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x00001033) return .{ .SLL = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x00002033) return .{ .SLT = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x00003033) return .{ .SLTU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x00004033) return .{ .XOR = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x00005033) return .{ .SRL = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x40005033) return .{ .SRA = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x00006033) return .{ .OR = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x00007033) return .{ .AND = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x00001013) return .{ .SLLI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0xfe00707f == 0x00005013) return .{ .SRLI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0xfe00707f == 0x40005013) return .{ .SRAI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0xfe00707f == 0x0e005033) return .{ .CZERO_EQZ = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00707f == 0x0e007033) return .{ .CZERO_NEZ = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
-    if (w & 0xfe00607f == 0x28000053) return .{ .FMINMAX_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
-    if (w & 0x00007fff == 0x0000100b) return .{ .BINIT = .{ .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x00007fff == 0x0000200b) return .{ .BSYNC_0 = .{ .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0xffffffff == 0x0000400b) return .{ .yield = {} };
+    if (w & 0xffffffff == 0x00002013) return .{ .wdone = .{ .imm = immI(w) } };
+    if (w & 0xfff0707f == 0xe0001053) return .{ .fclass_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
+    if (w & 0xfff0707f == 0xf0000053) return .{ .fmv_w_x = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
+    if (w & 0xfff0707f == 0xe0000053) return .{ .fmv_x_w = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
+    if (w & 0xfff0007f == 0x58000053) return .{ .fsqrt_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
+    if (w & 0xfff0007f == 0xc0000053) return .{ .fcvt_w_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
+    if (w & 0xfff0007f == 0xc0100053) return .{ .fcvt_wu_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
+    if (w & 0xfff0007f == 0xd0000053) return .{ .fcvt_s_w = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
+    if (w & 0xfff0007f == 0xd0100053) return .{ .fcvt_s_wu = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w) } };
+    if (w & 0xfe00707f == 0x00000033) return .{ .add = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x20002033) return .{ .sh1add = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x20004033) return .{ .sh2add = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x20006033) return .{ .sh3add = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x40000033) return .{ .sub = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00001033) return .{ .sll = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00002033) return .{ .slt = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00003033) return .{ .sltu = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00004033) return .{ .xor = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00005033) return .{ .srl = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x40005033) return .{ .sra = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00006033) return .{ .@"or" = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00007033) return .{ .@"and" = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x00001013) return .{ .slli = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0xfe00707f == 0x00005013) return .{ .srli = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0xfe00707f == 0x40005013) return .{ .srai = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0xfe00707f == 0x0e005033) return .{ .czero_eqz = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00707f == 0x0e007033) return .{ .czero_nez = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20) } };
+    if (w & 0xfe00607f == 0x28000053) return .{ .fminmax_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
+    if (w & 0x00007fff == 0x0000100b) return .{ .binit = .{ .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x00007fff == 0x0000200b) return .{ .bsync_0 = .{ .rs1 = reg(w, 15), .imm = immI(w) } };
     // funct3 = 011 is not a RISC-V encoding (FINDINGS.md F7).
-    if (w & 0xfe00407f == 0x20000053 and funct3(w) != 0b011) return .{ .FSGNJ_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
+    if (w & 0xfe00407f == 0x20000053 and funct3(w) != 0b011) return .{ .fsgnj_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
     // funct3 = 011 is not a RISC-V encoding (FINDINGS.md F7).
-    if (w & 0xfe00407f == 0xa0000053 and funct3(w) != 0b011) return .{ .FCMP_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
-    if (w & 0xfe00007f == 0x00000053) return .{ .FADD_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
-    if (w & 0xfe00007f == 0x08000053) return .{ .FSUB_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
-    if (w & 0xfe00007f == 0x10000053) return .{ .FMUL_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
-    if (w & 0xfe00007f == 0x18000053) return .{ .FDIV_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
-    if (w & 0x0000707f == 0x00000013) return .{ .ADDI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00002013) return .{ .SLTI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00003013) return .{ .SLTIU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00004013) return .{ .XORI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00006013) return .{ .ORI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00007013) return .{ .ANDI = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00000063) return .{ .BEQ = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00001063) return .{ .BNE = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00004063) return .{ .BLT = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00005063) return .{ .BGE = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00006063) return .{ .BLTU = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00007063) return .{ .BGEU = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
-    if (w & 0x0000707f == 0x00000067) return .{ .JALR = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00000003) return .{ .LB = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00001003) return .{ .LH = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00002003) return .{ .LW = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00002007) return .{ .FLW = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00004003) return .{ .LBU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00005003) return .{ .LHU = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
-    if (w & 0x0000707f == 0x00000023) return .{ .SB = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
-    if (w & 0x0000707f == 0x00001023) return .{ .SH = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
-    if (w & 0x0000707f == 0x00002023) return .{ .SW = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
-    if (w & 0x0000707f == 0x00002027) return .{ .FSW = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w), .imm = immS(w) } };
-    if (w & 0x0000707f == 0x0000000f) return .{ .FENCE = {} };
+    if (w & 0xfe00407f == 0xa0000053 and funct3(w) != 0b011) return .{ .fcmp_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
+    if (w & 0xfe00007f == 0x00000053) return .{ .fadd_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
+    if (w & 0xfe00007f == 0x08000053) return .{ .fsub_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
+    if (w & 0xfe00007f == 0x10000053) return .{ .fmul_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
+    if (w & 0xfe00007f == 0x18000053) return .{ .fdiv_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w) } };
+    if (w & 0x0000707f == 0x00000013) return .{ .addi = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00002013) return .{ .slti = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00003013) return .{ .sltiu = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00004013) return .{ .xori = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00006013) return .{ .ori = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00007013) return .{ .andi = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00000063) return .{ .beq = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00001063) return .{ .bne = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00004063) return .{ .blt = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00005063) return .{ .bge = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00006063) return .{ .bltu = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00007063) return .{ .bgeu = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immB(w) } };
+    if (w & 0x0000707f == 0x00000067) return .{ .jalr = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00000003) return .{ .lb = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00001003) return .{ .lh = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00002003) return .{ .lw = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00002007) return .{ .flw = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rm = funct3(w), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00004003) return .{ .lbu = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00005003) return .{ .lhu = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .imm = immI(w) } };
+    if (w & 0x0000707f == 0x00000023) return .{ .sb = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
+    if (w & 0x0000707f == 0x00001023) return .{ .sh = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
+    if (w & 0x0000707f == 0x00002023) return .{ .sw = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .imm = immS(w) } };
+    if (w & 0x0000707f == 0x00002027) return .{ .fsw = .{ .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rm = funct3(w), .imm = immS(w) } };
+    if (w & 0x0000707f == 0x0000000f) return .{ .fence = {} };
     // SYSTEM (1110011) with funct3 001/010/011, 101/110/111 (Zicsr). funct3
     // 000 and 100 are not CSR accesses and do not decode here.
-    if (w & 0x0000707f == 0x00001073) return .{ .CSRRW = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .csr = csr(w) } };
-    if (w & 0x0000707f == 0x00002073) return .{ .CSRRS = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .csr = csr(w) } };
-    if (w & 0x0000707f == 0x00003073) return .{ .CSRRC = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .csr = csr(w) } };
-    if (w & 0x0000707f == 0x00005073) return .{ .CSRRWI = .{ .rd = reg(w, 7), .uimm = reg(w, 15), .csr = csr(w) } };
-    if (w & 0x0000707f == 0x00006073) return .{ .CSRRSI = .{ .rd = reg(w, 7), .uimm = reg(w, 15), .csr = csr(w) } };
-    if (w & 0x0000707f == 0x00007073) return .{ .CSRRCI = .{ .rd = reg(w, 7), .uimm = reg(w, 15), .csr = csr(w) } };
-    if (w & 0x0600007f == 0x00000043) return .{ .FMADD_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27), .rm = funct3(w) } };
-    if (w & 0x0600007f == 0x00000047) return .{ .FMSUB_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27), .rm = funct3(w) } };
-    if (w & 0x0600007f == 0x0000004b) return .{ .FNMSUB_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27), .rm = funct3(w) } };
-    if (w & 0x0600007f == 0x0000004f) return .{ .FNMADD_S = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27), .rm = funct3(w) } };
-    if (w & 0x0000007f == 0x0000006f) return .{ .JAL = .{ .rd = reg(w, 7), .imm = immJ(w) } };
-    if (w & 0x0000007f == 0x00000037) return .{ .LUI = .{ .rd = reg(w, 7), .imm = immU(w) } };
-    if (w & 0x0000007f == 0x00000017) return .{ .AUIPC = .{ .rd = reg(w, 7), .imm = immU(w) } };
+    if (w & 0x0000707f == 0x00001073) return .{ .csrrw = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .csr = csr(w) } };
+    if (w & 0x0000707f == 0x00002073) return .{ .csrrs = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .csr = csr(w) } };
+    if (w & 0x0000707f == 0x00003073) return .{ .csrrc = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .csr = csr(w) } };
+    if (w & 0x0000707f == 0x00005073) return .{ .csrrwi = .{ .rd = reg(w, 7), .uimm = reg(w, 15), .csr = csr(w) } };
+    if (w & 0x0000707f == 0x00006073) return .{ .csrrsi = .{ .rd = reg(w, 7), .uimm = reg(w, 15), .csr = csr(w) } };
+    if (w & 0x0000707f == 0x00007073) return .{ .csrrci = .{ .rd = reg(w, 7), .uimm = reg(w, 15), .csr = csr(w) } };
+    if (w & 0x0600007f == 0x00000043) return .{ .fmadd_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27), .rm = funct3(w) } };
+    if (w & 0x0600007f == 0x00000047) return .{ .fmsub_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27), .rm = funct3(w) } };
+    if (w & 0x0600007f == 0x0000004b) return .{ .fnmsub_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27), .rm = funct3(w) } };
+    if (w & 0x0600007f == 0x0000004f) return .{ .fnmadd_s = .{ .rd = reg(w, 7), .rs1 = reg(w, 15), .rs2 = reg(w, 20), .rs3 = reg(w, 27), .rm = funct3(w) } };
+    if (w & 0x0000007f == 0x0000006f) return .{ .jal = .{ .rd = reg(w, 7), .imm = immJ(w) } };
+    if (w & 0x0000007f == 0x00000037) return .{ .lui = .{ .rd = reg(w, 7), .imm = immU(w) } };
+    if (w & 0x0000007f == 0x00000017) return .{ .auipc = .{ .rd = reg(w, 7), .imm = immU(w) } };
     return null;
 }
 
@@ -277,41 +277,41 @@ fn expectDecode(expected: Instruction, word: u32) !void {
 }
 
 test "control_unit: R-type, add x1, x2, x3" {
-    try expectDecode(.{ .ADD = .{ .rd = 1, .rs1 = 2, .rs2 = 3 } }, 0x003100B3);
+    try expectDecode(.{ .add = .{ .rd = 1, .rs1 = 2, .rs2 = 3 } }, 0x003100B3);
 }
 
 test "control_unit: I-type, addi x1, x0, -1" {
-    try expectDecode(.{ .ADDI = .{ .rd = 1, .rs1 = 0, .imm = 0xFFFF_FFFF } }, 0xFFF00093);
+    try expectDecode(.{ .addi = .{ .rd = 1, .rs1 = 0, .imm = 0xFFFF_FFFF } }, 0xFFF00093);
 }
 
 test "control_unit: S-type, sw x2, -4(x1)" {
-    try expectDecode(.{ .SW = .{ .rs1 = 1, .rs2 = 2, .imm = 0xFFFF_FFFC } }, 0xFE20AE23);
+    try expectDecode(.{ .sw = .{ .rs1 = 1, .rs2 = 2, .imm = 0xFFFF_FFFC } }, 0xFE20AE23);
 }
 
 test "control_unit: B-type, beq x1, x2, -4" {
-    try expectDecode(.{ .BEQ = .{ .rs1 = 1, .rs2 = 2, .imm = 0xFFFF_FFFC } }, 0xFE208EE3);
+    try expectDecode(.{ .beq = .{ .rs1 = 1, .rs2 = 2, .imm = 0xFFFF_FFFC } }, 0xFE208EE3);
 }
 
 test "control_unit: U-type, lui x1, 0x12345" {
-    try expectDecode(.{ .LUI = .{ .rd = 1, .imm = 0x1234_5000 } }, 0x123450B7);
+    try expectDecode(.{ .lui = .{ .rd = 1, .imm = 0x1234_5000 } }, 0x123450B7);
 }
 
 test "control_unit: J-type, jal x0, -8" {
-    try expectDecode(.{ .JAL = .{ .rd = 0, .imm = 0xFFFF_FFF8 } }, 0xFF9FF06F);
+    try expectDecode(.{ .jal = .{ .rd = 0, .imm = 0xFFFF_FFF8 } }, 0xFF9FF06F);
 }
 
 test "control_unit: R4-type, fmadd.s f1, f2, f3, f4" {
-    try expectDecode(.{ .FMADD_S = .{ .rd = 1, .rs1 = 2, .rs2 = 3, .rs3 = 4, .rm = 0 } }, 0x203100C3);
+    try expectDecode(.{ .fmadd_s = .{ .rd = 1, .rs1 = 2, .rs2 = 3, .rs3 = 4, .rm = 0 } }, 0x203100C3);
 }
 
 test "control_unit: fcvt.w.s x1, f2 mixes register files" {
-    try expectDecode(.{ .FCVT_W_S = .{ .rd = 1, .rs1 = 2, .rm = 0 } }, 0xC00100D3);
+    try expectDecode(.{ .fcvt_w_s = .{ .rd = 1, .rs1 = 2, .rm = 0 } }, 0xC00100D3);
 }
 
 test "control_unit: the more specific of two overlapping patterns wins" {
     // slti x0, x0, 0 matches both SLTI and the CSV's WDONE row.
-    try expectDecode(.{ .WDONE = .{ .imm = 0 } }, 0x00002013);
-    try expectDecode(.{ .SLTI = .{ .rd = 1, .rs1 = 0, .imm = 0 } }, 0x00002093);
+    try expectDecode(.{ .wdone = .{ .imm = 0 } }, 0x00002013);
+    try expectDecode(.{ .slti = .{ .rd = 1, .rs1 = 0, .imm = 0 } }, 0x00002093);
 }
 
 test "control_unit: a 16-bit encoding decodes to nothing" {
@@ -319,15 +319,15 @@ test "control_unit: a 16-bit encoding decodes to nothing" {
 }
 
 test "control_unit: csrr x1, mhartid is CSRRS with rs1 = x0" {
-    try expectDecode(.{ .CSRRS = .{ .rd = 1, .rs1 = 0, .csr = .mhartid } }, 0xF14020F3);
+    try expectDecode(.{ .csrrs = .{ .rd = 1, .rs1 = 0, .csr = .mhartid } }, 0xF14020F3);
 }
 
 test "control_unit: csrrwi x0, fflags, 5 carries the immediate" {
-    try expectDecode(.{ .CSRRWI = .{ .rd = 0, .uimm = 5, .csr = .fflags } }, 0x0012D073);
+    try expectDecode(.{ .csrrwi = .{ .rd = 0, .uimm = 5, .csr = .fflags } }, 0x0012D073);
 }
 
 test "control_unit: an unnamed CSR number still decodes" {
-    try expectDecode(.{ .CSRRS = .{ .rd = 1, .rs1 = 0, .csr = @fromBackingInt(0x7C0) } }, 0x7C0020F3);
+    try expectDecode(.{ .csrrs = .{ .rd = 1, .rs1 = 0, .csr = @fromBackingInt(0x7C0) } }, 0x7C0020F3);
 }
 
 test "control_unit: ecall (SYSTEM, funct3 = 000) is not a CSR access" {
