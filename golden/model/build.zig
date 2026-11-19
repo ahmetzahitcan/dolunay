@@ -45,8 +45,12 @@ fn addSoftFloat(
     const recipe = "build/Linux-x86_64-GCC";
     const specialization = "source/RISCV";
 
-    // SOFTFLOAT_OPTS and COMPILE_C from the recipe's Makefile.
+    // SOFTFLOAT_OPTS and COMPILE_C from the recipe's Makefile, plus
+    // thread-local state: each host thread gets its own rounding mode and
+    // exception flags. The header's translation must say the same.
+    const thread_local = "_Thread_local";
     const flags: []const []const u8 = &.{
+        "-DTHREAD_LOCAL=" ++ thread_local,
         "-DSOFTFLOAT_FAST_INT64",
         "-DSOFTFLOAT_ROUND_ODD",
         "-DINLINE_LEVEL=5",
@@ -76,6 +80,7 @@ fn addSoftFloat(
         .optimize = optimize,
     });
     headers.addIncludePath(dep.path("source/include"));
+    headers.defineCMacro("THREAD_LOCAL", thread_local);
 
     return .{ .lib = lib, .headers = headers.createModule() };
 }
