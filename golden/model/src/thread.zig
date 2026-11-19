@@ -144,6 +144,8 @@ pub const Thread = struct {
             .FMV_X_W => |i| self.xregs.write(i.rd, self.fregs.read(i.rs1)),
             .FMV_W_X => |i| self.fregs.write(i.rd, self.xregs.read(i.rs1)),
 
+            .CSRRW, .CSRRS, .CSRRC, .CSRRWI, .CSRRSI, .CSRRCI => @panic("not implemented yet"),
+
             // These instructions must be dealt within the warp!
             .BEQ, .BNE, .BLT, .BGE, .BLTU, .BGEU => unreachable,
             .JAL, .JALR => unreachable,
@@ -152,8 +154,6 @@ pub const Thread = struct {
             .BINIT, .BSYNC_0, .YIELD => unreachable,
             .FENCE => unreachable,
             .WDONE => unreachable,
-
-            else => @panic("not implemented yet"),
         }
     }
 };
