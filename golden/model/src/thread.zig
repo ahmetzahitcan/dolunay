@@ -160,23 +160,18 @@ pub const Thread = struct {
 
 fn testThread() Thread {
     var t = Thread.new(0, 0);
-    t.xregs = @splat(0);
-    t.fregs = @splat(.{ .v = 0 });
+    t.xregs.values = @splat(0);
+    t.fregs.values = @splat(0);
     t.fflags = 0;
     return t;
 }
 
-const expectEqual = std.testing.expectEqual;
+// Instruction semantics are tested next to the pure functions that compute
+// them (int_utils.zig, float.zig); these tests cover what Thread adds: the
+// registers, `pc`, accruing `fflags`, and illegal acts.
 
-test "thread: add and sub wrap modulo 2^32" {
-    var t = testThread();
-    t.xregs.write(1, 0xFFFF_FFFF);
-    t.xregs.write(2, 2);
-    try t.execute(0, .{ .ADD = .{ .rd = 3, .rs1 = 1, .rs2 = 2 } });
-    try expectEqual(@as(u32, 1), t.xregs.read(3));
-    try t.execute(0, .{ .SUB = .{ .rd = 3, .rs1 = 2, .rs2 = 1 } });
-    try expectEqual(@as(u32, 3), t.xregs.read(3));
-}
+const expectEqual = std.testing.expectEqual;
+const expectError = std.testing.expectError;
 
 test "thread: x0 reads as zero and ignores writes" {
     var t = testThread();
@@ -186,226 +181,36 @@ test "thread: x0 reads as zero and ignores writes" {
     try expectEqual(@as(u32, 7), t.xregs.read(1));
 }
 
-test "thread: SHnADD shifts rs1, then adds rs2" {
+test "thread: AUIPC adds the immediate to pc, wrapping" {
     var t = testThread();
-    t.xregs.write(1, 3);
-    t.xregs.write(2, 100);
-    try t.execute(0, .{ .SH1ADD = .{ .rd = 3, .rs1 = 1, .rs2 = 2 } });
-    try expectEqual(@as(u32, 106), t.xregs.read(3));
-    try t.execute(0, .{ .SH3ADD = .{ .rd = 3, .rs1 = 1, .rs2 = 2 } });
-    try expectEqual(@as(u32, 124), t.xregs.read(3));
+    try t.execute(0xFFFF_F000, .{ .AUIPC = .{ .rd = 1, .imm = 0x0000_2000 } });
+    try expectEqual(@as(u32, 0x0000_1000), t.xregs.read(1));
 }
 
-test "thread: shifts use the low 5 bits of the amount" {
+test "thread: fflags accrue across instructions" {
     var t = testThread();
-    t.xregs.write(1, 0x8000_0010);
-    t.xregs.write(2, 33); // shifts by 1
-    try t.execute(0, .{ .SLL = .{ .rd = 3, .rs1 = 1, .rs2 = 2 } });
-    try expectEqual(@as(u32, 0x0000_0020), t.xregs.read(3));
-    try t.execute(0, .{ .SRL = .{ .rd = 3, .rs1 = 1, .rs2 = 2 } });
-    try expectEqual(@as(u32, 0x4000_0008), t.xregs.read(3));
-    try t.execute(0, .{ .SRA = .{ .rd = 3, .rs1 = 1, .rs2 = 2 } });
-    try expectEqual(@as(u32, 0xC000_0008), t.xregs.read(3));
-    // srai x3, x1, 4: imm = 0x404, as the decoder gives it.
-    try t.execute(0, .{ .SRAI = .{ .rd = 3, .rs1 = 1, .imm = 0x404 } });
-    try expectEqual(@as(u32, 0xF800_0001), t.xregs.read(3));
+    t.fregs.write(1, 0x3F80_0000); // 1.0
+    t.fregs.write(2, 0x4040_0000); // 3.0
+    try t.execute(0, .{ .FDIV_S = .{ .rd = 3, .rs1 = 1, .rs2 = 2, .rm = 0b000 } }); // inexact
+    try t.execute(0, .{ .FADD_S = .{ .rd = 4, .rs1 = 1, .rs2 = 2, .rm = 0b000 } }); // exact
+    try expectEqual(@as(u32, 0x4080_0000), t.fregs.read(4));
+    try expectEqual(@as(u8, softfloat.softfloat_flag_inexact), t.fflags);
 }
 
-test "thread: SLT is signed, SLTU and SLTIU unsigned" {
+test "thread: illegal acts return an error" {
     var t = testThread();
-    t.xregs.write(1, 0xFFFF_FFFF); // -1
-    t.xregs.write(2, 1);
-    try t.execute(0, .{ .SLT = .{ .rd = 3, .rs1 = 1, .rs2 = 2 } });
-    try expectEqual(@as(u32, 1), t.xregs.read(3));
-    try t.execute(0, .{ .SLTU = .{ .rd = 3, .rs1 = 1, .rs2 = 2 } });
-    try expectEqual(@as(u32, 0), t.xregs.read(3));
-    // sltiu x3, x2, -1: true for every value except 0xFFFFFFFF.
-    try t.execute(0, .{ .SLTIU = .{ .rd = 3, .rs1 = 2, .imm = 0xFFFF_FFFF } });
-    try expectEqual(@as(u32, 1), t.xregs.read(3));
-    try t.execute(0, .{ .SLTI = .{ .rd = 3, .rs1 = 2, .imm = 0xFFFF_FFFF } });
-    try expectEqual(@as(u32, 0), t.xregs.read(3));
+    try expectError(error.ReservedRoundingMode, t.execute(0, .{ .FADD_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b101 } }));
+    try expectError(error.IllegalInstruction, t.execute(0, .{ .FSGNJ_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b011 } }));
+    try expectError(error.IllegalInstruction, t.execute(0, .{ .FCMP_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b011 } }));
+    try expectError(error.IllegalInstruction, t.execute(0, .{ .FMINMAX_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b010 } }));
 }
 
-test "thread: logical immediates use the sign-extended immediate" {
+test "thread: FMV moves bits between register files without conversion" {
     var t = testThread();
-    t.xregs.write(1, 0x1234_5678);
-    try t.execute(0, .{ .XORI = .{ .rd = 2, .rs1 = 1, .imm = 0xFFFF_FFFF } });
-    try expectEqual(@as(u32, 0xEDCB_A987), t.xregs.read(2));
-    try t.execute(0, .{ .ANDI = .{ .rd = 2, .rs1 = 1, .imm = 0xFFFF_FF00 } });
-    try expectEqual(@as(u32, 0x1234_5600), t.xregs.read(2));
-    try t.execute(0, .{ .ORI = .{ .rd = 2, .rs1 = 1, .imm = 0x0000_000F } });
-    try expectEqual(@as(u32, 0x1234_567F), t.xregs.read(2));
-}
-
-// Floating-point values below are IEEE 754 binary32 bit patterns.
-const one: u32 = 0x3F80_0000;
-const two: u32 = 0x4000_0000;
-const three: u32 = 0x4040_0000;
-const plus_zero: u32 = 0x0000_0000;
-const minus_zero: u32 = 0x8000_0000;
-const quiet_nan: u32 = 0x7FC0_0001;
-const signaling_nan: u32 = 0x7F80_0001;
-const invalid: u8 = softfloat.softfloat_flag_invalid;
-const inexact: u8 = softfloat.softfloat_flag_inexact;
-
-test "thread: FADD.S adds, and fflags accrue" {
-    var t = testThread();
-    t.fregs.write(1, one);
-    t.fregs.write(2, two);
-    try t.execute(0, .{ .FADD_S = .{ .rd = 3, .rs1 = 1, .rs2 = 2, .rm = 0b111 } });
-    try expectEqual(three, t.fregs.read(3));
-    try expectEqual(@as(u8, 0), t.fflags);
-    // 1/3 is inexact; the flag stays set after an exact operation.
-    try t.execute(0, .{ .FDIV_S = .{ .rd = 4, .rs1 = 1, .rs2 = 3, .rm = 0b000 } });
-    try t.execute(0, .{ .FADD_S = .{ .rd = 5, .rs1 = 1, .rs2 = 2, .rm = 0b000 } });
-    try expectEqual(inexact, t.fflags);
-}
-
-test "thread: 0/0 gives the canonical NaN and raises invalid" {
-    var t = testThread();
-    try t.execute(0, .{ .FDIV_S = .{ .rd = 1, .rs1 = 0, .rs2 = 0, .rm = 0b000 } });
-    try expectEqual(float.canonical_nan, t.fregs.read(1));
-    try expectEqual(invalid, t.fflags);
-}
-
-test "thread: rm 101 and 110 are illegal" {
-    var t = testThread();
-    try std.testing.expectError(error.ReservedRoundingMode, t.execute(0, .{ .FADD_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b101 } }));
-    try std.testing.expectError(error.ReservedRoundingMode, t.execute(0, .{ .FCVT_W_S = .{ .rd = 1, .rs1 = 1, .rm = 0b110 } }));
-}
-
-test "thread: the rounding mode reaches the operation" {
-    var t = testThread();
-    t.fregs.write(1, 0x3FC0_0000); // 1.5
-    try t.execute(0, .{ .FCVT_W_S = .{ .rd = 1, .rs1 = 1, .rm = 0b000 } }); // RNE
-    try expectEqual(@as(u32, 2), t.xregs.read(1));
-    try t.execute(0, .{ .FCVT_W_S = .{ .rd = 1, .rs1 = 1, .rm = 0b001 } }); // RTZ
-    try expectEqual(@as(u32, 1), t.xregs.read(1));
-    try t.execute(0, .{ .FCVT_W_S = .{ .rd = 1, .rs1 = 1, .rm = 0b010 } }); // RDN
-    try expectEqual(@as(u32, 1), t.xregs.read(1));
-    try t.execute(0, .{ .FCVT_W_S = .{ .rd = 1, .rs1 = 1, .rm = 0b011 } }); // RUP
-    try expectEqual(@as(u32, 2), t.xregs.read(1));
-    try expectEqual(inexact, t.fflags);
-}
-
-test "thread: out-of-range conversions saturate, NaN converts to the maximum" {
-    var t = testThread();
-    t.fregs.write(1, 0xCF80_0000); // -2^32
-    try t.execute(0, .{ .FCVT_W_S = .{ .rd = 1, .rs1 = 1, .rm = 0b000 } });
-    try expectEqual(@as(u32, 0x8000_0000), t.xregs.read(1));
-    try t.execute(0, .{ .FCVT_WU_S = .{ .rd = 1, .rs1 = 1, .rm = 0b000 } });
-    try expectEqual(@as(u32, 0), t.xregs.read(1));
-    t.fregs.write(2, quiet_nan);
-    try t.execute(0, .{ .FCVT_W_S = .{ .rd = 1, .rs1 = 2, .rm = 0b000 } });
-    try expectEqual(@as(u32, 0x7FFF_FFFF), t.xregs.read(1));
-    try t.execute(0, .{ .FCVT_WU_S = .{ .rd = 1, .rs1 = 2, .rm = 0b000 } });
-    try expectEqual(@as(u32, 0xFFFF_FFFF), t.xregs.read(1));
-    try expectEqual(invalid, t.fflags);
-}
-
-test "thread: integer to float conversions" {
-    var t = testThread();
-    t.xregs.write(1, 0xFFFF_FFFD); // -3, or 4294967293 unsigned
-    try t.execute(0, .{ .FCVT_S_W = .{ .rd = 1, .rs1 = 1, .rm = 0b000 } });
-    try expectEqual(three | float.sign_bit, t.fregs.read(1));
-    try t.execute(0, .{ .FCVT_S_WU = .{ .rd = 2, .rs1 = 1, .rm = 0b000 } });
-    try expectEqual(@as(u32, 0x4F80_0000), t.fregs.read(2)); // rounds to 2^32
-    try expectEqual(inexact, t.fflags);
-}
-
-test "thread: fused multiply-add and its negated forms" {
-    var t = testThread();
-    t.fregs.write(1, two);
-    t.fregs.write(2, three);
-    t.fregs.write(3, one);
-    try t.execute(0, .{ .FMADD_S = .{ .rd = 4, .rs1 = 1, .rs2 = 2, .rs3 = 3, .rm = 0b000 } }); // 2*3 + 1 = 7
-    try expectEqual(@as(u32, 0x40E0_0000), t.fregs.read(4));
-    try t.execute(0, .{ .FMSUB_S = .{ .rd = 4, .rs1 = 1, .rs2 = 2, .rs3 = 3, .rm = 0b000 } }); // 2*3 - 1 = 5
-    try expectEqual(@as(u32, 0x40A0_0000), t.fregs.read(4));
-    try t.execute(0, .{ .FNMSUB_S = .{ .rd = 4, .rs1 = 1, .rs2 = 2, .rs3 = 3, .rm = 0b000 } }); // -(2*3) + 1 = -5
-    try expectEqual(@as(u32, 0xC0A0_0000), t.fregs.read(4));
-    try t.execute(0, .{ .FNMADD_S = .{ .rd = 4, .rs1 = 1, .rs2 = 2, .rs3 = 3, .rm = 0b000 } }); // -(2*3) - 1 = -7
-    try expectEqual(@as(u32, 0xC0E0_0000), t.fregs.read(4));
-}
-
-test "thread: FMIN.S/FMAX.S order the zeros and skip a NaN" {
-    var t = testThread();
-    t.fregs.write(1, plus_zero);
-    t.fregs.write(2, minus_zero);
-    t.fregs.write(3, quiet_nan);
-    t.fregs.write(4, signaling_nan);
-    try t.execute(0, .{ .FMINMAX_S = .{ .rd = 5, .rs1 = 1, .rs2 = 2, .rm = 0b000 } });
-    try expectEqual(minus_zero, t.fregs.read(5));
-    try t.execute(0, .{ .FMINMAX_S = .{ .rd = 5, .rs1 = 2, .rs2 = 1, .rm = 0b001 } });
-    try expectEqual(plus_zero, t.fregs.read(5));
-    try t.execute(0, .{ .FMINMAX_S = .{ .rd = 5, .rs1 = 3, .rs2 = 2, .rm = 0b000 } });
-    try expectEqual(minus_zero, t.fregs.read(5));
-    try expectEqual(@as(u8, 0), t.fflags); // a quiet NaN raises nothing
-    try t.execute(0, .{ .FMINMAX_S = .{ .rd = 5, .rs1 = 3, .rs2 = 4, .rm = 0b001 } });
-    try expectEqual(float.canonical_nan, t.fregs.read(5));
-    try expectEqual(invalid, t.fflags);
-}
-
-test "thread: sign injection" {
-    var t = testThread();
-    t.fregs.write(1, three);
-    t.fregs.write(2, minus_zero);
-    try t.execute(0, .{ .FSGNJ_S = .{ .rd = 3, .rs1 = 1, .rs2 = 2, .rm = 0b000 } });
-    try expectEqual(three | float.sign_bit, t.fregs.read(3));
-    try t.execute(0, .{ .FSGNJ_S = .{ .rd = 3, .rs1 = 1, .rs2 = 2, .rm = 0b001 } });
-    try expectEqual(three, t.fregs.read(3));
-    try t.execute(0, .{ .FSGNJ_S = .{ .rd = 3, .rs1 = 3, .rs2 = 2, .rm = 0b010 } });
-    try expectEqual(three | float.sign_bit, t.fregs.read(3));
-}
-
-test "thread: FEQ.S is quiet, FLT.S signals on a quiet NaN" {
-    var t = testThread();
-    t.fregs.write(1, one);
-    t.fregs.write(2, quiet_nan);
-    try t.execute(0, .{ .FCMP_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b010 } });
-    try expectEqual(@as(u32, 1), t.xregs.read(1));
-    try t.execute(0, .{ .FCMP_S = .{ .rd = 1, .rs1 = 1, .rs2 = 2, .rm = 0b010 } });
-    try expectEqual(@as(u32, 0), t.xregs.read(1));
-    try expectEqual(@as(u8, 0), t.fflags);
-    try t.execute(0, .{ .FCMP_S = .{ .rd = 1, .rs1 = 1, .rs2 = 2, .rm = 0b001 } });
-    try expectEqual(@as(u32, 0), t.xregs.read(1));
-    try expectEqual(invalid, t.fflags);
-}
-
-test "thread: FCLASS.S sets one bit per class" {
-    var t = testThread();
-    const cases = [_]struct { bits: u32, class: u5 }{
-        .{ .bits = 0xFF80_0000, .class = 0 }, // -inf
-        .{ .bits = 0xBF80_0000, .class = 1 }, // -1.0
-        .{ .bits = 0x8000_0001, .class = 2 }, // negative subnormal
-        .{ .bits = minus_zero, .class = 3 },
-        .{ .bits = plus_zero, .class = 4 },
-        .{ .bits = 0x0000_0001, .class = 5 }, // positive subnormal
-        .{ .bits = one, .class = 6 },
-        .{ .bits = 0x7F80_0000, .class = 7 }, // +inf
-        .{ .bits = signaling_nan, .class = 8 },
-        .{ .bits = quiet_nan, .class = 9 },
-    };
-    for (cases) |c| {
-        t.fregs.write(1, c.bits);
-        try t.execute(0, .{ .FCLASS_S = .{ .rd = 1, .rs1 = 1, .rm = 0b001 } });
-        try expectEqual(@as(u32, 1) << c.class, t.xregs.read(1));
-    }
-}
-
-test "thread: FMV moves bits without conversion" {
-    var t = testThread();
+    const signaling_nan: u32 = 0x7F80_0001;
     t.xregs.write(1, signaling_nan);
     try t.execute(0, .{ .FMV_W_X = .{ .rd = 1, .rs1 = 1, .rm = 0b000 } });
-    try expectEqual(signaling_nan, t.fregs.read(1));
     try t.execute(0, .{ .FMV_X_W = .{ .rd = 2, .rs1 = 1, .rm = 0b000 } });
     try expectEqual(signaling_nan, t.xregs.read(2));
     try expectEqual(@as(u8, 0), t.fflags);
-}
-
-test "thread: an unassigned funct3 is illegal" {
-    var t = testThread();
-    try std.testing.expectError(error.IllegalInstruction, t.execute(0, .{ .FSGNJ_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b011 } }));
-    try std.testing.expectError(error.IllegalInstruction, t.execute(0, .{ .FCMP_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b011 } }));
-    try std.testing.expectError(error.IllegalInstruction, t.execute(0, .{ .FMINMAX_S = .{ .rd = 1, .rs1 = 1, .rs2 = 1, .rm = 0b010 } }));
 }

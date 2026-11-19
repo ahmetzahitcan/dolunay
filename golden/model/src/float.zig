@@ -211,16 +211,91 @@ pub fn fromU32(x: u32, rm: u3) Error!Result {
     return callFloat(rm, softfloat.ui32_to_f32, .{x});
 }
 
+// Values below are binary32 bit patterns.
+const one: u32 = 0x3F80_0000;
+const two: u32 = 0x4000_0000;
+const three: u32 = 0x4040_0000;
+const plus_zero: u32 = 0x0000_0000;
+const minus_zero: u32 = 0x8000_0000;
+const quiet_nan: u32 = 0x7FC0_0001;
+const signaling_nan: u32 = 0x7F80_0001;
+const inexact: u8 = softfloat.softfloat_flag_inexact;
+
+const expectEqual = std.testing.expectEqual;
+
 test "float: flags do not carry over from one call to the next" {
-    const one: u32 = 0x3F80_0000;
-    const three: u32 = 0x4040_0000;
-    const third = try div(one, three, 0b000);
-    try std.testing.expectEqual(@as(u8, softfloat.softfloat_flag_inexact), third.flags);
-    const four = try add(one, three, 0b000);
-    try std.testing.expectEqual(Result{ .value = 0x4080_0000, .flags = 0 }, four);
+    try expectEqual(inexact, (try div(one, three, 0b000)).flags);
+    try expectEqual(Result{ .value = 0x4080_0000 }, try add(one, three, 0b000));
 }
 
-test "float: comparisons ignore the caller's rounding mode" {
-    // A reserved rm cannot reach compare: eq/lt/le take none.
-    try std.testing.expectEqual(Result{ .value = 1 }, le(0x3F80_0000, 0x3F80_0000));
+test "float: 0/0 gives the canonical NaN and raises invalid" {
+    try expectEqual(Result{ .value = canonical_nan, .flags = invalid }, try div(plus_zero, plus_zero, 0b000));
+}
+
+test "float: rm selects the rounding mode; 101 and 110 are reserved" {
+    const one_and_half: u32 = 0x3FC0_0000;
+    try expectEqual(@as(u32, 2), (try toI32(one_and_half, 0b000)).value); // RNE
+    try expectEqual(@as(u32, 1), (try toI32(one_and_half, 0b001)).value); // RTZ
+    try expectEqual(@as(u32, 1), (try toI32(one_and_half, 0b010)).value); // RDN
+    try expectEqual(@as(u32, 2), (try toI32(one_and_half, 0b011)).value); // RUP
+    try expectEqual(@as(u32, 2), (try toI32(one_and_half, 0b111)).value); // no frm: RNE
+    try expectEqual(inexact, (try toI32(one_and_half, 0b000)).flags);
+    try std.testing.expectError(error.ReservedRoundingMode, add(one, one, 0b101));
+    try std.testing.expectError(error.ReservedRoundingMode, toI32(one, 0b110));
+}
+
+test "float: conversions to integer saturate; NaN gives the maximum" {
+    const minus_2_32: u32 = 0xCF80_0000;
+    try expectEqual(Result{ .value = 0x8000_0000, .flags = invalid }, try toI32(minus_2_32, 0b000));
+    try expectEqual(Result{ .value = 0, .flags = invalid }, try toU32(minus_2_32, 0b000));
+    try expectEqual(Result{ .value = 0x7FFF_FFFF, .flags = invalid }, try toI32(quiet_nan, 0b000));
+    try expectEqual(Result{ .value = 0xFFFF_FFFF, .flags = invalid }, try toU32(quiet_nan, 0b000));
+}
+
+test "float: conversions from integer" {
+    try expectEqual(Result{ .value = three | sign_bit }, try fromI32(0xFFFF_FFFD, 0b000)); // -3
+    try expectEqual(Result{ .value = 0x4F80_0000, .flags = inexact }, try fromU32(0xFFFF_FFFD, 0b000)); // 2^32
+}
+
+test "float: fused multiply-add and its negated forms" {
+    try expectEqual(@as(u32, 0x40E0_0000), (try mulAdd(two, three, one, 0b000)).value); // 7
+    try expectEqual(@as(u32, 0x40A0_0000), (try mulSub(two, three, one, 0b000)).value); // 5
+    try expectEqual(@as(u32, 0xC0A0_0000), (try negMulSub(two, three, one, 0b000)).value); // -5
+    try expectEqual(@as(u32, 0xC0E0_0000), (try negMulAdd(two, three, one, 0b000)).value); // -7
+}
+
+test "float: min/max order the zeros, skip one NaN, and signal only on sNaN" {
+    try expectEqual(Result{ .value = minus_zero }, min(plus_zero, minus_zero));
+    try expectEqual(Result{ .value = plus_zero }, max(minus_zero, plus_zero));
+    try expectEqual(Result{ .value = minus_zero }, min(quiet_nan, minus_zero));
+    try expectEqual(Result{ .value = canonical_nan, .flags = invalid }, max(quiet_nan, signaling_nan));
+}
+
+test "float: sign injection" {
+    try expectEqual(three | sign_bit, sgnj(three, minus_zero));
+    try expectEqual(three, sgnjn(three, minus_zero));
+    try expectEqual(three, sgnjx(three | sign_bit, minus_zero));
+}
+
+test "float: FEQ is quiet, FLT and FLE signal on a quiet NaN" {
+    try expectEqual(Result{ .value = 1 }, eq(one, one));
+    try expectEqual(Result{ .value = 0 }, eq(one, quiet_nan));
+    try expectEqual(Result{ .value = 0, .flags = invalid }, lt(one, quiet_nan));
+    try expectEqual(Result{ .value = 1 }, le(one, one));
+}
+
+test "float: classify sets one bit per class" {
+    const cases = [_]struct { bits: u32, class: u5 }{
+        .{ .bits = 0xFF80_0000, .class = 0 }, // -inf
+        .{ .bits = 0xBF80_0000, .class = 1 }, // -1.0
+        .{ .bits = 0x8000_0001, .class = 2 }, // negative subnormal
+        .{ .bits = minus_zero, .class = 3 },
+        .{ .bits = plus_zero, .class = 4 },
+        .{ .bits = 0x0000_0001, .class = 5 }, // positive subnormal
+        .{ .bits = one, .class = 6 },
+        .{ .bits = 0x7F80_0000, .class = 7 }, // +inf
+        .{ .bits = signaling_nan, .class = 8 },
+        .{ .bits = quiet_nan, .class = 9 },
+    };
+    for (cases) |c| try expectEqual(@as(u32, 1) << c.class, classify(c.bits));
 }
