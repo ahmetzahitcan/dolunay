@@ -93,3 +93,15 @@ the usual shims. Checked 2026-11-07 on a scratch copy of `ss/` and
 Suggested correction for `ENVIRONMENT.md`: require GCC 15, and point the
 Debian/Ubuntu row at xPack, or note that the distribution compilers fail as
 above.
+
+## F7 — `FSGNJ_S` and `FCMP_S` accept funct3 = 011
+
+Found 2026-11-19. Checked: `control_unit/control_unit.csv` rows `FSGNJ_S` and
+`FCMP_S`, against the RISC-V unprivileged ISA, "F", "Single-Precision
+Floating-Point Conversion and Move Instructions" and "Single-Precision
+Floating-Point Compare Instructions".
+
+Both patterns fix only funct3[2] (`0??`), so they also match funct3 = 011,
+which RISC-V assigns to neither FSGNJ\[N|X\].S (000/001/010) nor
+FEQ/FLT/FLE.S (010/001/000). The RTL decodes such a word as one of those
+instructions. The model's decoder does not decode it.

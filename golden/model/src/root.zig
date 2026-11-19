@@ -5,6 +5,8 @@ const std = @import("std");
 const softfloat = @import("softfloat");
 
 pub const control_unit = @import("control_unit.zig");
+pub const float = @import("float.zig");
+pub const thread = @import("thread.zig");
 
 test {
     std.testing.refAllDecls(@This());
@@ -71,11 +73,11 @@ test "control_unit: J-type, jal x0, -8" {
 }
 
 test "control_unit: R4-type, fmadd.s f1, f2, f3, f4" {
-    try expectDecode(.{ .FMADD_S = .{ .rd = 1, .rs1 = 2, .rs2 = 3, .rs3 = 4 } }, 0x203100C3);
+    try expectDecode(.{ .FMADD_S = .{ .rd = 1, .rs1 = 2, .rs2 = 3, .rs3 = 4, .rm = 0 } }, 0x203100C3);
 }
 
 test "control_unit: fcvt.w.s x1, f2 mixes register files" {
-    try expectDecode(.{ .FCVT_W_S = .{ .rd = 1, .rs1 = 2 } }, 0xC00100D3);
+    try expectDecode(.{ .FCVT_W_S = .{ .rd = 1, .rs1 = 2, .rm = 0 } }, 0xC00100D3);
 }
 
 test "control_unit: the more specific of two overlapping patterns wins" {
@@ -86,4 +88,26 @@ test "control_unit: the more specific of two overlapping patterns wins" {
 
 test "control_unit: a 16-bit encoding decodes to nothing" {
     try std.testing.expectEqual(@as(?Instruction, null), control_unit.decode(0x0000_0001));
+}
+
+test "control_unit: csrr x1, mhartid is CSRRS with rs1 = x0" {
+    try expectDecode(.{ .CSRRS = .{ .rd = 1, .rs1 = 0, .csr = .mhartid } }, 0xF14020F3);
+}
+
+test "control_unit: csrrwi x0, fflags, 5 carries the immediate" {
+    try expectDecode(.{ .CSRRWI = .{ .rd = 0, .uimm = 5, .csr = .fflags } }, 0x0012D073);
+}
+
+test "control_unit: an unnamed CSR number still decodes" {
+    try expectDecode(.{ .CSRRS = .{ .rd = 1, .rs1 = 0, .csr = @fromBackingInt(0x7C0) } }, 0x7C0020F3);
+}
+
+test "control_unit: ecall (SYSTEM, funct3 = 000) is not a CSR access" {
+    try std.testing.expectEqual(@as(?Instruction, null), control_unit.decode(0x0000_0073));
+}
+
+test "control_unit: FSGNJ and FCMP with funct3 = 011 do not decode" {
+    // fsgnj-like and feq-like words with funct3 = 011 (FINDINGS.md F7).
+    try std.testing.expectEqual(@as(?Instruction, null), control_unit.decode(0x2020B0D3));
+    try std.testing.expectEqual(@as(?Instruction, null), control_unit.decode(0xA020B0D3));
 }
