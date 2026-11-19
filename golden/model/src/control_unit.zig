@@ -128,10 +128,6 @@ pub const Instruction = union(enum) {
     SW: struct { rs1: u5, rs2: u5, imm: u32 },
     FSW: struct { rs1: u5, rs2: u5, rm: u3, imm: u32 },
 
-    // LR/SC
-    // LR, 00010??_00000_?????_010_?????_01011, lr.w $d, ($1), x, I, I, x, x, OP1, x, RS1, x, NEVER, 1, MEM, 0, 0, 0, 1, LOAD, WORD, x, x, 0, 1, 0, 0, 0, x, x, x, x, x
-    // SC, 00011??_?????_?????_010_?????_01011, sc.w $d, $2, ($1), x, I, I, I, x, OP1, x, RS1, x, NEVER, 1, SC, 0, 0, 0, 1, STORE, WORD, RS2, x, 0, 0, 1, 0, 0, x, x, x, x, x
-
     // Barrier operations
     BINIT: struct { rs1: u5, imm: u32 },
     BSYNC_0: struct { rs1: u5, imm: u32 },
