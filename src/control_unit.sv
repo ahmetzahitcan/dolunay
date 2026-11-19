@@ -221,41 +221,6 @@ module control_unit
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
             end
-            30'b00010??00000?????010?????01011: begin // LR
-                `ifndef SYNTHESIS
-                sim__disasm_format_w = "lr.w $d, ($1)";
-                `endif
-                imm_type_w = IMM_TYPE_UNDEFINED;
-                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
-                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
-                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
-                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
-                instr_o.alu_funct = ALU_FUNCT_OP1;
-                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
-                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
-                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
-                instr_o.wb_active = 1'b1;
-                instr_o.wb_source = WB_SOURCE_MEM;
-                instr_o.barr_load = 1'b0;
-                instr_o.barr_sync = 1'b0;
-                instr_o.yield = 1'b0;
-                instr_o.mem_active = 1'b1;
-                instr_o.mem_loadstore = MEM_LOADSTORE_LOAD;
-                instr_o.mem_opsize = MEM_OPSIZE_WORD;
-                instr_o.mem_store_source = MEM_STORE_SOURCE_UNDEFINED;
-                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
-                instr_o.is_jalr = 1'b0;
-                instr_o.is_lr = 1'b1;
-                instr_o.is_sc = 1'b0;
-                instr_o.is_wdone = 1'b0;
-                instr_o.fpu_active = 1'b0;
-                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
-                instr_o.fpu_op_modifier = 'x;
-                instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
-                instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
-                instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
-            end
             30'b111100010100?????????????11100: begin // CSR_MHARTID
                 `ifndef SYNTHESIS
                 sim__disasm_format_w = "csrr $d, mhartid";
@@ -1514,41 +1479,6 @@ module control_unit
                 instr_o.fpu_op_modifier = 1'b0;
                 instr_o.fpu_op0_sel = FPU_OP0_SEL_RS1;
                 instr_o.fpu_op1_sel = FPU_OP1_SEL_RS2;
-                instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
-            end
-            30'b00011????????????010?????01011: begin // SC
-                `ifndef SYNTHESIS
-                sim__disasm_format_w = "sc.w $d, $2, ($1)";
-                `endif
-                imm_type_w = IMM_TYPE_UNDEFINED;
-                instr_o.rd_regfile = params_pkg::REGFILE_SEL_I;
-                instr_o.rs1_regfile = params_pkg::REGFILE_SEL_I;
-                instr_o.rs2_regfile = params_pkg::REGFILE_SEL_I;
-                instr_o.rs3_regfile = params_pkg::REGFILE_SEL_UNDEFINED;
-                instr_o.alu_funct = ALU_FUNCT_OP1;
-                instr_o.alu_addy_funct = ALU_ADDY_FUNCT_UNDEFINED;
-                instr_o.alu_op1_sel = ALU_OP1_SEL_RS1;
-                instr_o.alu_op2_sel = ALU_OP2_SEL_UNDEFINED;
-                instr_o.branch_cond = BRANCH_COND_NEVER;
-                instr_o.wb_active = 1'b1;
-                instr_o.wb_source = WB_SOURCE_SC;
-                instr_o.barr_load = 1'b0;
-                instr_o.barr_sync = 1'b0;
-                instr_o.yield = 1'b0;
-                instr_o.mem_active = 1'b1;
-                instr_o.mem_loadstore = MEM_LOADSTORE_STORE;
-                instr_o.mem_opsize = MEM_OPSIZE_WORD;
-                instr_o.mem_store_source = MEM_STORE_SOURCE_RS2;
-                instr_o.mem_extendmode = MEM_EXTENDMODE_UNDEFINED;
-                instr_o.is_jalr = 1'b0;
-                instr_o.is_lr = 1'b0;
-                instr_o.is_sc = 1'b1;
-                instr_o.is_wdone = 1'b0;
-                instr_o.fpu_active = 1'b0;
-                instr_o.fpu_opcode = fpnew_pkg::operation_e'('x);
-                instr_o.fpu_op_modifier = 'x;
-                instr_o.fpu_op0_sel = FPU_OP0_SEL_UNDEFINED;
-                instr_o.fpu_op1_sel = FPU_OP1_SEL_UNDEFINED;
                 instr_o.fpu_op2_sel = FPU_OP2_SEL_UNDEFINED;
             end
             30'b?????????????????0010000000010: begin // BINIT

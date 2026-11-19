@@ -15,7 +15,6 @@ package control_unit_pkg;
 	typedef enum logic [4:0] {
 		ALU_FUNCT_SLT,
 		ALU_FUNCT_ADDY,
-		ALU_FUNCT_OP1,
 		ALU_FUNCT_HARTID,
 		ALU_FUNCT_WARPID,
 		ALU_FUNCT_THRID,
@@ -74,15 +73,15 @@ package control_unit_pkg;
 	typedef enum logic [2:0] {
 		WB_SOURCE_ALU,
 		WB_SOURCE_FPU,
-		WB_SOURCE_MEM,
 		WB_SOURCE_SC,
 		WB_SOURCE_PC_P4,
+		WB_SOURCE_MEM,
 		WB_SOURCE_UNDEFINED='x
 	} wb_source_e;
 
 	typedef enum logic {
-		MEM_LOADSTORE_LOAD,
 		MEM_LOADSTORE_STORE,
+		MEM_LOADSTORE_LOAD,
 		MEM_LOADSTORE_UNDEFINED='x
 	} mem_loadstore_e;
 
@@ -94,8 +93,8 @@ package control_unit_pkg;
 	} mem_opsize_e;
 
 	typedef enum logic [1:0] {
-		MEM_STORE_SOURCE_RS2,
 		MEM_STORE_SOURCE_BINIT,
+		MEM_STORE_SOURCE_RS2,
 		MEM_STORE_SOURCE_BSYNC,
 		MEM_STORE_SOURCE_UNDEFINED='x
 	} mem_store_source_e;
