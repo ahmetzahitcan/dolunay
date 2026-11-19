@@ -37,6 +37,7 @@ fn immJ(w: u32) u32 {
 }
 
 pub const Instruction = union(enum) {
+    // OP-type instructions
     ADD: struct { rd: u5, rs1: u5, rs2: u5 },
     SH1ADD: struct { rd: u5, rs1: u5, rs2: u5 },
     SH2ADD: struct { rd: u5, rs1: u5, rs2: u5 },
@@ -50,6 +51,8 @@ pub const Instruction = union(enum) {
     SRA: struct { rd: u5, rs1: u5, rs2: u5 },
     OR: struct { rd: u5, rs1: u5, rs2: u5 },
     AND: struct { rd: u5, rs1: u5, rs2: u5 },
+
+    // OP-IMM-type instructions
     ADDI: struct { rd: u5, rs1: u5, imm: u32 },
     SLLI: struct { rd: u5, rs1: u5, imm: u32 },
     SLTI: struct { rd: u5, rs1: u5, imm: u32 },
@@ -59,16 +62,24 @@ pub const Instruction = union(enum) {
     SRAI: struct { rd: u5, rs1: u5, imm: u32 },
     ORI: struct { rd: u5, rs1: u5, imm: u32 },
     ANDI: struct { rd: u5, rs1: u5, imm: u32 },
+
+    // Branch operations
     BEQ: struct { rs1: u5, rs2: u5, imm: u32 },
     BNE: struct { rs1: u5, rs2: u5, imm: u32 },
     BLT: struct { rs1: u5, rs2: u5, imm: u32 },
     BGE: struct { rs1: u5, rs2: u5, imm: u32 },
     BLTU: struct { rs1: u5, rs2: u5, imm: u32 },
     BGEU: struct { rs1: u5, rs2: u5, imm: u32 },
+
+    // Jump operations
     JAL: struct { rd: u5, imm: u32 },
     JALR: struct { rd: u5, rs1: u5, imm: u32 },
+
+    // LUI and AUIPC`
     LUI: struct { rd: u5, imm: u32 },
     AUIPC: struct { rd: u5, imm: u32 },
+
+    // Memory operations
     LB: struct { rd: u5, rs1: u5, imm: u32 },
     LH: struct { rd: u5, rs1: u5, imm: u32 },
     LW: struct { rd: u5, rs1: u5, imm: u32 },
@@ -79,15 +90,22 @@ pub const Instruction = union(enum) {
     SH: struct { rs1: u5, rs2: u5, imm: u32 },
     SW: struct { rs1: u5, rs2: u5, imm: u32 },
     FSW: struct { rs1: u5, rs2: u5, imm: u32 },
+
+    // LR/SC
     LR: struct { rd: u5, rs1: u5 },
     SC: struct { rd: u5, rs1: u5, rs2: u5 },
+
+    // Barrier operations
     BINIT: struct { rs1: u5, imm: u32 },
     BSYNC_0: struct { rs1: u5, imm: u32 },
     YIELD: void,
+
+    // CSR operations
     CSR_MHARTID: struct { rd: u5 },
     CSR_XWARPID: struct { rd: u5 },
     CSR_XTHRID: struct { rd: u5 },
     CSR_XROLE: struct { rd: u5 },
+
     CSR_CYCLETIME: struct { rd: u5 },
     CSR_CYCLETIMEH: struct { rd: u5 },
     CSR_INSTRET: struct { rd: u5 },
@@ -96,28 +114,47 @@ pub const Instruction = union(enum) {
     CSR_WUINSTRETH: struct { rd: u5 },
     CSR_WTINSTRET: struct { rd: u5 },
     CSR_WTINSTRETH: struct { rd: u5 },
+
     CSR_OTHER: struct { rd: u5 },
+
+    // FENCE operations (NOP)
     FENCE: void,
+
+    // Zicond operations
     CZERO_EQZ: struct { rd: u5, rs1: u5, rs2: u5 },
     CZERO_NEZ: struct { rd: u5, rs1: u5, rs2: u5 },
+
+    // Done signal (slti x0, x0, 0)
     WDONE: struct { imm: u32 },
+
+    // Floating non-FMA ADDMUL
     FADD_S: struct { rd: u5, rs1: u5, rs2: u5 },
     FSUB_S: struct { rd: u5, rs1: u5, rs2: u5 },
     FMUL_S: struct { rd: u5, rs1: u5, rs2: u5 },
+
+    // Floating FMA
     FMADD_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5 },
     FMSUB_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5 },
     FNMSUB_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5 },
     FNMADD_S: struct { rd: u5, rs1: u5, rs2: u5, rs3: u5 },
+
+    // Floating DIVSQRT
     FDIV_S: struct { rd: u5, rs1: u5, rs2: u5 },
     FSQRT_S: struct { rd: u5, rs1: u5, rs2: u5 },
+
+    // Floating NONCOMP
     FMINMAX_S: struct { rd: u5, rs1: u5, rs2: u5 },
     FSGNJ_S: struct { rd: u5, rs1: u5, rs2: u5 },
     FCMP_S: struct { rd: u5, rs1: u5, rs2: u5 },
     FCLASS_S: struct { rd: u5, rs1: u5 },
+
+    // Floating CONV
     FCVT_W_S: struct { rd: u5, rs1: u5 },
     FCVT_WU_S: struct { rd: u5, rs1: u5 },
     FCVT_S_W: struct { rd: u5, rs1: u5 },
     FCVT_S_WU: struct { rd: u5, rs1: u5 },
+
+    // Floating-integer move
     FMV_W_X: struct { rd: u5, rs1: u5 },
     FMV_X_W: struct { rd: u5, rs1: u5 },
 };

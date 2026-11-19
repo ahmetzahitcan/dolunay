@@ -132,22 +132,33 @@ def parse_csv(csv_file):
     # Separate the INVALID (default) row from real instructions; skip comments.
     default_values = {}
     valid_rows = []
+    sequence = []  # (comment text or None, row or None), in CSV order
     for row in rows:
         inst = row['instruction'].strip()
         if inst.upper() == 'INVALID':
             default_values = {k: v.strip() for k, v in row.items()}
         elif inst.startswith("'"):
-            continue  # commented-out row
+            # A commented-out row; a comment with commas in it spans cells.
+            cells = [(row[k] or '').strip() for k in fields] + [c.strip() for c in row.get(None) or []]
+            text = ', '.join(c for c in cells if c)[1:].strip()
+            sequence.append((text, None))
         else:
             valid_rows.append(row)
+            sequence.append((None, row))
 
     if not default_values:
         print("Warning: No INVALID row found. Default values will be set to 'x'.")
         default_values = {k: 'x' for k in fields}
 
-    # Clean match strings and drop blank rows.
+    # Clean match strings and drop blank rows. `layout` keeps the CSV's
+    # comments, blank rows and instructions in order, for emitters that echo it:
+    # ('comment', text), ('blank', None) or ('row', CsvIndex).
     instructions = []
-    for row in valid_rows:
+    layout = []
+    for comment, row in sequence:
+        if row is None:
+            layout.append(('comment', comment))
+            continue
         inst = row['instruction'].strip()
         match_str = (
             row['match_string']
@@ -157,10 +168,12 @@ def parse_csv(csv_file):
             .replace('X', '?')
         )
         if not inst and not match_str:
+            layout.append(('blank', None))
             continue
         row['CleanMatchString'] = match_str
         row['SpecificBits'] = sum(1 for b in match_str if b in '01')
         row['CsvIndex'] = len(instructions)  # CSV order survives the sort below
+        layout.append(('row', row['CsvIndex']))
         instructions.append(row)
 
     # Validate: no duplicate or ambiguously overlapping patterns.
@@ -295,6 +308,7 @@ def parse_csv(csv_file):
         'instructions': instructions,
         'enums': enums,
         'external_enums': external_enums,
+        'layout': layout,
     }
 
 
@@ -584,6 +598,7 @@ def emit_zig(data, output_file):
         mask = int(''.join('0' if b == '?' else '1' for b in bits), 2)
         match = int(bits.replace('?', '0'), 2)
         rows.append((row['CsvIndex'], inst, mask, match, _zig_operands(row, fields)))
+    by_index = {r[0]: r for r in rows}
 
     def payload_type(operands):
         if not operands:
@@ -597,9 +612,23 @@ def emit_zig(data, output_file):
 
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(_ZIG_PRELUDE)
+        # The union follows the CSV's layout: its comment rows become comments
+        # and its blank rows blank lines (at most one in a row, none at either
+        # end, as zig fmt requires).
+        lines = []
+        for kind, value in data['layout']:
+            if kind == 'comment':
+                lines.append(f"    // {value}" if value else "    //")
+            elif kind == 'blank':
+                if lines and lines[-1] != '':
+                    lines.append('')
+            elif value in by_index:  # '~' and malformed rows have no variant
+                _, inst, _, _, operands = by_index[value]
+                lines.append(f"    {inst}: {payload_type(operands)},")
+        while lines and lines[-1] == '':
+            lines.pop()
         f.write("pub const Instruction = union(enum) {\n")
-        for _, inst, _, _, operands in sorted(rows):
-            f.write(f"    {inst}: {payload_type(operands)},\n")
+        f.writelines(line + "\n" for line in lines)
         f.write("};\n\n")
         f.write("/// Decodes `w`, or returns null when no row matches. Rows are tried most\n")
         f.write("/// fixed bits first, so the most specific match wins (golden/CONTRACT.md §3).\n")
