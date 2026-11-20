@@ -16,7 +16,7 @@ pub const Illegal = float.Error || error{
     IllegalInstruction,
 };
 
-const XRegs = struct {
+pub const XRegs = struct {
     const reg_count = 32;
     values: [reg_count - 1]u32,
 
@@ -29,7 +29,7 @@ const XRegs = struct {
     }
 };
 
-const FRegs = struct {
+pub const FRegs = struct {
     const reg_count = 32;
     values: [reg_count]u32,
 
