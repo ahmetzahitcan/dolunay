@@ -4,6 +4,7 @@
 pub mod address_space;
 pub mod control_unit;
 pub mod float;
+pub mod illegal;
 pub mod int_utils;
 pub mod softfloat;
 pub mod thread;

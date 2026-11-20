@@ -135,7 +135,11 @@ disagreement between them and the model's code (`CONTRACT.md`, introduction):
     functions; `src/softfloat.rs`: the calls into SoftFloat.
   - `src/thread.rs`, `src/warp.rs`, `src/address_space.rs`: a skeleton of one
     warp fetching from a ROM and stepping its active path's threads. The
-    address space is passed into `Warp::step`, not owned by the warp.
+    address space is passed into `Warp::step`, not owned by the warp. A step
+    computes every thread's `Effect`s before committing any, so an illegal
+    instruction changes nothing (`CONTRACT.md` §1, guarantee 2).
+  - `src/illegal.rs`: the illegal acts the model detects, which end a run as
+    `illegal`.
 
   The previous designs' code is in git history (the Zig one up to the commit
   that replaced it, the Renode-hosted one under the tag `archive/renode`); do

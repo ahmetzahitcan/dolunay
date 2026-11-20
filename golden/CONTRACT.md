@@ -99,6 +99,8 @@ it (**fast mode**).
    which is exact; `timeout`, when an instruction budget runs out; or `illegal`,
    when the model detects an act the spec makes *illegal* (`spec/README.md`),
    such as `wdone` from a path that does not hold the whole warp.
+   An instruction that is illegal on any thread of the active path has no
+   effect: the observation shows the state from before it.
    Non-termination in general is undecidable, so `timeout` is a report, not a
    verdict. The model may report a stronger class (such as a proven livelock)
    only with a proof from the run. It names the stuck threads, and never rescues

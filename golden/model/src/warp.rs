@@ -1,6 +1,7 @@
 use crate::address_space::{self, AddressSpace};
 use crate::control_unit::{self, Instruction};
-use crate::thread::{Illegal, Thread};
+use crate::illegal::Illegal;
+use crate::thread::{Effect, Thread};
 
 const THREAD_COUNT: usize = 32;
 /// A path's number within its warp.
@@ -38,6 +39,11 @@ impl ThreadManager {
 
     pub fn active(&mut self) -> impl Iterator<Item = &mut Thread> {
         self.on_path(Some(self.active_path))
+    }
+
+    /// The indices of the active path's threads, in thread order.
+    pub fn active_indices(&self) -> impl Iterator<Item = usize> {
+        (0..THREAD_COUNT).filter(|&i| self.paths[i] == self.active_path)
     }
 
     #[allow(dead_code)]
@@ -88,10 +94,19 @@ impl Warp {
             Fence => todo!("fence"),
             Wdone { .. } => todo!("wdone"),
 
-            // All other instructions are executed by each thread in the warp.
+            // All other instructions are executed by each thread of the active
+            // path. Every thread's effect is computed from the state before
+            // the instruction, and none is committed unless all succeed: an
+            // instruction that is illegal on any thread of the path has no
+            // effect (CONTRACT.md §1, guarantee 2).
             _ => {
-                for thread in self.threads.active() {
-                    thread.step(self.pc, instruction)?;
+                let effects_lists = self
+                    .threads
+                    .active_indices()
+                    .map(|i| Ok((i, self.threads.threads[i].execute(self.pc, instruction)?)))
+                    .collect::<Result<Vec<(usize, Vec<Effect>)>, Illegal>>()?;
+                for (i, effects) in effects_lists {
+                    self.threads.threads[i].commit(effects);
                 }
                 self.pc = self.pc.wrapping_add(4);
             }
@@ -119,7 +134,7 @@ mod tests {
         assert_eq!(warp.threads.threads[0].xregs.read(7), 0);
         assert_eq!(warp.threads.threads[1].xregs.read(7), 0);
 
-        for i in 1..1_000_000 {
+        for i in 1..1_000_000u32 {
             warp.step(&addrs).unwrap();
             warp.step(&addrs).unwrap();
             assert_eq!(warp.pc, 4);
@@ -128,5 +143,17 @@ mod tests {
             assert_eq!(warp.threads.threads[0].xregs.read(7), i);
             assert_eq!(warp.threads.threads[1].xregs.read(7), i);
         }
+    }
+
+    #[test]
+    fn an_illegal_instruction_changes_nothing() {
+        let mut rom = [0; ROM_SIZE];
+        rom[0..4].copy_from_slice(&[0xd3, 0xd0, 0x10, 0x00]); // fadd.s f1, f1, f1 with rm = 101
+        let addrs = AddressSpace::new(rom);
+
+        let mut warp = Warp::new(0);
+        let before = warp.clone();
+        assert_eq!(warp.step(&addrs), Err(Illegal::ReservedRoundingMode));
+        assert_eq!(warp, before);
     }
 }
