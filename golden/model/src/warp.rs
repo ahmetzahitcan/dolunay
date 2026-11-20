@@ -24,7 +24,16 @@ impl ThreadManager {
     }
 
     /// The threads on `path`, or every thread when `path` is `None`.
-    fn on_path(&mut self, path: Option<PathId>) -> impl Iterator<Item = &mut Thread> {
+    fn on_path(&self, path: Option<PathId>) -> impl Iterator<Item = &Thread> {
+        self.threads
+            .iter()
+            .zip(self.paths)
+            .filter(move |&(_, p)| path.is_none_or(|path| p == path))
+            .map(|(thread, _)| thread)
+    }
+
+    /// The threads on `path`, or every thread when `path` is `None`.
+    fn on_path_mut(&mut self, path: Option<PathId>) -> impl Iterator<Item = &mut Thread> {
         self.threads
             .iter_mut()
             .zip(self.paths)
@@ -32,23 +41,42 @@ impl ThreadManager {
             .map(|(thread, _)| thread)
     }
 
-    #[allow(dead_code)]
-    pub fn all(&mut self) -> impl Iterator<Item = &mut Thread> {
+    pub fn all(&self) -> impl Iterator<Item = &Thread> {
         self.on_path(None)
     }
 
-    pub fn active(&mut self) -> impl Iterator<Item = &mut Thread> {
+    pub fn all_mut(&mut self) -> impl Iterator<Item = &mut Thread> {
+        self.on_path_mut(None)
+    }
+
+    pub fn all_ids(&self) -> impl Iterator<Item = usize> {
+        0..THREADS_PER_WARP
+    }
+
+    pub fn active(&self) -> impl Iterator<Item = &Thread> {
         self.on_path(Some(self.active_path))
     }
 
+    pub fn active_mut(&mut self) -> impl Iterator<Item = &mut Thread> {
+        self.on_path_mut(Some(self.active_path))
+    }
+
     /// The indices of the active path's threads, in thread order.
-    pub fn active_indices(&self) -> impl Iterator<Item = usize> {
+    pub fn active_ids(&self) -> impl Iterator<Item = usize> {
         (0..THREADS_PER_WARP).filter(|&i| self.paths[i] == self.active_path)
     }
 
-    #[allow(dead_code)]
-    pub fn friends(&mut self, thread_id: u16) -> impl Iterator<Item = &mut Thread> {
+    pub fn friends(&self, thread_id: u16) -> impl Iterator<Item = &Thread> {
         self.on_path(Some(self.paths[thread_id as usize]))
+    }
+
+    pub fn friends_mut(&mut self, thread_id: u16) -> impl Iterator<Item = &mut Thread> {
+        self.on_path_mut(Some(self.paths[thread_id as usize]))
+    }
+
+    pub fn friends_ids(&self, thread_id: u16) -> impl Iterator<Item = usize> {
+        let path = self.paths[thread_id as usize];
+        (0..THREADS_PER_WARP).filter(move |&i| self.paths[i] == path)
     }
 }
 
@@ -82,7 +110,7 @@ impl Warp {
                 // target and the link are computed modulo 2^32.
                 let new_pc = self.pc.wrapping_add(imm);
                 let link_pc = self.pc.wrapping_add(4);
-                for thread in self.threads.active() {
+                for thread in self.threads.active_mut() {
                     thread.xregs.write(rd, link_pc);
                 }
                 self.pc = new_pc;
@@ -102,7 +130,7 @@ impl Warp {
             _ => {
                 let effects_lists = self
                     .threads
-                    .active_indices()
+                    .active_ids()
                     .map(|i| Ok((i, self.threads.threads[i].execute(self.pc, instruction)?)))
                     .collect::<Result<Vec<(usize, Vec<Effect>)>, Illegal>>()?;
                 for (i, effects) in effects_lists {
