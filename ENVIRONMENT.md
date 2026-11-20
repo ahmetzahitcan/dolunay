@@ -17,7 +17,7 @@ in the headers of `ss/generate.sh` and `asm-kernels/generate.sh`.
 | make, hexdump, Python 3 | kernels (the scripts' last steps) | `make --version`, `hexdump --version`, `python3 --version` |
 | bender | RTL: dependency fetch | `bender --version` |
 | Verilator **or** Icarus Verilog | RTL simulation | `verilator --version` / `iverilog -V` |
-| Zig, at the version `golden/model/build.zig.zon` pins | golden model | `zig version` |
+| Rust, at least the version `golden/model/Cargo.toml` names in `rust-version`, and a C compiler | golden model | `rustc --version`, `cc --version` |
 
 Report a missing tool as missing; do not substitute another silently.
 

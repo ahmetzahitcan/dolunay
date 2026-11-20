@@ -6,9 +6,5 @@
 build/
 *.log
 
-# Zig's local cache and install prefix, next to model/build.zig.
-.zig-cache/
-zig-out/
-
-# Packages fetched by `zig build` from model/build.zig.zon, by hash.
-zig-pkg/
+# Cargo's build directory, next to model/Cargo.toml.
+model/target/

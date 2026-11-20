@@ -1,0 +1,12 @@
+[package]
+name = "dolunay"
+version = "0.0.0"
+edition = "2024"
+# The Rust version the model is built with. Like Zig's minimum_zig_version
+# before it, it moves only on purpose, with the code updated in the same commit.
+rust-version = "1.100"
+publish = false
+links = "softfloat"
+
+[build-dependencies]
+cc = "=1.2.30"

@@ -21,22 +21,24 @@ New here? Read in this order:
 |---|---|
 | Machine modelled | the **next** variant: threads in lockstep per path, the PC rule, whole-warp finishing, scratchpad + DMA, barrier logic under revision |
 | Specification | RISC-V standard + [`spec/`](spec/); only a draft of the execution model. ISA restrictions decided: F with static rounding, no A or Zalrsc, 32-bit instructions only |
-| Design | the model executes the spec literally; a program of its own, in Zig |
-| Code | **a skeleton** — the Zig package in `model/`, linked against Berkeley SoftFloat; the decoder `control_unit/generate.py` emits, nothing else |
+| Design | the model executes the spec literally; a program of its own, in Rust |
+| Code | **a skeleton** — the Rust package in `model/`, linked against Berkeley SoftFloat: the decoder, the RV32I and F semantics, and one warp fetching from a ROM; no branches, memory, barriers or CSRs yet |
 | Kernel build | the previous variant's kernels, to be rewritten; the build scripts call `riscv32-unknown-elf-*`, and each machine supplies shims (`CONTRACT.md` §5) |
 | Geometry | **undecided** — a parameter, never a constant |
 
 ## Building and running
 
-From `model/`, with the Zig version that `model/build.zig.zon` pins:
+From `model/`, with at least the Rust version that `rust-version` in
+`model/Cargo.toml` names, and a C compiler for SoftFloat:
 
 ```sh
-zig build test
+git submodule update --init   # once after cloning: fetches Berkeley SoftFloat
+cargo test
 ```
 
-The first build fetches Berkeley SoftFloat (network needed). There is nothing
-to run yet. The tests check that SoftFloat is linked with its RISC-V
-specialization, and that the generated decoder handles a few hand-encoded words.
+There is nothing to run yet. The tests check that SoftFloat is linked with its
+RISC-V specialization, the floating-point and integer semantics, that the
+decoder handles a few hand-encoded words, and a short run of one warp.
 
 ## Next steps
 
