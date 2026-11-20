@@ -24,7 +24,7 @@ New here? Read in this order:
 | Design | the model executes the spec literally; a program of its own, in Rust |
 | Code | **a skeleton** — the Rust package in `model/`, linked against Berkeley SoftFloat: the decoder, the RV32I and F semantics, and one warp fetching from a ROM; no branches, memory, barriers or CSRs yet |
 | Kernel build | the previous variant's kernels, to be rewritten; the build scripts call `riscv32-unknown-elf-*`, and each machine supplies shims (`CONTRACT.md` §5) |
-| Geometry | **undecided** — a parameter, never a constant |
+| Geometry | **undecided** — defined in one place, assumed nowhere else |
 
 ## Building and running
 

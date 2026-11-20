@@ -97,8 +97,8 @@ geometry is undecided. Therefore:
   with a test showing the rest of the model does not depend on it. Its default
   is a choice like any other: propose it, and use it once the maintainer has
   approved it (§5). No "temporarily inline".
-- **No constants for geometry.** Warps × threads is a parameter with one place
-  it is read from.
+- **Geometry is defined in one place.** Warps × threads is read from that one
+  place; no other code assumes its value.
 - **No uncited encodings.** Every opcode, funct field and CSR number cites the
   RISC-V specification or the `spec/` section it comes from. Until `spec/`
   specifies a custom instruction, any in the code is a placeholder labelled as

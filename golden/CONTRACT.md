@@ -66,7 +66,7 @@ execution produces the same **output**. The output is defined by the kernel's
 **output descriptor**: the memory regions that hold its result, with integers
 compared bitwise, floats within a stated tolerance, and fields that count only
 when a condition on other fields holds. How the run ends (§4 `termination`) is
-always part of the output. Determinacy is a property of a kernel *and an input*.
+always part of the output. Determinacy is a property of a kernel, an input *and a geometry*.
 
 Checking determinacy (G1) needs more than one execution. The methods, cheapest
 first, all expressed as policies:
@@ -81,10 +81,9 @@ first, all expressed as policies:
 2. **Systematic exploration** of only the reported conflicts' orders (partial-order
    reduction, with a bound on context switches), for kernels whose order is free
    but whose result is meant not to depend on it: locks and atomics around
-   commutative updates, flag handoffs, allocators. Exhaustive at a small
-   geometry.
-3. **Random sampling** (PCT-style priority schedules, not uniform choice) at full
-   geometry, where exploration is too large.
+   commutative updates, flag handoffs, allocators.
+3. **Random sampling** (PCT-style priority schedules, not uniform choice), where
+   exploration is too large.
 
 Once a kernel is validated on an input, the model may run any one execution of
 it (**fast mode**).
@@ -174,7 +173,7 @@ detail, stop and ask for that detail to be written into this file *first*.
 
 | Question | Why it matters | Where it lands |
 |---|---|---|
-| Geometry (warps × threads) | How many threads exist; every kernel's indices | a parameter, never a constant |
+| Geometry (warps × threads) | How many threads exist; every kernel's indices | defined in one place; no other code assumes its value |
 | What "lockstep" means precisely — drafted as the warp program order | Which orders between threads of a path are observable | `spec/EXECUTION-MODEL.md` |
 | Reconvergence: paths combine only through `bsync`, never implicitly, at the PC their threads share — but `bsync`'s identity, expected set and release condition are open | Path bookkeeping; barrier semantics | `spec/EXECUTION-MODEL.md` |
 | *Which* order conflicting accesses within one lockstep instruction take effect in (that there is one is decided) — or whether that is reopened to make such conflicts illegal, so the conflict check reports them | What such kernels compute; what the conflict check sees | `spec/`; scratchpad (may reorder internally if the result is as if in that order) |
