@@ -140,6 +140,8 @@ disagreement between them and the model's code (`CONTRACT.md`, introduction):
     instruction changes nothing (`CONTRACT.md` §1, guarantee 2).
   - `src/illegal.rs`: the illegal acts the model detects, which end a run as
     `illegal`.
+  - `src/geometry.rs`: the one place geometry is defined (§4). Only threads
+    per warp exists so far, at a placeholder value.
 
   The previous designs' code is in git history (the Zig one up to the commit
   that replaced it, the Renode-hosted one under the tag `archive/renode`); do

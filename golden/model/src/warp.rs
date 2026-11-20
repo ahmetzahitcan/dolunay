@@ -1,16 +1,16 @@
 use crate::address_space::{self, AddressSpace};
 use crate::control_unit::{self, Instruction};
+use crate::geometry::THREADS_PER_WARP;
 use crate::illegal::Illegal;
 use crate::thread::{Effect, Thread};
 
-const THREAD_COUNT: usize = 32;
 /// A path's number within its warp.
 type PathId = u8;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ThreadManager {
-    threads: [Thread; THREAD_COUNT],
-    paths: [PathId; THREAD_COUNT],
+    threads: [Thread; THREADS_PER_WARP],
+    paths: [PathId; THREADS_PER_WARP],
     active_path: PathId,
 }
 
@@ -18,7 +18,7 @@ impl ThreadManager {
     pub fn new(warp_id: u16) -> ThreadManager {
         ThreadManager {
             threads: std::array::from_fn(|i| Thread::new(warp_id, i as u16)),
-            paths: [0; THREAD_COUNT],
+            paths: [0; THREADS_PER_WARP],
             active_path: 0,
         }
     }
@@ -43,7 +43,7 @@ impl ThreadManager {
 
     /// The indices of the active path's threads, in thread order.
     pub fn active_indices(&self) -> impl Iterator<Item = usize> {
-        (0..THREAD_COUNT).filter(|&i| self.paths[i] == self.active_path)
+        (0..THREADS_PER_WARP).filter(|&i| self.paths[i] == self.active_path)
     }
 
     #[allow(dead_code)]
@@ -122,6 +122,8 @@ mod tests {
 
     #[test]
     fn a_basic_warp_run() {
+        // The first and the last thread, so the test holds for any geometry.
+        const LAST: usize = THREADS_PER_WARP - 1;
         let mut rom = [0; ROM_SIZE];
         rom[0..4].copy_from_slice(&[0x93, 0x03, 0x00, 0x00]); // addi x7, x0, 0
         rom[4..8].copy_from_slice(&[0x93, 0x83, 0x13, 0x00]); // addi x7, x7, 1
@@ -132,16 +134,16 @@ mod tests {
         warp.step(&addrs).unwrap();
         assert_eq!(warp.pc, 4);
         assert_eq!(warp.threads.threads[0].xregs.read(7), 0);
-        assert_eq!(warp.threads.threads[1].xregs.read(7), 0);
+        assert_eq!(warp.threads.threads[LAST].xregs.read(7), 0);
 
         for i in 1..1_000_000u32 {
             warp.step(&addrs).unwrap();
             warp.step(&addrs).unwrap();
             assert_eq!(warp.pc, 4);
             assert_eq!(warp.threads.threads[0].xregs.read(1), 12);
-            assert_eq!(warp.threads.threads[1].xregs.read(1), 12);
+            assert_eq!(warp.threads.threads[LAST].xregs.read(1), 12);
             assert_eq!(warp.threads.threads[0].xregs.read(7), i);
-            assert_eq!(warp.threads.threads[1].xregs.read(7), i);
+            assert_eq!(warp.threads.threads[LAST].xregs.read(7), i);
         }
     }
 
