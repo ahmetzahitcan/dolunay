@@ -1,3 +1,6 @@
 {
-    "dotnet.defaultSolution": "golden/model/Dolunay.sln"
+    "dotnet.defaultSolution": "golden/model/Dolunay.sln",
+    "rust-analyzer.linkedProjects": [
+        "golden/model/Cargo.toml"
+    ]
 }
