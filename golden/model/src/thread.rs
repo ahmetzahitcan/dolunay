@@ -75,6 +75,32 @@ impl Thread {
         }
     }
 
+    /// Evaluates the branch condition of `instruction` on this thread,
+    /// returning true if the branch is taken, false if not.
+    /// 
+    /// Panics: If instruction is not a branch.
+    pub fn eval_branch(&self, instruction: Instruction) -> bool {
+        use Instruction::*;
+        let x = |r: u8| self.xregs.read(r);
+        match instruction {
+            Beq { rs1, rs2, imm: _ } => x(rs1) == x(rs2),
+            Bne { rs1, rs2, imm: _ } => x(rs1) != x(rs2),
+            Blt { rs1, rs2, imm: _ } => int_utils::less_signed(x(rs1), x(rs2)) != 0,
+            Bge { rs1, rs2, imm: _ } => int_utils::less_signed(x(rs1), x(rs2)) == 0,
+            Bltu { rs1, rs2, imm: _ } => int_utils::less_unsigned(x(rs1), x(rs2)) != 0,
+            Bgeu { rs1, rs2, imm: _ } => int_utils::less_unsigned(x(rs1), x(rs2)) == 0,
+            _ => unreachable!("{instruction:?} is not a branch"),
+        }
+    }
+
+    /// Evaluates a JALR instruction and returns the expected PC
+    /// 
+    /// Panics: If instruction is not JALR.
+    pub fn eval_jalr(&self, instruction: Instruction) -> u32 {
+        let Instruction::Jalr { rd: _, rs1, imm } = instruction else { unreachable!("{instruction:?} is not JALR") };
+        self.xregs.read(rs1).wrapping_add(imm)
+    }
+
     /// Applies the effects `execute` computed, in order.
     pub fn commit(&mut self, effects: Vec<Effect>) {
         for effect in effects {

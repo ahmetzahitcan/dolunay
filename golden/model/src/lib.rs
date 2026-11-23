@@ -10,3 +10,4 @@ pub mod int_utils;
 pub mod softfloat;
 pub mod thread;
 pub mod warp;
+pub mod path;
