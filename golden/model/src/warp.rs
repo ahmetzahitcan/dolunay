@@ -30,15 +30,14 @@ impl Warp {
     pub fn thread(&self, thread_id: u16) -> &Thread {
         assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
 
-        let mut result = None;
         let pathes = self.inactive_pathes.iter().chain(iter::once(self.active()));
         for path in pathes {
             if let Some(thread) = path.thread(thread_id) {
-                result = Some(thread);
+                return thread;
             }
         }
 
-        result.expect("Missing thread!")
+        panic!("Missing thread!");
     }
 
     /// Executes one instruction of the active path. The address space is the
