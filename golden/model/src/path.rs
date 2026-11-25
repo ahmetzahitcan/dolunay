@@ -63,6 +63,10 @@ impl Path {
         self.thread_mut(self.leader_id()).unwrap()
     }
 
+    pub fn has_thread(&self, thread_id: u16) -> bool {
+        self.thread(thread_id).is_some()
+    }
+
     pub fn thread(&self, thread_id: u16) -> Option<&Thread> {
         for t in &self.threads {
             if t.thread_id == thread_id {

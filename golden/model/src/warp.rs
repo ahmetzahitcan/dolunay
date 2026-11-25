@@ -1,4 +1,4 @@
-use std::iter::{self, zip};
+use std::iter::zip;
 
 use crate::address_space::{self, AddressSpace};
 use crate::control_unit::{self, Instruction};
@@ -14,6 +14,7 @@ pub struct Warp {
     active_path: Option<Path>,
 }
 
+// Constructors
 impl Warp {
     pub fn new(warp_id: u16) -> Self {
         Self { 
@@ -22,16 +23,65 @@ impl Warp {
             active_path: Some(Path::new(INITIAL_PC, (0..THREADS_PER_WARP).map(|tid| Box::new(Thread::new(tid as u16))).collect())),
         }
     }
+}
+
+// Path access methods
+impl Warp {
+    pub fn paths(&self) -> impl Iterator<Item = &Path> {
+        assert!(self.active_path.is_some());
+        self.inactive_paths.iter().chain(self.active_path.iter())
+    }
+
+    pub fn paths_mut(&mut self) -> impl Iterator<Item = &mut Path> {
+        assert!(self.active_path.is_some());
+        self.inactive_paths.iter_mut().chain(self.active_path.iter_mut())
+    }
+
+    pub fn path(&self, thread_id: u16) -> &Path {
+        assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
+        
+
+        let paths = self.paths();
+        for path in paths {
+            if path.has_thread(thread_id) {
+                return path;
+            }
+        }
+
+        panic!("Missing thread!");
+    }
+
+    pub fn path_mut(&mut self, thread_id: u16) -> &mut Path {
+        assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
+        assert!(self.active_path.is_some());
+
+        let paths = self.paths_mut();
+        for path in paths {
+            if path.has_thread(thread_id) {
+                return path;
+            }
+        }
+
+        panic!("Missing thread!");
+    }
 
     pub fn active(&self) -> &Path {
         self.active_path.as_ref().unwrap()
     }
 
+    pub fn active_mut(&mut self) -> &mut Path {
+        self.active_path.as_mut().unwrap()
+    }
+}
+
+// Thread access methods
+impl Warp {
     pub fn thread(&self, thread_id: u16) -> &Thread {
         assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
+        assert!(self.active_path.is_some());
 
-        let pathes = self.inactive_paths.iter().chain(iter::once(self.active()));
-        for path in pathes {
+        let paths = self.paths();
+        for path in paths {
             if let Some(thread) = path.thread(thread_id) {
                 return thread;
             }
@@ -40,6 +90,31 @@ impl Warp {
         panic!("Missing thread!");
     }
 
+    pub fn thread_mut(&mut self, thread_id: u16) -> &mut Thread {
+        assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
+        assert!(self.active_path.is_some());
+
+        let paths = self.paths_mut();
+        for path in paths {
+            if let Some(thread) = path.thread_mut(thread_id) {
+                return thread;
+            }
+        }
+
+        panic!("Missing thread!");
+    }
+
+    pub fn threads(&self) -> impl Iterator<Item = &Thread> {
+        self.paths().flat_map(|p| p.threads())
+    }
+
+    pub fn threads_mut(&mut self) -> impl Iterator<Item = &mut Thread> {
+        self.paths_mut().flat_map(|p| p.threads_mut())
+    }
+}
+
+// Execution methods
+impl Warp {
     /// Executes one instruction of the active path. The address space is the
     /// machine's, shared by every warp, so it is passed in, not owned.
     pub fn step(&mut self, addrs: &AddressSpace) -> Result<(), Illegal> {
@@ -184,15 +259,24 @@ mod tests {
     use super::*;
     use crate::{address_space::ROM_SIZE, geometry::THREADS_PER_WARP};
 
+    /// A ROM holding `words` from address 0.
+    fn rom_of(words: &[u32]) -> AddressSpace {
+        let mut rom = [0; ROM_SIZE];
+        for (i, w) in words.iter().enumerate() {
+            rom[4 * i..4 * i + 4].copy_from_slice(&w.to_le_bytes());
+        }
+        AddressSpace::new(rom)
+    }
+
     #[test]
     fn a_basic_warp_run() {
         // The first and the last thread, so the test holds for any geometry.
         const LAST: u16 = (THREADS_PER_WARP - 1) as u16;
-        let mut rom = [0; ROM_SIZE];
-        rom[0..4].copy_from_slice(&[0x93, 0x03, 0x00, 0x00]); // addi x7, x0, 0
-        rom[4..8].copy_from_slice(&[0x93, 0x83, 0x13, 0x00]); // addi x7, x7, 1
-        rom[8..12].copy_from_slice(&[0xef, 0xf0, 0xdf, 0xff]); // jal x1, -4
-        let addrs = AddressSpace::new(rom);
+        let addrs = rom_of(&[
+            0x00000393, // addi x7, x0, 0
+            0x00138393, // addi x7, x7, 1
+            0xFFDFF0EF, // jal x1, -4
+        ]);
 
         let mut warp = Warp::new(0);
         warp.step(&addrs).unwrap();
@@ -213,9 +297,7 @@ mod tests {
 
     #[test]
     fn an_illegal_instruction_changes_nothing() {
-        let mut rom = [0; ROM_SIZE];
-        rom[0..4].copy_from_slice(&[0xd3, 0xd0, 0x10, 0x00]); // fadd.s f1, f1, f1 with rm = 101
-        let addrs = AddressSpace::new(rom);
+        let addrs = rom_of(&[0x0010D0D3]); // fadd.s f1, f1, f1 with rm = 101
 
         let mut warp = Warp::new(0);
         let before = warp.clone();
@@ -226,32 +308,6 @@ mod tests {
     // Which new path becomes active after a split is a choice point
     // (spec/EXECUTION-MODEL.md §2), so the tests below look at every path and
     // never at which one is active.
-
-    /// A ROM holding `words` from address 0.
-    fn rom_of(words: &[u32]) -> AddressSpace {
-        let mut rom = [0; ROM_SIZE];
-        for (i, w) in words.iter().enumerate() {
-            rom[4 * i..4 * i + 4].copy_from_slice(&w.to_le_bytes());
-        }
-        AddressSpace::new(rom)
-    }
-
-    fn paths(warp: &Warp) -> impl Iterator<Item = &Path> {
-        warp.inactive_paths.iter().chain(warp.active_path.iter())
-    }
-
-    fn pc_of(warp: &Warp, thread_id: u16) -> u32 {
-        paths(warp).find(|p| p.thread(thread_id).is_some()).unwrap().pc
-    }
-
-    /// Writes `value(thread_id)` to `x<r>` of every thread. Only for a warp
-    /// whose threads are all in the active path, as they are at start-up.
-    fn set_x(warp: &mut Warp, r: u8, value: impl Fn(u16) -> u32) {
-        assert!(warp.inactive_paths.is_empty());
-        for t in warp.active_path.as_mut().unwrap().threads_mut() {
-            t.xregs.write(r, value(t.thread_id));
-        }
-    }
 
     #[test]
     fn a_branch_all_threads_agree_on_keeps_one_path() {
@@ -264,7 +320,7 @@ mod tests {
         let mut warp = Warp::new(0);
         for expected_pc in [0x8, 0xc, 0x0] {
             warp.step(&addrs).unwrap();
-            assert!(warp.inactive_paths.is_empty());
+            assert_eq!(warp.paths().count(), 1);
             assert_eq!(warp.active().pc, expected_pc);
         }
     }
@@ -273,13 +329,15 @@ mod tests {
     fn a_branch_threads_disagree_on_splits_the_path_by_outcome() {
         let addrs = rom_of(&[0x00029663]); // bne x5, x0, 12
         let mut warp = Warp::new(0);
-        set_x(&mut warp, 5, |tid| (tid % 2) as u32);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, (t.thread_id % 2) as u32);
+        }
         warp.step(&addrs).unwrap();
 
-        assert_eq!(paths(&warp).count(), 2);
+        assert_eq!(warp.paths().count(), 2);
         for tid in 0..THREADS_PER_WARP as u16 {
             let expected_pc = if tid % 2 == 1 { 12 } else { 4 };
-            assert_eq!(pc_of(&warp, tid), expected_pc, "thread {tid}");
+            assert_eq!(warp.path(tid).pc, expected_pc, "thread {tid}");
         }
     }
 
@@ -287,12 +345,14 @@ mod tests {
     fn jalr_splits_the_path_by_target_and_links_every_thread() {
         let addrs = rom_of(&[0x008280E7]); // jalr x1, 8(x5)
         let mut warp = Warp::new(0);
-        set_x(&mut warp, 5, |tid| 0x100 + 4 * (tid % 3) as u32);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, 0x100 + 4 * (t.thread_id % 3) as u32);
+        }
         warp.step(&addrs).unwrap();
 
-        assert_eq!(paths(&warp).count(), THREADS_PER_WARP.min(3));
+        assert_eq!(warp.paths().count(), THREADS_PER_WARP.min(3));
         for tid in 0..THREADS_PER_WARP as u16 {
-            assert_eq!(pc_of(&warp, tid), 0x108 + 4 * (tid % 3) as u32, "thread {tid}");
+            assert_eq!(warp.path(tid).pc, 0x108 + 4 * (tid % 3) as u32, "thread {tid}");
             assert_eq!(warp.thread(tid).xregs.read(1), 4, "thread {tid}");
         }
     }
@@ -303,10 +363,12 @@ mod tests {
         // rs1 + imm with its least-significant bit set to zero.
         let addrs = rom_of(&[0x010282E7]); // jalr x5, 16(x5)
         let mut warp = Warp::new(0);
-        set_x(&mut warp, 5, |_| 0x101);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, 0x101);
+        }
         warp.step(&addrs).unwrap();
 
-        assert!(warp.inactive_paths.is_empty());
+        assert_eq!(warp.paths().count(), 1);
         assert_eq!(warp.active().pc, 0x110);
         assert_eq!(warp.thread(0).xregs.read(5), 4);
     }
