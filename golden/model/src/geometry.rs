@@ -6,4 +6,9 @@
 
 /// Threads per warp. Placeholder.
 pub const THREADS_PER_WARP: usize = 32;
+
+// Warps per machine. Placeholder.
+pub const WARPS_PER_MACHINE: usize = 32;
+
+// Initial PC value.
 pub const INITIAL_PC: u32 = 0;
