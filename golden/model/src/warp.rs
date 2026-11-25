@@ -19,7 +19,7 @@ impl Warp {
         Self { 
             warp_id,
             inactive_paths: Vec::with_capacity(THREADS_PER_WARP - 1),
-            active_path: Some(Path::new(INITIAL_PC, (0..THREADS_PER_WARP).map(|tid| Box::new(Thread::new(warp_id, tid as u16))).collect())),
+            active_path: Some(Path::new(INITIAL_PC, (0..THREADS_PER_WARP).map(|tid| Box::new(Thread::new(tid as u16))).collect())),
         }
     }
 

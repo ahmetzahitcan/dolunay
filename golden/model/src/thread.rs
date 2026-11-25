@@ -60,17 +60,15 @@ pub struct Thread {
     pub fregs: FRegs,
     /// The thread's floating-point flags.
     pub fflags: u8,
-    pub warp_id: u16,
     pub thread_id: u16,
 }
 
 impl Thread {
-    pub fn new(warp_id: u16, thread_id: u16) -> Thread {
+    pub fn new(thread_id: u16) -> Thread {
         Thread {
             xregs: XRegs { values: [POISON; 31] },
             fregs: FRegs { values: [POISON; 32] },
             fflags: POISON_FFLAGS,
-            warp_id,
             thread_id,
         }
     }
@@ -231,7 +229,7 @@ mod tests {
     use crate::softfloat;
 
     fn test_thread() -> Thread {
-        let mut t = Thread::new(0, 0);
+        let mut t = Thread::new(0);
         t.xregs.values = [0; 31];
         t.fregs.values = [0; 32];
         t.fflags = 0;
@@ -307,7 +305,7 @@ mod tests {
 
     #[test]
     fn new_threads_hold_the_poison_pattern() {
-        let t = Thread::new(0, 0);
+        let t = Thread::new(0);
         assert_eq!(t.xregs.read(0), 0);
         assert_eq!(t.xregs.read(1), POISON);
         assert_eq!(t.fregs.read(0), POISON);
