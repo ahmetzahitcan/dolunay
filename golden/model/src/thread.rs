@@ -45,7 +45,7 @@ impl FRegs {
 
 /// One change an instruction makes to one thread, computed from the thread's
 /// state before the instruction. An instruction makes zero or more.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
     WriteX { rd: u8, value: u32 },
     WriteF { rd: u8, value: u32 },
