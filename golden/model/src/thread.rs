@@ -98,7 +98,7 @@ impl Thread {
     /// Panics: If instruction is not JALR.
     pub fn eval_jalr(&self, instruction: Instruction) -> u32 {
         let Instruction::Jalr { rd: _, rs1, imm } = instruction else { unreachable!("{instruction:?} is not JALR") };
-        self.xregs.read(rs1).wrapping_add(imm)
+        self.xregs.read(rs1).wrapping_add(imm) & !1 // Dumb clearing of the lowest bit
     }
 
     /// Applies the effects `execute` computed, in order.

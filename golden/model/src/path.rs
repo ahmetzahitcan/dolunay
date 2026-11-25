@@ -1,4 +1,4 @@
-use crate::{geometry::THREADS_PER_WARP, path::SplitResult::{AllPassing, AllTaking}, thread::Thread};
+use crate::{geometry::THREADS_PER_WARP, thread::Thread};
 
 pub enum SplitResult {
     AllTaking(Path),
@@ -21,13 +21,10 @@ impl Path {
         }
     }
 
-    pub fn new(pc: u32, threads: impl Iterator<Item = Thread>) -> Self {
-        let mut tvec = Vec::with_capacity(THREADS_PER_WARP);
-        for t in threads {
-            tvec.push(Box::new(t));
-        }
+    pub fn new(pc: u32, mut threads: Vec<Box<Thread>>) -> Self {
+        threads.reserve_exact(THREADS_PER_WARP - threads.len());
         Path {
-            threads: tvec,
+            threads,
             pc
         }
     }
@@ -36,24 +33,34 @@ impl Path {
         let (takers, passers) = 
             self.threads.drain(..).partition::<Vec<_>, _>(|t | predicate(t));
 
+        use SplitResult::*;
         match (takers.is_empty(), passers.is_empty()) {
             (true, true) => unreachable!(), // This is impossible: the active path has at least one thread, and every thread either takes or passes the branch.
-            (true, false) => {
-                // All threads pass the branch, so the active path continues.
-                self.threads = passers;
-                AllPassing(self)
-            }, 
-            (false, true) => {
-                // All threads take the branch, so the active path continues.
-                self.threads = takers;
-                AllTaking(self)
-            },  
-            (false, false) => {
-                // Branch divergence
+            (true, false) => AllPassing(Self::new(self.pc, passers)), // All threads pass the branch, so the active path continues.
+            (false, true) => AllTaking(Self::new(self.pc, takers)), // All threads take the branch, so the active path continues.
+            (false, false) => Divergence { taking: Self::new(self.pc, takers), passing: Self::new(self.pc, passers) } // Branch divergence
+        }
+    }
 
-                todo!()
+    pub fn leader_id(&self) -> u16 {
+        // TODO: Determine the leader selection policy.
+        //       For now, just pick the thread with the lowest ID.
+        let mut lowest_id = u16::MAX;
+        for t in &self.threads {
+            if t.thread_id < lowest_id {
+                lowest_id = t.thread_id;
             }
         }
+        debug_assert!(self.thread(lowest_id).is_some(), "Path::leader_id(&self) has returned a thread ID not found in the path!");
+        lowest_id
+    }
+
+    pub fn leader(&self) -> &Thread {
+        self.thread(self.leader_id()).unwrap()
+    }
+
+    pub fn leader_mut(&mut self) -> &mut Thread {
+        self.thread_mut(self.leader_id()).unwrap()
     }
 
     pub fn thread(&self, thread_id: u16) -> Option<&Thread> {
