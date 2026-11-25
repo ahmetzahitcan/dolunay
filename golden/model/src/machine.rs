@@ -2,6 +2,7 @@ use std::array;
 
 use crate::{address_space::AddressSpace, geometry::WARPS_PER_MACHINE, illegal::Illegal, warp::Warp};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Machine {
     warps: [Warp; WARPS_PER_MACHINE],
     address_space: AddressSpace,
