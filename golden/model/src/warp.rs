@@ -117,7 +117,7 @@ impl Warp {
 impl Warp {
     /// Executes one instruction of the active path. The address space is the
     /// machine's, shared by every warp, so it is passed in, not owned.
-    pub fn step(&mut self, addrs: &AddressSpace) -> Result<(), Illegal> {
+    pub fn step(&mut self, addrs: &mut AddressSpace) -> Result<(), Illegal> {
         let mut path = self.active_path.take().unwrap();
 
         use Instruction::*;
@@ -272,37 +272,41 @@ mod tests {
     fn a_basic_warp_run() {
         // The first and the last thread, so the test holds for any geometry.
         const LAST: u16 = (THREADS_PER_WARP - 1) as u16;
-        let addrs = rom_of(&[
+        let mut addrs = rom_of(&[
             0x00000393, // addi x7, x0, 0
             0x00138393, // addi x7, x7, 1
             0xFFDFF0EF, // jal x1, -4
         ]);
+        let addrs_before = addrs.clone();
 
         let mut warp = Warp::new(0);
-        warp.step(&addrs).unwrap();
+        warp.step(&mut addrs).unwrap();
         assert_eq!(warp.active().pc, 4);
         assert_eq!(warp.thread(0).xregs.read(7), 0);
         assert_eq!(warp.thread(LAST).xregs.read(7), 0);
 
         for i in 1..1_000_000u32 {
-            warp.step(&addrs).unwrap();
-            warp.step(&addrs).unwrap();
+            warp.step(&mut addrs).unwrap();
+            warp.step(&mut addrs).unwrap();
             assert_eq!(warp.active().pc, 4);
             assert_eq!(warp.thread(0).xregs.read(1), 12);
             assert_eq!(warp.thread(LAST).xregs.read(1), 12);
             assert_eq!(warp.thread(0).xregs.read(7), i);
             assert_eq!(warp.thread(LAST).xregs.read(7), i);
         }
+        assert_eq!(addrs, addrs_before);
     }
 
     #[test]
     fn an_illegal_instruction_changes_nothing() {
-        let addrs = rom_of(&[0x0010D0D3]); // fadd.s f1, f1, f1 with rm = 101
+        let mut addrs = rom_of(&[0x0010D0D3]); // fadd.s f1, f1, f1 with rm = 101
+        let addrs_before = addrs.clone();
 
         let mut warp = Warp::new(0);
         let before = warp.clone();
-        assert_eq!(warp.step(&addrs), Err(Illegal::ReservedRoundingMode));
+        assert_eq!(warp.step(&mut addrs), Err(Illegal::ReservedRoundingMode));
         assert_eq!(warp, before);
+        assert_eq!(addrs, addrs_before);
     }
 
     // Which new path becomes active after a split is a choice point
@@ -311,65 +315,73 @@ mod tests {
 
     #[test]
     fn a_branch_all_threads_agree_on_keeps_one_path() {
-        let addrs = rom_of(&[
+        let mut addrs = rom_of(&[
             0x00000463, // 0x0: beq x0, x0, 8   taken
             0x00000013, // 0x4: addi x0, x0, 0
             0xFE001CE3, // 0x8: bne x0, x0, -8  not taken
             0xFE005AE3, // 0xc: bge x0, x0, -12 taken
         ]);
+        let addrs_before = addrs.clone();
         let mut warp = Warp::new(0);
         for expected_pc in [0x8, 0xc, 0x0] {
-            warp.step(&addrs).unwrap();
+            warp.step(&mut addrs).unwrap();
             assert_eq!(warp.paths().count(), 1);
             assert_eq!(warp.active().pc, expected_pc);
         }
+        assert_eq!(addrs, addrs_before);
     }
 
     #[test]
     fn a_branch_threads_disagree_on_splits_the_path_by_outcome() {
-        let addrs = rom_of(&[0x00029663]); // bne x5, x0, 12
+        let mut addrs = rom_of(&[0x00029663]); // bne x5, x0, 12
+        let addrs_before = addrs.clone();
         let mut warp = Warp::new(0);
         for t in warp.threads_mut() {
             t.xregs.write(5, (t.thread_id % 2) as u32);
         }
-        warp.step(&addrs).unwrap();
+        warp.step(&mut addrs).unwrap();
 
         assert_eq!(warp.paths().count(), 2);
         for tid in 0..THREADS_PER_WARP as u16 {
             let expected_pc = if tid % 2 == 1 { 12 } else { 4 };
             assert_eq!(warp.path(tid).pc, expected_pc, "thread {tid}");
         }
+        assert_eq!(addrs, addrs_before);
     }
 
     #[test]
     fn jalr_splits_the_path_by_target_and_links_every_thread() {
-        let addrs = rom_of(&[0x008280E7]); // jalr x1, 8(x5)
+        let mut addrs = rom_of(&[0x008280E7]); // jalr x1, 8(x5)
+        let addrs_before = addrs.clone();
         let mut warp = Warp::new(0);
         for t in warp.threads_mut() {
             t.xregs.write(5, 0x100 + 4 * (t.thread_id % 3) as u32);
         }
-        warp.step(&addrs).unwrap();
+        warp.step(&mut addrs).unwrap();
 
         assert_eq!(warp.paths().count(), THREADS_PER_WARP.min(3));
         for tid in 0..THREADS_PER_WARP as u16 {
             assert_eq!(warp.path(tid).pc, 0x108 + 4 * (tid % 3) as u32, "thread {tid}");
             assert_eq!(warp.thread(tid).xregs.read(1), 4, "thread {tid}");
         }
+        assert_eq!(addrs, addrs_before);
     }
 
     #[test]
     fn jalr_reads_rs1_before_linking_and_clears_bit_0_of_the_target() {
         // RISC-V unprivileged ISA, "Unconditional Jumps": the target is
         // rs1 + imm with its least-significant bit set to zero.
-        let addrs = rom_of(&[0x010282E7]); // jalr x5, 16(x5)
+        let mut addrs = rom_of(&[0x010282E7]); // jalr x5, 16(x5)
+        let addrs_before = addrs.clone();
         let mut warp = Warp::new(0);
         for t in warp.threads_mut() {
             t.xregs.write(5, 0x101);
         }
-        warp.step(&addrs).unwrap();
+        warp.step(&mut addrs).unwrap();
 
         assert_eq!(warp.paths().count(), 1);
         assert_eq!(warp.active().pc, 0x110);
         assert_eq!(warp.thread(0).xregs.read(5), 4);
+        assert_eq!(addrs, addrs_before);
     }
 }
