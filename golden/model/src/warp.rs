@@ -240,6 +240,9 @@ impl Warp {
                 for (t, w) in zip(path.threads_mut(), loads ){
                     t.xregs.write(rd, w);
                 }
+
+                path.pc = path.pc.wrapping_add(4);
+                self.active_path = Some(path);
             },
 
             Flw { .. } => todo!("FLW"),
@@ -281,6 +284,9 @@ impl Warp {
                 for s in stores {
                     address_space.commit_store(s);
                 }
+
+                path.pc = path.pc.wrapping_add(4);
+                self.active_path = Some(path);
             },
 
             Fsw { .. } => todo!("FSW"),
@@ -338,6 +344,184 @@ mod tests {
             rom[4 * i..4 * i + 4].copy_from_slice(&w.to_le_bytes());
         }
         AddressSpace::new(rom)
+    }
+
+    // RV32I encodings (RISC-V unprivileged ISA, "Load and Store Instructions"),
+    // checked against the decoder in `load_store_words_decode_as_written`.
+    const LW_X6_0_X5: u32 = 0x0002A303; // lw x6, 0(x5)
+    const LW_X5_0_X5: u32 = 0x0002A283; // lw x5, 0(x5)
+    const SW_X6_0_X5: u32 = 0x0062A023; // sw x6, 0(x5)
+
+    /// Where the load tests put one data word per thread, clear of the code.
+    const DATA: u32 = 0x100;
+
+    /// `code` from address 0, and at `DATA` one word per thread: thread t's
+    /// word is `data_word(t)`.
+    fn rom_with_data(code: &[u32]) -> AddressSpace {
+        let mut words = vec![0; DATA as usize / 4 + THREADS_PER_WARP];
+        words[..code.len()].copy_from_slice(code);
+        for tid in 0..THREADS_PER_WARP {
+            words[DATA as usize / 4 + tid] = data_word(tid);
+        }
+        rom_of(&words)
+    }
+
+    fn data_word(tid: usize) -> u32 {
+        0xA000_0000 | tid as u32
+    }
+
+    /// The address thread t uses in the store tests. A debug slot is the only
+    /// address a store can succeed on until the scratchpad exists; that test
+    /// goes with the debug unit.
+    const DEBUG_BASE: u32 = 0xFFFF_FF00;
+
+    #[test]
+    fn load_store_words_decode_as_written() {
+        use control_unit::decode;
+        use Instruction::{Lw, Sw};
+        assert_eq!(decode(LW_X6_0_X5), Some(Lw { rd: 6, rs1: 5, imm: 0 }));
+        assert_eq!(decode(LW_X5_0_X5), Some(Lw { rd: 5, rs1: 5, imm: 0 }));
+        assert_eq!(decode(SW_X6_0_X5), Some(Sw { rs1: 5, rs2: 6, imm: 0 }));
+    }
+
+    #[test]
+    fn lw_gives_each_thread_the_word_at_its_own_address() {
+        let mut addrs = rom_with_data(&[LW_X6_0_X5]);
+        let addrs_before = addrs.clone();
+        let mut warp = Warp::new(0);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, DATA + 4 * t.thread_id as u32);
+        }
+        warp.step(&mut addrs).unwrap();
+
+        assert_eq!(warp.paths().count(), 1);
+        assert_eq!(warp.active().pc, 4);
+        for tid in 0..THREADS_PER_WARP {
+            assert_eq!(warp.thread(tid).xregs.read(6), data_word(tid), "thread {tid}");
+        }
+        assert_eq!(addrs, addrs_before);
+    }
+
+    #[test]
+    fn lw_reads_every_address_before_writing_rd() {
+        // rd = rs1: each thread's address comes from its x5 before the load.
+        let mut addrs = rom_with_data(&[LW_X5_0_X5]);
+        let mut warp = Warp::new(0);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, DATA + 4 * t.thread_id as u32);
+        }
+        warp.step(&mut addrs).unwrap();
+
+        for tid in 0..THREADS_PER_WARP {
+            assert_eq!(warp.thread(tid).xregs.read(5), data_word(tid), "thread {tid}");
+        }
+    }
+
+    #[test]
+    fn threads_may_load_the_same_address() {
+        // Only stores conflict (CONTRACT.md §2, "Store conflicts are illegal").
+        let mut addrs = rom_with_data(&[LW_X6_0_X5]);
+        let mut warp = Warp::new(0);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, DATA);
+        }
+        warp.step(&mut addrs).unwrap();
+
+        for tid in 0..THREADS_PER_WARP {
+            assert_eq!(warp.thread(tid).xregs.read(6), data_word(0), "thread {tid}");
+        }
+    }
+
+    /// Steps a warp whose threads all hold `addr(t)` in x5 and `t` in x6, and
+    /// checks that the step is `expected` and changes nothing (CONTRACT.md §1,
+    /// guarantee 2).
+    fn assert_illegal_and_unchanged(instruction: u32, addr: impl Fn(usize) -> u32, expected: Illegal) {
+        let mut addrs = rom_with_data(&[instruction]);
+        let addrs_before = addrs.clone();
+        let mut warp = Warp::new(0);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, addr(t.thread_id));
+            t.xregs.write(6, t.thread_id as u32);
+        }
+        let before = warp.clone();
+
+        assert_eq!(warp.step(&mut addrs), Err(expected));
+        assert_eq!(warp, before);
+        assert_eq!(addrs, addrs_before);
+    }
+
+    // In the tests below only the last thread breaks the rule, so an illegal
+    // act on any one thread of the path is enough.
+    const LAST: usize = THREADS_PER_WARP - 1;
+
+    #[test]
+    fn an_unaligned_lw_changes_nothing() {
+        let addr = |tid| DATA + 4 * tid as u32 + (tid == LAST) as u32;
+        assert_illegal_and_unchanged(LW_X6_0_X5, addr, Illegal::UnalignedAccess);
+    }
+
+    #[test]
+    fn an_unmapped_lw_changes_nothing() {
+        let addr = |tid| if tid == LAST { ROM_SIZE as u32 } else { DATA + 4 * tid as u32 };
+        assert_illegal_and_unchanged(LW_X6_0_X5, addr, Illegal::UnmappedAddress);
+    }
+
+    #[test]
+    fn a_store_conflict_changes_nothing() {
+        // The last thread stores to thread 0's address. Their values differ.
+        let addr = |tid| DEBUG_BASE + 4 * if tid == LAST { 0 } else { tid as u32 };
+        assert_illegal_and_unchanged(SW_X6_0_X5, addr, Illegal::StoreConflict);
+    }
+
+    #[test]
+    fn a_store_conflict_is_illegal_whatever_the_values() {
+        // Every thread stores the same value to the same address.
+        let mut addrs = rom_with_data(&[SW_X6_0_X5]);
+        let mut warp = Warp::new(0);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, DEBUG_BASE);
+            t.xregs.write(6, 7);
+        }
+        let before = warp.clone();
+
+        if THREADS_PER_WARP > 1 {
+            assert_eq!(warp.step(&mut addrs), Err(Illegal::StoreConflict));
+            assert_eq!(warp, before);
+        }
+    }
+
+    #[test]
+    fn a_sw_to_rom_changes_nothing() {
+        let addr = |tid| if tid == LAST { DATA } else { DEBUG_BASE + 4 * tid as u32 };
+        assert_illegal_and_unchanged(SW_X6_0_X5, addr, Illegal::StoreToRom);
+    }
+
+    #[test]
+    fn an_unaligned_sw_changes_nothing() {
+        let addr = |tid| DEBUG_BASE + 4 * tid as u32 + 2 * (tid == LAST) as u32;
+        assert_illegal_and_unchanged(SW_X6_0_X5, addr, Illegal::UnalignedAccess);
+    }
+
+    #[test]
+    fn an_unmapped_sw_changes_nothing() {
+        let addr = |tid| if tid == LAST { ROM_SIZE as u32 } else { DEBUG_BASE + 4 * tid as u32 };
+        assert_illegal_and_unchanged(SW_X6_0_X5, addr, Illegal::UnmappedAddress);
+    }
+
+    #[test]
+    fn a_sw_to_distinct_addresses_steps_the_path() {
+        let mut addrs = rom_with_data(&[SW_X6_0_X5]);
+        let addrs_before = addrs.clone();
+        let mut warp = Warp::new(0);
+        for t in warp.threads_mut() {
+            t.xregs.write(5, DEBUG_BASE + 4 * t.thread_id as u32);
+            t.xregs.write(6, t.thread_id as u32);
+        }
+        warp.step(&mut addrs).unwrap();
+
+        assert_eq!(warp.paths().count(), 1);
+        assert_eq!(warp.active().pc, 4);
+        assert_eq!(addrs, addrs_before);
     }
 
     #[test]
