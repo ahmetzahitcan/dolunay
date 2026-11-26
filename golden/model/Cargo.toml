@@ -10,3 +10,7 @@ links = "softfloat"
 
 [build-dependencies]
 cc = "=1.2.30"
+
+[dependencies]
+indexmap = "2.14.2"
+rustc-hash = "2.1.3"

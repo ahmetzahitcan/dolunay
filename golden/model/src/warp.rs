@@ -1,6 +1,9 @@
 use std::iter::zip;
 
-use crate::address_space::{self, AddressSpace};
+use indexmap::IndexMap;
+use rustc_hash::FxBuildHasher;
+
+use crate::address_space::AddressSpace;
 use crate::control_unit::{self, Instruction};
 use crate::geometry::{INITIAL_PC, THREADS_PER_WARP};
 use crate::illegal::Illegal;
@@ -10,7 +13,8 @@ use crate::thread::Thread;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Warp {
     pub warp_id: usize,
-    inactive_paths: Vec<Path>,
+    blocked_paths: Vec<Path>,
+    paused_paths: Vec<Path>,
     active_path: Option<Path>,
 }
 
@@ -19,7 +23,8 @@ impl Warp {
     pub fn new(warp_id: usize) -> Self {
         Self { 
             warp_id,
-            inactive_paths: Vec::with_capacity(THREADS_PER_WARP - 1),
+            blocked_paths: Vec::with_capacity(THREADS_PER_WARP - 1),
+            paused_paths: Vec::with_capacity(THREADS_PER_WARP - 1),
             active_path: Some(Path::new(INITIAL_PC, (0..THREADS_PER_WARP).map(|tid| Box::new(Thread::new(tid))).collect())),
         }
     }
@@ -29,12 +34,12 @@ impl Warp {
 impl Warp {
     pub fn paths(&self) -> impl Iterator<Item = &Path> {
         assert!(self.active_path.is_some());
-        self.inactive_paths.iter().chain(self.active_path.iter())
+        self.paused_paths.iter().chain(self.active_path.iter())
     }
 
     pub fn paths_mut(&mut self) -> impl Iterator<Item = &mut Path> {
         assert!(self.active_path.is_some());
-        self.inactive_paths.iter_mut().chain(self.active_path.iter_mut())
+        self.paused_paths.iter_mut().chain(self.active_path.iter_mut())
     }
 
     pub fn path(&self, thread_id: usize) -> &Path {
@@ -117,19 +122,18 @@ impl Warp {
 impl Warp {
     /// Executes one instruction of the active path. The address space is the
     /// machine's, shared by every warp, so it is passed in, not owned.
-    pub fn step(&mut self, addrs: &mut AddressSpace) -> Result<(), Illegal> {
+    pub fn step(&mut self, address_space: &mut AddressSpace) -> Result<(), Illegal> {
         let mut path = self.active_path.take().unwrap();
 
         use Instruction::*;
-        let word = match addrs.load(path.pc) {
+        let undecoded_instruction = match address_space.load(path.pc) {
             Ok(word) => word,
-            Err(address_space::Error::UnalignedAccess) => unreachable!("pc {:#010x} is not aligned", path.pc),
-            Err(address_space::Error::UnmappedAddress) => {
+            Err(err) => {
                 self.active_path = Some(path);    
-                return Err(Illegal::IllegalInstruction)
+                return Err(err);
             },
         };
-        let Some(instruction) = control_unit::decode(word) else {
+        let Some(instruction) = control_unit::decode(undecoded_instruction) else {
             self.active_path = Some(path);    
             return Err(Illegal::IllegalInstruction)
         };
@@ -158,7 +162,7 @@ impl Warp {
                         passing.pc = passing_pc;
 
                         // TODO: Specify policy over which path should be the active one. passing for now.
-                        self.inactive_paths.push(taking);
+                        self.paused_paths.push(taking);
                         self.active_path = Some(passing);
                     },
                 }
@@ -208,12 +212,80 @@ impl Warp {
                 // Using expect and rewrapping it in Some; just to make sure it is in fact valid.
                 self.active_path = Some(committed_paths.pop().expect("No paths committed?!")); 
                 for p in committed_paths {
-                    self.inactive_paths.push(p);
+                    self.paused_paths.push(p);
                 };
             },
-            Lb { .. } | Lh { .. } | Lw { .. } | Lbu { .. } | Lhu { .. } | Flw { .. } => todo!("loads"),
-            Sb { .. } | Sh { .. } | Sw { .. } | Fsw { .. } => todo!("stores"),
-            Binit { .. } | Bsync0 { .. } | Yield => todo!("barriers and yield"),
+
+            Lw { rd, .. } => {
+                let mut err = None;
+                let mut loads = Vec::with_capacity(path.size());
+
+                for t in path.threads() {
+                    let addr = t.eval_addr(instruction);
+                    let word = match address_space.load(addr) {
+                        Ok(word) => word,
+                        Err(e) => {
+                            err = Some(e);
+                            break;
+                        },
+                    };
+                    loads.push(word)
+                }
+
+                if let Some(e) = err {
+                    self.active_path = Some(path);
+                    return Err(e);
+                }
+
+                for (t, w) in zip(path.threads_mut(), loads ){
+                    t.xregs.write(rd, w);
+                }
+            },
+
+            Flw { .. } => todo!("FLW"),
+            Lb { .. } | Lh { .. } | Lbu { .. } | Lhu { .. } => todo!("subword loads"),
+
+            Sw { .. } => {
+                let mut err = None;
+                let mut pairs = IndexMap::with_capacity_and_hasher(
+                    path.size(),
+                    FxBuildHasher::default());
+
+                for t in path.threads() {
+                    let addr = t.eval_addr(instruction);
+                    let word = t.eval_store(instruction);
+                    if pairs.insert(addr, word).is_some() {
+                        err = Some(Illegal::StoreConflict);
+                        break;
+                    }
+                }
+
+                if let Some(e) = err {
+                    self.active_path = Some(path);
+                    return Err(e);
+                }
+
+                let mut stores = Vec::with_capacity(pairs.len());
+
+                for (addr, word) in pairs {
+                    let store = match address_space.eval_store(addr, word) {
+                        Ok(s) => s,
+                        Err(e) => {
+                            self.active_path = Some(path);
+                            return Err(e);
+                        },
+                    };
+                    stores.push(store);
+                }
+
+                for s in stores {
+                    address_space.commit_store(s);
+                }
+            },
+
+            Fsw { .. } => todo!("FSW"),
+            Sb { .. } | Sh { .. } => todo!("stores"),
+            Binit { .. } | Bsync { .. } | Yield => todo!("barriers and yield"),
             Fence => todo!("fence"),
             Wdone { .. } => todo!("wdone"),
 

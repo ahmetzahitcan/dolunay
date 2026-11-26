@@ -73,13 +73,46 @@ impl Thread {
         }
     }
 
+    /// Evaluates the address accessed by `instruction`.
+    /// 
+    /// Panics: If instruction is not a memory access.
+    pub fn eval_addr(&self, instruction: Instruction) -> u32 {
+        use Instruction::*;
+        let x = |r| self.xregs.read(r);
+        match instruction {
+            Lb { rs1, imm, .. } | Lh { rs1, imm, .. } | Lw { rs1, imm, .. } | 
+                Lbu { rs1, imm, .. } | Lhu { rs1, imm, .. } | Flw { rs1, imm, .. } |
+                Sb { rs1, imm, .. } | Sh { rs1, imm, .. } | 
+                Sw { rs1, imm, .. } | Fsw { rs1, imm, .. } => x(rs1).wrapping_add(imm),
+
+            _ => unreachable!("{instruction:?} is not a memory access"),
+        }
+    }
+
+    /// Evaluates the word stored by `instruction`.
+    /// 
+    /// Panics: If instruction is not a store operation.
+    pub fn eval_store(&self, instruction: Instruction) -> u32 {
+        use Instruction::*;
+        let x = |r| self.xregs.read(r);
+        let f= |r| self.fregs.read(r);
+        match instruction {
+            Sb {rs2, ..} => x(rs2) & 0xFF,
+            Sh {rs2, ..} => x(rs2) & 0xFFFF,
+            Sw {rs2, ..} => x(rs2),
+            Fsw {rs2, ..} => f(rs2),
+
+            _ => unreachable!("{instruction:?} is not a memory access"),
+        }
+    }
+
     /// Evaluates the branch condition of `instruction` on this thread,
     /// returning true if the branch is taken, false if not.
     /// 
     /// Panics: If instruction is not a branch.
     pub fn eval_branch(&self, instruction: Instruction) -> bool {
         use Instruction::*;
-        let x = |r: u8| self.xregs.read(r);
+        let x = |r| self.xregs.read(r);
         match instruction {
             Beq { rs1, rs2, imm: _ } => x(rs1) == x(rs2),
             Bne { rs1, rs2, imm: _ } => x(rs1) != x(rs2),
@@ -116,14 +149,14 @@ impl Thread {
     /// guarantee 2).
     pub fn execute(&self, pc: u32, instruction: Instruction) -> Result<Vec<Effect>, Illegal> {
         use Instruction::*;
-        let x = |r: u8| self.xregs.read(r);
-        let f = |r: u8| self.fregs.read(r);
-        let to_x = |rd: u8, value: u32| Vec::from([Effect::WriteX { rd, value }]);
-        let to_f = |rd: u8, value: u32| Vec::from([Effect::WriteF { rd, value }]);
-        let float_to_x = |rd: u8, r: float::Output| {
+        let x = |r| self.xregs.read(r);
+        let f = |r| self.fregs.read(r);
+        let to_x = |rd, value| Vec::from([Effect::WriteX { rd, value }]);
+        let to_f = |rd, value| Vec::from([Effect::WriteF { rd, value }]);
+        let float_to_x = |rd, r: float::Output| {
             Vec::from([Effect::WriteX { rd, value: r.value }, Effect::AccumulateFflags { flags: r.flags }])
         };
-        let float_to_f = |rd: u8, r: float::Output| {
+        let float_to_f = |rd, r: float::Output| {
             Vec::from([Effect::WriteF { rd, value: r.value }, Effect::AccumulateFflags { flags: r.flags }])
         };
 
@@ -211,7 +244,7 @@ impl Thread {
             | Jal { .. } | Jalr { .. }
             | Lb { .. } | Lh { .. } | Lw { .. } | Lbu { .. } | Lhu { .. } | Flw { .. }
             | Sb { .. } | Sh { .. } | Sw { .. } | Fsw { .. }
-            | Binit { .. } | Bsync0 { .. } | Yield
+            | Binit { .. } | Bsync { .. } | Yield
             | Fence
             | Wdone { .. } => unreachable!("{instruction:?} is executed by the warp"),
         })

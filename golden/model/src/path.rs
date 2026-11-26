@@ -8,7 +8,7 @@ pub enum SplitResult {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Path {
-    pub threads: Vec<Box<Thread>>,
+    threads: Vec<Box<Thread>>,
     pub pc: u32,
 }
 
@@ -27,6 +27,10 @@ impl Path {
             threads,
             pc
         }
+    }
+
+    pub fn size(&self) -> usize {
+        self.threads.len()
     }
 
     pub fn split(mut self, predicate: impl Fn(&Thread) -> bool) -> SplitResult {

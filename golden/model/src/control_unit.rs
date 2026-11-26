@@ -140,7 +140,7 @@ pub enum Instruction {
 
     // Barrier operations
     Binit { rs1: u8, imm: u32 },
-    Bsync0 { rs1: u8, imm: u32 },
+    Bsync { rs1: u8, imm: u32 },
     Yield,
 
     // CSR operations (RISC-V unprivileged ISA, "Zicsr")
@@ -289,7 +289,7 @@ pub fn decode(w: u32) -> Option<Instruction> {
         return Some(Binit { rs1: reg(w, 15), imm: imm_i(w) });
     }
     if w & 0x00007fff == 0x0000200b {
-        return Some(Bsync0 { rs1: reg(w, 15), imm: imm_i(w) });
+        return Some(Bsync { rs1: reg(w, 15), imm: imm_i(w) });
     }
     // funct3 = 011 is not a RISC-V encoding (FINDINGS.md F7).
     if w & 0xfe00407f == 0x20000053 && funct3(w) != 0b011 {
