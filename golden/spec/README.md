@@ -16,8 +16,7 @@ encodings or rules:
   is unsupported, what traps).
 - **Execution model:** paths and what lockstep means, the choice points
   and their rules — cooperative switching within a warp and the `yield`
-  guarantee — reconvergence, and the order of conflicting accesses within
-  one lockstep instruction.
+  guarantee — reconvergence, and the atomicity of each instruction of a warp.
 - **Memory and synchronisation:** the scratchpad, DMA, barriers and their
   memory ordering, as the variant settles.
 - **Valid kernels:** the determinacy rule and the output descriptor a kernel

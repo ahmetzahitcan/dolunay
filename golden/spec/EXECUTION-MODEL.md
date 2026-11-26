@@ -16,7 +16,9 @@ Model") defines **program order** informally as the architectural order in
 which a hart executes its instructions. Dolunay defines the **warp program
 order** (WPO) of a warp the same way: the architectural order in which the warp
 executes its instructions. Each element of the WPO is one instruction executed
-by the warp's active path, on all of that path's threads.
+by the warp's active path, on all of that path's threads. **Each element is
+atomic:** to any observer outside the warp, either every thread of the path has
+executed it or none has.
 
 At every point of the WPO, the warp's **path state** is:
 
@@ -97,9 +99,11 @@ Exceptions to the substitution:
 - **No standard atomics.** Dolunay implements neither A nor Zalrsc.
   Atomics between warps are warp-level and execute once for the active path;
   how they enter the axioms is to be written with them (§5).
-- **One WPO element holds the accesses of several threads.** Their order is the
-  one the spec fixes for a lockstep instruction, which RVWMO does not
-  have.
+- **One WPO element holds the accesses of several threads**, all loads or all
+  stores, and is one event in the global memory order (§1). Stores by two of
+  its threads to overlapping bytes are **illegal**. So no order among an
+  element's accesses is observable.
+- **No memory-mapped I/O.** Every mapped address is memory.
 
 ---
 
@@ -122,10 +126,10 @@ Take path A = threads {0, 2} and path B = threads {1, 3} at the same store
 instruction; threads 1 and 2 store to `x`, threads 0 and 3 store to `y`. As two
 paths, the stores take effect A then B (threads 0, 2, 1, 3: `x` from thread 1,
 `y` from thread 3) or B then A (1, 3, 0, 2: `x` from thread 2, `y` from thread
-0). Merged into one path, they take effect in the order the spec fixes within one lockstep instruction — if that
-is ascending, 0, 1, 2, 3: `x` from thread 2, `y` from thread 3, which neither
-order produces. So a merge is not a hidden optimisation; it changes the result,
-hence §2 forbids it.
+0). Merged into one path, threads 1 and 2 store to `x` in one lockstep
+instruction, which is an illegal store conflict the program as written does not
+contain. So a merge is not a hidden optimisation; it changes the meaning, hence
+§2 forbids it.
 
 ### 4.3 Finishing, and misused barriers
 
@@ -161,7 +165,9 @@ observe, is open.
   only at explicit points.
 - **Hardware:** a warp's later loads must see its earlier stores from any
   thread, which means a per-warp store queue with forwarding across threads
-  rather than a per-thread one.
+  rather than a per-thread one. Each instruction is atomic to other warps, so a
+  lockstep access that a banked scratchpad serialises over several cycles must
+  keep other warps' conflicting accesses out until it completes.
 
 ---
 
@@ -172,11 +178,8 @@ observe, is open.
    paths a combination takes in. (The PC of a combined path is settled by the PC rule of §1:
    all its threads are at the same `bsync`.)
 2. **RVWMO with "warp" for "hart":** confirm by analysis that it holds, in
-   particular fences across threads and the interaction with the order within one lockstep instruction.
-3. **The order within one lockstep instruction:** which order (ascending thread index is the
-   obvious default), or whether conflicting accesses within one lockstep
-   instruction become illegal instead (`../CONTRACT.md` §2).
-4. **Synchronisation:** the data instructions within a warp, and whether
+   particular fences across threads and elements that hold several accesses.
+3. **Synchronisation:** the data instructions within a warp, and whether
    they may read threads outside the active path; the warp-level atomics, and
    how both enter the WPO and the axioms of §3.
-5. **Traps:** whether there are any, and the semantics of §4.4.
+4. **Traps:** whether there are any, and the semantics of §4.4.

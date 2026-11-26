@@ -1,7 +1,7 @@
 # Golden Model Contract
 
 **Status: authoritative for everything under `golden/`.** Written 2026-11-04;
-amended 2026-11-06, 2026-11-07, 2026-11-16 and 2026-11-17 for the redesign. History is in
+amended 2026-11-06, 2026-11-07, 2026-11-16, 2026-11-17 and 2026-11-26 for the redesign. History is in
 git.
 
 This file says what the golden model *is*, what it must guarantee, and what it is
@@ -49,13 +49,16 @@ The spec is **not deterministic**. Where software does not care, it leaves a
   (one of the paths it created), a `yield`, or a path starting to wait at a
   barrier. Paths switch at no other point;
 - **between warps**, how their instructions interleave; warps execute
-  concurrently, so every access to shared memory is a choice point;
+  concurrently, so every instruction that accesses shared memory is a choice
+  point. Instructions are atomic (§2), so the choice is between instructions,
+  never between threads of one;
 - the values of the readable timing CSRs (`cycle`, `time`, `instret`, the HPM
   counters), which the spec leaves unconstrained;
 - later, as they are specified: DMA progress.
 
-The order of conflicting accesses within one lockstep instruction is **not** a
-choice point; the spec defines it.
+No order within one lockstep instruction is observable: its threads either all
+load or all store, stores to overlapping bytes are **illegal**, and the
+instruction is atomic to every observer outside the warp (§2).
 
 A **valid execution** is one that makes some choice at every choice point and
 otherwise follows the spec. An implementation is **correct** when each of its
@@ -142,12 +145,20 @@ detail, stop and ask for that detail to be written into this file *first*.
   execute concurrently. Which path or warp goes first is a choice point (§1).
 - **Finishing.** Only the whole warp finishes: `wdone` is legal only when the
   active path holds every thread of the warp.
-- **Order within an instruction.** Conflicting accesses by the threads of one
-  lockstep instruction take effect in an order the spec defines.
+- **Instructions are atomic.** To any observer outside the warp — another
+  warp, and DMA once it exists — each instruction of the warp program order has
+  been executed either by every thread of the path that executes it or by none.
+  An implementation may spread an instruction over several cycles if no such
+  observer can tell.
+- **Store conflicts are illegal.** Two threads of one lockstep instruction
+  storing to overlapping bytes is illegal, whatever the values; the model
+  reports it as the `illegal` termination.
 - **Memory.** A redesigned memory hierarchy around a **scratchpad + DMA**. The
   previous variant's region decode, per-thread TLS port, leader selection and
   replay are **not** assumed to survive. **The model owns every shared
-  resource**: every thread reaches shared memory through the model.
+  resource**: every thread reaches shared memory through the model. There is
+  **no memory-mapped I/O**: every mapped address is memory, and no access has a
+  side effect beyond reading or writing it.
 - **Scratchpad accesses are synchronisation.** How threads are matched to banks
   is an implementation detail the model does not reproduce, but accesses to the
   scratchpad are expected to be visible synchronisation in their own right.
@@ -178,14 +189,13 @@ detail, stop and ask for that detail to be written into this file *first*.
 | Geometry (warps × threads) | How many threads exist; every kernel's indices | defined in one place; no other code assumes its value |
 | What "lockstep" means precisely — drafted as the warp program order | Which orders between threads of a path are observable | `spec/EXECUTION-MODEL.md` |
 | Reconvergence: paths combine only through `bsync`, never implicitly, at the PC their threads share — but `bsync`'s identity, expected set and release condition are open | Path bookkeeping; barrier semantics | `spec/EXECUTION-MODEL.md` |
-| *Which* order conflicting accesses within one lockstep instruction take effect in (that there is one is decided) — or whether that is reopened to make such conflicts illegal, so the conflict check reports them | What such kernels compute; what the conflict check sees | `spec/`; scratchpad (may reorder internally if the result is as if in that order) |
 | Progress between warps: must every warp that can execute eventually execute? Pressing: handoffs between warps spin on atomics | Whether a kernel that waits on another warp terminates; whether `timeout` can mean a spec violation | `spec/`; policy (default: yes) |
 | Synchronisation details: the instructions within a warp, and whether they may read threads outside the active path; the warp-level atomics' operands and where the old value goes; a compare-and-swap or a warp-level LR/SC; which memory they apply to | What kernels can express; the conflict check's synchronisation between warps | `spec/` |
 | Output descriptor: format, tolerance metric for floats (ULP, absolute, relative), NaN and signed zero | What "same output" means | the kernel corpus; determinacy check |
 | Barrier context: memory, warp registers, or model-internal? | What is observable | sync interface |
 | Barrier release rule | Semantics | sync interface |
 | Memory ordering of `yield` and of the barrier; whether RVWMO holds with "warp" read as "hart" | Whether the interesting kernels can be judged at all | memory model, `spec/EXECUTION-MODEL.md` |
-| DMA interface: MMIO device, or instructions? | Hook surface; whether DMA is a scheduled agent | agent interface |
+| DMA interface: which instructions or CSRs (not MMIO, §2) | Hook surface; whether DMA is a scheduled agent | agent interface |
 | Traps: whether there are any | What an illegal or faulting instruction does | `spec/EXECUTION-MODEL.md` |
 | The wording of guarantee 1: "same seed, same run", or "every source of nondeterminism is a choice point that a policy makes, logs, and can be forced to" | What the determinacy check and replay rely on; whether control and enumeration of choices are guaranteed | §1 |
 | A termination class for a provably stuck run, such as a thread spinning on `j .`: widen `deadlock` or add a class; which cases; per warp or per machine | What guarantee 2 reports for kernels that hang without deadlocking | §1, §4 |
@@ -298,9 +308,9 @@ It must identify each choice in the spec's terms, never the RTL's:
 - **within a warp:** the path that executes next, as warp, thread mask and PC,
   so the model stops at the first choice whose path is not ready in its own
   state;
-- **between warps:** for each address, the order in which conflicting accesses
-  took effect — a per-address order, not a global one; accesses to different
-  addresses need no order;
+- **between warps:** for each address, the order in which the instructions
+  that access it took effect — a per-address order of instructions, not of
+  threads, and not a global one; accesses to different addresses need no order;
 - the value read from a timing CSR, and later DMA progress, once specified.
 
 The RTL side must be able to emit both files. Until it can, G2 is untested —

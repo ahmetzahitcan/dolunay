@@ -46,9 +46,8 @@ In order; each is a small step to discuss before it is coded.
 
 1. **The step of one path, in the model, on a stub instruction set**: one
    instruction of the active path on each of its threads, splitting by
-   next PC, with the PC rule checked at `bsync`. Its open rules (the
-   order within one lockstep instruction, `bsync`'s release) stay knobs whose defaults the
-   maintainer approves.
+   next PC, with the PC rule checked at `bsync`. Its open rule, `bsync`'s
+   release, stays a knob whose default the maintainer approves.
 2. **The first ISA document in [`spec/`](spec/)**, with the maintainer: `yield`,
    `wdone`, the warp-id and thread-id CSRs, and the decided restrictions: F with static
    rounding, no A or Zalrsc, 32-bit instructions only.
