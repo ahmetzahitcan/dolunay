@@ -60,11 +60,11 @@ pub struct Thread {
     pub fregs: FRegs,
     /// The thread's floating-point flags.
     pub fflags: u8,
-    pub thread_id: u16,
+    pub thread_id: usize,
 }
 
 impl Thread {
-    pub fn new(thread_id: u16) -> Thread {
+    pub fn new(thread_id: usize) -> Thread {
         Thread {
             xregs: XRegs { values: [POISON; 31] },
             fregs: FRegs { values: [POISON; 32] },

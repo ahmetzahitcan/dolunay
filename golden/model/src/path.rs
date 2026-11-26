@@ -42,10 +42,10 @@ impl Path {
         }
     }
 
-    pub fn leader_id(&self) -> u16 {
+    pub fn leader_id(&self) -> usize {
         // TODO: Determine the leader selection policy.
         //       For now, just pick the thread with the lowest ID.
-        let mut lowest_id = u16::MAX;
+        let mut lowest_id = usize::MAX;
         for t in &self.threads {
             if t.thread_id < lowest_id {
                 lowest_id = t.thread_id;
@@ -63,11 +63,11 @@ impl Path {
         self.thread_mut(self.leader_id()).unwrap()
     }
 
-    pub fn has_thread(&self, thread_id: u16) -> bool {
+    pub fn has_thread(&self, thread_id: usize) -> bool {
         self.thread(thread_id).is_some()
     }
 
-    pub fn thread(&self, thread_id: u16) -> Option<&Thread> {
+    pub fn thread(&self, thread_id: usize) -> Option<&Thread> {
         for t in &self.threads {
             if t.thread_id == thread_id {
                 return Some(t);
@@ -76,7 +76,7 @@ impl Path {
         None
     }
 
-    pub fn thread_mut(&mut self, thread_id: u16) -> Option<&mut Thread> {
+    pub fn thread_mut(&mut self, thread_id: usize) -> Option<&mut Thread> {
         for t in &mut self.threads {
             if t.thread_id == thread_id {
                 return Some(t);

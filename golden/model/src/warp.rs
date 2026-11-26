@@ -9,18 +9,18 @@ use crate::thread::Thread;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Warp {
-    pub warp_id: u16,
+    pub warp_id: usize,
     inactive_paths: Vec<Path>,
     active_path: Option<Path>,
 }
 
 // Constructors
 impl Warp {
-    pub fn new(warp_id: u16) -> Self {
+    pub fn new(warp_id: usize) -> Self {
         Self { 
             warp_id,
             inactive_paths: Vec::with_capacity(THREADS_PER_WARP - 1),
-            active_path: Some(Path::new(INITIAL_PC, (0..THREADS_PER_WARP).map(|tid| Box::new(Thread::new(tid as u16))).collect())),
+            active_path: Some(Path::new(INITIAL_PC, (0..THREADS_PER_WARP).map(|tid| Box::new(Thread::new(tid))).collect())),
         }
     }
 }
@@ -37,8 +37,8 @@ impl Warp {
         self.inactive_paths.iter_mut().chain(self.active_path.iter_mut())
     }
 
-    pub fn path(&self, thread_id: u16) -> &Path {
-        assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
+    pub fn path(&self, thread_id: usize) -> &Path {
+        assert!(thread_id < THREADS_PER_WARP, "Invalid thread ID!");
         
 
         let paths = self.paths();
@@ -51,8 +51,8 @@ impl Warp {
         panic!("Missing thread!");
     }
 
-    pub fn path_mut(&mut self, thread_id: u16) -> &mut Path {
-        assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
+    pub fn path_mut(&mut self, thread_id: usize) -> &mut Path {
+        assert!(thread_id < THREADS_PER_WARP, "Invalid thread ID!");
         assert!(self.active_path.is_some());
 
         let paths = self.paths_mut();
@@ -76,8 +76,8 @@ impl Warp {
 
 // Thread access methods
 impl Warp {
-    pub fn thread(&self, thread_id: u16) -> &Thread {
-        assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
+    pub fn thread(&self, thread_id: usize) -> &Thread {
+        assert!(thread_id < THREADS_PER_WARP, "Invalid thread ID!");
         assert!(self.active_path.is_some());
 
         let paths = self.paths();
@@ -90,8 +90,8 @@ impl Warp {
         panic!("Missing thread!");
     }
 
-    pub fn thread_mut(&mut self, thread_id: u16) -> &mut Thread {
-        assert!(thread_id < THREADS_PER_WARP as u16, "Invalid thread ID!");
+    pub fn thread_mut(&mut self, thread_id: usize) -> &mut Thread {
+        assert!(thread_id < THREADS_PER_WARP, "Invalid thread ID!");
         assert!(self.active_path.is_some());
 
         let paths = self.paths_mut();
@@ -271,7 +271,7 @@ mod tests {
     #[test]
     fn a_basic_warp_run() {
         // The first and the last thread, so the test holds for any geometry.
-        const LAST: u16 = (THREADS_PER_WARP - 1) as u16;
+        const LAST: usize = THREADS_PER_WARP - 1;
         let mut addrs = rom_of(&[
             0x00000393, // addi x7, x0, 0
             0x00138393, // addi x7, x7, 1
@@ -342,7 +342,7 @@ mod tests {
         warp.step(&mut addrs).unwrap();
 
         assert_eq!(warp.paths().count(), 2);
-        for tid in 0..THREADS_PER_WARP as u16 {
+        for tid in 0..THREADS_PER_WARP {
             let expected_pc = if tid % 2 == 1 { 12 } else { 4 };
             assert_eq!(warp.path(tid).pc, expected_pc, "thread {tid}");
         }
@@ -360,7 +360,7 @@ mod tests {
         warp.step(&mut addrs).unwrap();
 
         assert_eq!(warp.paths().count(), THREADS_PER_WARP.min(3));
-        for tid in 0..THREADS_PER_WARP as u16 {
+        for tid in 0..THREADS_PER_WARP {
             assert_eq!(warp.path(tid).pc, 0x108 + 4 * (tid % 3) as u32, "thread {tid}");
             assert_eq!(warp.thread(tid).xregs.read(1), 4, "thread {tid}");
         }

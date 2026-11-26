@@ -12,7 +12,7 @@ pub struct Machine {
 impl Machine {
     pub fn new(address_space: AddressSpace) -> Self {
         Self {
-            warps: array::from_fn(|wid| Warp::new(wid as u16)),
+            warps: array::from_fn(|wid| Warp::new(wid)),
             address_space,
         }
     }
@@ -23,7 +23,7 @@ impl Machine {
     /// Steps through warps in order using an iterator of warp IDs. 
     /// If error occurs, returns the error and the warp ID that triggered it.
     /// Any warps after the erring warp are not stepped.
-    pub fn step_with(&mut self, warp_ids: impl IntoIterator<Item = u16>) -> Result<(), (u16, Illegal)> {
+    pub fn step_with(&mut self, warp_ids: impl IntoIterator<Item = usize>) -> Result<(), (usize, Illegal)> {
         for wid in warp_ids.into_iter() {
             self.warps[wid as usize].step(&mut self.address_space).map_err(|e| (wid, e))?;
         }
@@ -31,15 +31,15 @@ impl Machine {
     } 
 
     /// Steps one warp. If error occurs, returns the error.
-    pub fn step_one(&mut self, warp_id: u16) -> Result<(), Illegal> {
+    pub fn step_one(&mut self, warp_id: usize) -> Result<(), Illegal> {
         self.warps[warp_id as usize].step(&mut self.address_space)
     }
 
     /// Steps all warps in order of lowest ID to highest ID.
     /// If error occurs, returns the error and the warp ID that triggered it.
     /// Any warps after the erring warp are not stepped.
-    pub fn step_all(&mut self) -> Result<(), (u16, Illegal)> {
-        self.step_with((0 as u16)..(WARPS_PER_MACHINE as u16))
+    pub fn step_all(&mut self) -> Result<(), (usize, Illegal)> {
+        self.step_with(0..WARPS_PER_MACHINE)
     }
 }
 
@@ -51,7 +51,7 @@ mod tests {
     // Every warp starts at INITIAL_PC and runs the same program, so a warp's
     // PC tells how many steps it has taken. LAST is the last warp, so the
     // tests hold for any geometry with at least two warps.
-    const LAST: u16 = (WARPS_PER_MACHINE - 1) as u16;
+    const LAST: usize = WARPS_PER_MACHINE - 1;
     const NOP: u32 = 0x00000013; // addi x0, x0, 0
 
     /// A ROM holding `words` from address 0.
@@ -63,7 +63,7 @@ mod tests {
         AddressSpace::new(rom)
     }
 
-    fn pc_of(machine: &Machine, warp_id: u16) -> u32 {
+    fn pc_of(machine: &Machine, warp_id: usize) -> u32 {
         machine.warps[warp_id as usize].active().pc
     }
 
@@ -73,7 +73,7 @@ mod tests {
         let addrs_before = machine.address_space.clone();
         machine.step_one(LAST).unwrap();
 
-        for wid in 0..WARPS_PER_MACHINE as u16 {
+        for wid in 0..WARPS_PER_MACHINE {
             let expected_pc = if wid == LAST { 4 } else { 0 };
             assert_eq!(pc_of(&machine, wid), expected_pc, "warp {wid}");
         }
@@ -86,7 +86,7 @@ mod tests {
         let addrs_before = machine.address_space.clone();
         machine.step_with([0, LAST, 0]).unwrap();
 
-        for wid in 0..WARPS_PER_MACHINE as u16 {
+        for wid in 0..WARPS_PER_MACHINE {
             let expected_pc = match wid { 0 => 8, LAST => 4, _ => 0 };
             assert_eq!(pc_of(&machine, wid), expected_pc, "warp {wid}");
         }
@@ -99,7 +99,7 @@ mod tests {
         let addrs_before = machine.address_space.clone();
         machine.step_all().unwrap();
 
-        for wid in 0..WARPS_PER_MACHINE as u16 {
+        for wid in 0..WARPS_PER_MACHINE {
             assert_eq!(pc_of(&machine, wid), 4, "warp {wid}");
         }
         assert_eq!(machine.address_space, addrs_before);
